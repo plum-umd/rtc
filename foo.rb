@@ -1,5 +1,7 @@
+require 'rtc'
+
 class Foo
-    extend Rtc::Annotated                                                                                                                                    
+  rtc_annotated
 
     typesig("inc: (Numeric) -> Numeric")
   

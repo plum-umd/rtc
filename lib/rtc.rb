@@ -1,3 +1,7 @@
 # File to be included by client code.
 
-require 'rubydust/runtime'
+require 'rtc/annotated'
+
+def rtc_annotated
+  extend Rtc::Annotated
+end
