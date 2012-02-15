@@ -1,0 +1,435 @@
+# ######################################################################
+#
+# DRuby annotation language parser
+# Adapted directly from DRuby source file typeAnnotationParser.mly
+# Version of GitHub DRuby repo commit 0cda0264851bcdf6b301c3d7f564e9a3ee220e435
+#
+# ######################################################################
+
+class TypeAnnotationParser
+  prechigh
+    left T_COMMA
+    right T_RARROW
+    left K_OR
+  preclow
+
+  start entry
+
+token T_EOF
+token K_CLASS K_METACLASS K_MODULE K_INTERFACE K_TYPE K_TYPEVAR
+token K_ALIAS K_REQUIRE K_END
+token K_OR K_SELF
+
+token T_BEGIN_LINE T_SEMICOLON
+token T_COLON T_DOUBLE_COLON T_DOT
+token T_STAR T_QUESTION
+token T_CARROT T_BANG
+token T_EQUAL
+
+token T_RARROW
+token T_LPAREN T_RPAREN
+token T_LESS T_GREATER T_COMMA
+token T_LBRACKET T_RBRACKET
+token T_LBRACE T_RBRACE
+
+token T_SUBTYPE
+
+token T_STRING
+token T_IVAR T_CVAR T_GVAR
+token T_CONST_ID
+token T_TYPE_ID
+# token T_METHOD_NAME
+token T_LOCAL_ID T_TICKED_ID T_SUFFIXED_ID T_SCOPED_ID
+
+rule
+
+  entry: /* TODO:  get interfaces working */
+      e_method { result = val[0] }
+    | e_field { result = val[0] }
+    | e_named { result = val[0] }
+    | e_class  { result = val[0] }
+    /* | e_expr   { result = val[0] } */
+    /*| interface_file { result = val[0] } */
+
+  interface_file:
+      require_list class_def_list T_EOF {
+        fatal("Interface parsing not yet implemented")
+      }
+
+  require_list:
+      /* none */ { [] }
+    | require_stmt require_list { result = [val[0]] + val[1] }
+
+  require_stmt:
+      K_REQUIRE T_STRING { result = strip_quotes(token_text(val[1])) }
+
+  class_def_list:
+      { [] }
+    | class_def class_def_list { result = [val[0]] + val[1] }
+
+  class_def:
+      K_METACLASS class_elem_list K_END {
+        fatal("Metaclass type annotations not yet supported")
+      }
+    | K_CLASS class_annotation class_elem_list K_END {
+        fatal("Class type annotations not yet supported")
+      }
+    | K_MODULE class_annotation class_elem_list K_END {
+        fatal("Module type annotations not yet supported")
+      }
+
+  class_elem_list:
+      { result = [] }
+    | class_elem class_elem_list { result = [val[0]] + val[1] }
+
+  alias_name:
+      relative_method_name { result = token_text(val[0]) } 
+
+  class_elem:
+      K_ALIAS alias_name alias_name { fatal("Alias not yet implemented") }
+    | class_def   { result = val[0] }
+    | method_type { result = val[0] }
+    | field_sig   { result = val[0] }
+    | const_expr  { result = val[0] }
+
+  field_sig:
+      T_IVAR T_COLON type_expr {
+        result = handle_var(:ivar, token_text(val[0]), val[2]) }
+    | T_CVAR T_COLON type_expr {
+        result = handle_var(:cvar, token_text(val[0]), val[2]) }
+    | T_GVAR T_COLON type_expr {
+        result = handle_var(:gvar, token_text(val[0]), val[2]) }
+
+/* entry points, presumably for non-IF annotations */
+  e_expr:
+      type_expr T_EOF { fatal("Expr parsing not yet implemented") }
+
+/* NOTE:  none of these actually register the types -- that has to be
+   done at a higher level (where the use for the signature will be known) */
+
+  e_method:
+      method_annotation_list T_EOF { result = val[0] }
+
+  e_field:
+      field_annotation_list T_EOF { result = val[0] }
+
+  e_named:
+      named_type_list T_EOF { result = val[0] }
+
+  e_class:
+      class_annotation T_EOF { result = val[0] }
+
+  method_start:
+      T_BEGIN_LINE { result = nil }
+    | { result = nil }
+
+  method_annotation_list:
+      method_start const_method_type { result = [val[1]] }
+    | method_start const_method_type method_annotation_list {
+        result = [val[1]] + val[2]
+      }
+
+  field_start:
+      T_BEGIN_LINE { result = nil }
+    | { result = nil }
+
+  field_annotation_list:
+      field_start field_sig { result = [val[1]] }
+    | field_start field_sig field_annotation_list { result = [val[1]] + val[2] }
+
+/* Since "Constants" can appear as either values, or method names,
+   we need to inline these cases explicitly to make the parser happy */
+  const_expr:
+      T_CONST_ID T_COLON type_expr {
+        result = handle_constant(token_text(val[0]).to_sym, val[2])
+      }
+
+  const_method_type:
+      method_name T_LESS type_id_list T_GREATER constraint_list T_COLON method_sig
+      { result = handle_mtype(val[0], val[2], val[4], val[6]) }
+    | method_name T_COLON method_sig 
+      { result = handle_mtype(val[0], nil, nil, val[2]); }
+    | T_CONST_ID T_LESS type_id_list T_GREATER constraint_list T_COLON method_sig
+      { result = handle_mtype(token_text(val[0]).to_sym,
+                              val[2], val[4], val[6]) }
+
+    | T_CONST_ID T_COLON method_sig {
+        result = handle_mtype(token_text(val[0]).to_sym, nil, nil, val[2]) }
+
+  method_type:
+      relative_method_name T_LESS type_id_list T_GREATER constraint_list T_COLON method_sig
+      { result = handle_mtype(val[0], val[2], val[4], val[6]) }
+    | relative_method_name T_COLON method_sig 
+      { result = handle_mtype(val[0], nil, nil, val[2]) }
+
+  relative_method_name:
+      T_STRING         
+      { result = MethodIdentifier.new(proxy, token_text(val[0])) }
+    | T_LOCAL_ID       
+      { result = MethodIdentifier.new(proxy, token_text(val[0])) }
+    | T_SUFFIXED_ID    
+      { result = MethodIdentifier.new(proxy, token_text(val[0])) }
+    | T_SCOPED_ID      
+      { 
+        result = handle_scoped_id(token_text(val[0])) 
+      }
+
+  method_name:
+      relative_method_name { result = val[0] }
+
+  method_sig:
+      /* polymtype takes tvars separately from range and domain,
+       * so we have to go one level up before we can actully install
+       * a constraint from the signatures we parse here
+       */
+      T_LPAREN T_RPAREN block T_RARROW type_expr {
+        result = construct_msig([], val[2], val[4])
+      }
+    | /*named_*/type_expr block T_RARROW /*named_*/ type_expr {
+        result = construct_msig(val[0], val[1], val[3])
+      }
+
+  block:
+      { result = nil }
+    | T_LBRACE method_sig T_RBRACE { result = handle_btype(val[1]) }
+
+  type_id_list:
+      type_var { result = [val[0]] }
+    | type_var T_COMMA type_id_list { result = [val[0]] + val[2] }
+
+  simple_type_var:
+      T_LOCAL_ID { result = handle_type_param(:id, token_text(val[0])) } 
+    # | T_TICKED_ID { result = handle_type_param(:id, token_text(val[0])) } 
+    | K_SELF { result = handle_type_param(:self, token_text(val[0])) }
+
+  type_var:
+      /* T_TYPE_ID { result = handle_type_param(:id, token_text(val[0])) } */
+      simple_type_var { result = val[0] }
+    | T_CARROT simple_type_var {
+        result = handle_type_param(:varargs, token_text(val[1])) }
+
+  /* recursive type identifier constructs need to be reassembled at the top
+   * level, as [dr]ruby cannot currently handle the pieces separately */
+  type_ident:
+      T_CONST_ID { token_text(val[0]) }
+    | T_DOUBLE_COLON T_CONST_ID {
+        result = token_text(val[1])
+# token_text(val[0]) + token_text(val[1]) 
+      }
+    | type_ident T_DOUBLE_COLON T_CONST_ID {
+        result =
+          if val[0].class == Array 
+            val[0] << token_text(val[2]) 
+          else 
+            [val[0], token_text(val[2])]
+          end 
+      }
+
+  type_expr:
+      or_type_list {
+        list = val[0][:or_list]
+        if(list.length > 1)
+          # args = list + [pos]
+          result = # proxy.utype(*args)
+                   Rtc::Types::UnionType.new(list)
+        else
+          # flatten if there is no union
+          result = list[0]
+        end
+      }
+
+    or_type_list:
+      single_type_expr { result = {:or_list => [val[0]]} }
+    | single_type_expr K_OR or_type_list {
+        # need to differientiate OR lists from tuples (which are just arrays)
+        val[2][:or_list] = [val[0]] + val[2][:or_list]
+        result = val[2]
+      }
+
+  single_type_expr:
+      type_var { result = val[0] }
+    | type_ident {
+        id = handle_type_ident(val[0])
+        if(id.class == Class)
+          result = Rtc::Types::NominalType.of(id)
+        else
+          result = id
+        end
+      }
+    | tuple { result = val[0] } /* tuples are just arrays */
+    | T_DOT T_QUESTION { 
+        result = Rtc::Types::TopType.instance
+      } # proxy.toptype(pos) } /* dynamic = top?? */
+    | T_QUESTION single_type_expr { 
+        result = Rtc::Types::OptionalArg.new(val[1])
+      } # proxy.optargtype(val[1], pos) }
+    | T_STAR single_type_expr { 
+        result = Rtc::Types::Vararg.new(val[1])
+      } # proxy.varargtype(val[1], pos) }
+    | T_LBRACKET field_or_method_list T_RBRACKET {
+        result = handle_structural_type(val[1])
+      }
+    | type_ident T_LESS type_expr_comma_list T_GREATER {
+        id = handle_type_ident(val[0])
+        nominal = Rtc::Types::NominalType.of(id)
+        result = Rtc::Types::ParameterizedType.new(nominal, val[2])
+      } # proxy.instantiate(id, val[2]) }
+
+  tuple:
+      T_LPAREN type_expr_comma_list T_RPAREN { result = val[1] }
+
+  /* same as type_expr */
+  named_type_expr:
+      named_or_type_list {
+        list = val[0][:or_list]
+        if(list.length > 1)
+          result = Rtc::Types::UnionType.new(list)
+        else
+          result = list[0]
+        end
+      }
+
+  named_or_type_list:
+      single_named_type_expr { result = {:or_list => [val[0]]} }
+    | single_named_type_expr K_OR named_or_type_list {
+        val[2][:or_list] = [val[0]] + val[2][:or_list]
+        result = val[2]
+      }
+
+  single_named_type_expr:
+      single_type_expr { result = val[0] }
+    | T_TYPE_ID T_COLON single_type_expr {
+        result = {:name => token_text(val[0]),
+                  :type => val[2]}
+      }
+
+  type_expr_comma_list:
+      named_type_expr { result = [val[0]] }
+    | named_type_expr T_COMMA type_expr_comma_list {
+        result = [val[0]] + val[2] }
+
+  declared_subtypes:
+      { result = [] }
+    | T_SUBTYPE type_expr_comma_list { result = val[1] }
+
+  class_decl:
+      type_ident T_LESS type_id_list T_GREATER {
+        id = val[0].to_sym
+        type_vars = prepare_type_vars_for_sig(val[2])
+        result = handle_class_decl(id, type_vars)
+      }
+    | type_ident {
+        id = val[0].to_sym
+        result = handle_class_decl(id)
+      }
+
+  class_annotation:
+      K_CLASS class_decl declared_subtypes constraint_list {
+        result = handle_class_annot(val[1], val[2], val[3], true)
+      }
+    | K_MODULE class_decl declared_subtypes constraint_list {
+        result = handle_class_annot(val[1], val[2], val[3], false)
+      }
+
+  constraint_list:
+      { [] }
+    | T_SEMICOLON bounded_quantifier_list { result = val[1] }
+
+  bounded_quantifier_list:
+      bounded_quantifier { result = [val[0]] }
+    | bounded_quantifier T_COMMA bounded_quantifier_list {
+        result = [val[0]] + val[2]}
+
+  bounded_quantifier:
+      type_var T_SUBTYPE type_expr {
+        result = TypeConstraint.new(pos, val[0], val[2])
+      }
+
+  field_type:
+      T_IVAR T_COLON type_expr {
+        result = handle_var(:ivar, token_text(val[0]), val[2])
+      }
+
+  field_or_method_nonempty_list:
+      field_type  {
+        result = {:fields => [val[0]], :methods => []}       }
+    | method_type {
+        result = {:fields => [],       :methods => [val[0]]} }
+    | field_type T_COMMA field_or_method_nonempty_list {
+        field_method_hash = val[2]
+        field_method_hash[:fields] += [val[0]]
+        result = field_method_hash
+      }
+    | method_type T_COMMA field_or_method_nonempty_list {
+        field_method_hash = val[2]
+        field_method_hash[:methods] += [val[0]]
+        result = field_method_hash
+      }
+
+  field_or_method_list:
+      { result = {:fields => [], :methods => []} }
+    | field_or_method_nonempty_list { result = val[0] }
+
+  named_type_list:
+      named_type { result = [val[0]] }
+    | named_type T_SEMICOLON named_type_list { result = [val[0]] + val[2] }
+
+  named_type:
+      K_TYPE type_name T_COLON single_type_expr {
+        result = handle_named_type_expr(val[1], val[3])
+      }
+
+  type_name:
+      T_CONST_ID { token_text(val[0]) }
+
+end
+
+---- header ----
+
+require 'rtc/annot_lexer.rex'
+require 'rtc/parser'
+require 'rtc/typing/types.rb'
+
+module Rtc
+
+#  FIXME(rwsims): this is never called
+#  def str_typedef(s)
+#    pos = Rtc::Positioning.caller_pos(caller(), 0)
+#    ctx = Rtc::ErrorReporting::Context.new(pos, s.to_s)
+#    sigs = parse_typesig(s, pos, ctx)
+#    sigs.each {|sig| __alias_type(@pos, sig.id, sig.type) }
+#  end
+
+  class TypeAnnotationParser < Racc::Parser
+
+    attr_accessor :pos, :proxy
+
+    # FIXME(rwsims): it's not clear what proxy is for, it's used when defining
+    # class constants for doing class type signatures.
+    def initialize(proxy)
+        @proxy = proxy
+    end
+
+    def strip_quotes(arg)
+      arg.strip.gsub(/^\"/, "").gsub(/\"$/, "")
+    end
+
+    # ####################
+    # helper methods for type constructors from ML parser
+    # ####################
+
+    def token_text(x)
+      x
+    end
+
+    def pragma(key)
+      fail "Unknown pragma keyword: #{key}" if(key !="FIXME")
+    end
+
+  end
+
+---- inner ----
+
+---- footer ----
+
+end
