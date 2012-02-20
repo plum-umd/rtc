@@ -22,10 +22,17 @@ class Object
       @_rtc_type
     else
       class_obj = Rtc::Types::NominalType.of(self.class)
-      if class_obj.type_parameters.size == 0
+      if class_obj.type_parameters.size == 0 
         @_rtc_type = class_obj
       else
-        #TODO(jtoman): should we run through the array now?
+        if class_obj.klass == Array
+          @_rtc_type = Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each)])
+        elsif class_obj.klass == Hash
+          @_rtc_type = Rtc::types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each_key),
+            Rtc::Types::TypeVariable.create(self.each_value)])
+        else
+          raise(Exception, "TODO: implement me")
+        end
       end
     end
   end
@@ -77,7 +84,8 @@ module Rtc::Types
                 self <= a
               end
             when TypeVariable
-              #TODO: constrain type variables
+              typ = other.wrapped_type
+              return self <= typ
             when TopType
               true
             else
@@ -351,7 +359,10 @@ module Rtc::Types
         def initialize(nominal, parameters)
             raise Exception.new("Type parameter mismatch") unless parameters.size == nominal.type_parameters.length
             @nominal = nominal
-            @parameters = parameters
+            @parameters = parameters.map {
+              |t_param|
+              t_param.instance_of?(TypeVariable) ? t_param : TypeVariable.create(t_param)
+            }
             @_method_cache = {}
             super({},{})
         end
@@ -367,7 +378,7 @@ module Rtc::Types
                                      other.nominal <= @nominal)
                 zipped = @parameters.zip(other.parameters)
                 return false unless zipped.all? do |t, u|
-                    t <= u and u <= t
+                    t <= u
                 end
                 true
             else
@@ -414,12 +425,12 @@ module Rtc::Types
             t_ind = @nominal.type_parameters.index(type)
             raise Exception.new("Unknown type id #{type}") if t_ind == nil
             # this was a bad idea:
-            #if formal_type_parameters[t_ind].dynamic
-            #  formal_type_parameters[t_ind]
-            #else
-            #  formal_type_parameters[t_ind].wrapped_type
-            #end
-            formal_type_parameters[t_ind]
+            if formal_type_parameters[t_ind].dynamic
+              formal_type_parameters[t_ind]
+            else
+              formal_type_parameters[t_ind].wrapped_type
+            end
+            #formal_type_parameters[t_ind]
           when OptionalArg
             OptionalArg.new(replace_type(type.type,formal_type_parameters))
           when Vararg
@@ -427,9 +438,9 @@ module Rtc::Types
           when ParameterizedType
             ParameterizedType.new(
               type.nominal,
-              type.parameters.map do |t_param|
-                replace_type(TypeParameter.new(t_param), formal_type_parameters)
-              end
+              type.parameters.map { |t_param|
+                replace_type(t_param, formal_type_parameters)
+              }
             )
           when StructuralType
             type
@@ -460,8 +471,12 @@ module Rtc::Types
                 replace_type(t,formal_type_parameters)
               end
             )
-          else
-            puts type.class.name
+          when TypeVariable
+            if type.dynamic
+              type 
+            else
+              replace_type(type.wrapped_type, formal_type_parameters)
+            end
           end
         end
         
@@ -947,28 +962,30 @@ module Rtc::Types
       @@instance = nil
     end
     
-    class TypeVariable
-      
-      attr_accessor :id
-      attr_accessor :dynamic
+    class TypeVariable < Type
+      attr_reader :dynamic
       alias :dynamic? :dynamic
-      @@instance_counter = 0
-      def self.create
-        @@instance_counter = @@instance_counter + 1
-        TypeVariable.new(@@instance_counter)
+      def self.create(type_param)
+        raise(Exception, "Type Parameter must be an enumerator (for dynamic types) or a type class (for annotated types)") if
+          !type_param.instance_of?(Enumerator) && !type_param.kind_of?(Type)
+        TypeVariable.new(type_param)
       end
       
       def ==(other)
         eql?(other)
       end
       
+      def inspect
+        to_s
+      end
+      
       def eql?(other)
-        other.instance_of?(TypeVariable) && other.id == @id
+        other.instance_of?(TypeVariable) && other.id == id
       end
       
       def constrain_to(type)
         @dynamic = false
-        wrapped_type= type
+        wrapped_type = type
       end
       
       def wrapped_type
@@ -982,28 +999,31 @@ module Rtc::Types
       end
       
       def to_s
-        return "any" if dynamic
         wrapped_type.to_s
       end
-      
-      def hash
-        id * 151
-      end
-      
-      def initialize(id, type_it)
-        @wrapped_type = nil # maybe the bottom type?
-        @dynamic = true
-        @id = id
-        @it = type_it
-        @dirty = false
-        @type_cache = nil
+      def initialize(type)
+        if type.instance_of?(Enumerator)
+          @wrapped_type = nil # maybe the bottom type?
+          @dynamic = true        
+          @it = type
+          @dirty = true
+          @type_cache = nil
+        elsif type.kind_of?(Type)
+          @wrapped_type = type
+          @dynamic = false
+        end
+        super()
       end
       
       def <=(other)
-        return wrapped_type <= other if dynamic
+        if dynamic
+          ret = wrapped_type <= other
+          return wrapped_type <= other
+        end
         # otherwise our type has been constrained! this means that the other type must
         # match this type exactly
-        other <= wrapped_type && wrapped_type <= other
+        typ = wrapped_type
+        other <= typ && typ <= other
       end
       
       private 
@@ -1038,9 +1058,11 @@ module Rtc::Types
         if curr_type.size == 0
           curr_type = BottomType.instance
         elsif curr_type.size == 1
-          curr_type =curr_type_set.to_a[0]
+          curr_type = curr_type.to_a[0]
+        else
+          curr_type = UnionType.of(curr_type.to_a)
         end
-        @dirty = false          
+        @dirty = true
         @type_cache = curr_type
       end
       
