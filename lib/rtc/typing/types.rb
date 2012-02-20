@@ -7,6 +7,30 @@ require 'singleton'
 
 require 'rtc/tools/hash-builder.rb'
 
+class Object
+  def rtc_meta
+    if defined? @_rtc_meta
+      @_rtc_meta
+    else
+      @_rtc_meta = {
+        :annotated => false
+      }
+    end
+  end
+  def rtc_type
+    if defined? @_rtc_type
+      @_rtc_type
+    else
+      class_obj = Rtc::Types::NominalType.of(self.class)
+      if class_obj.type_parameters.size == 0
+        @_rtc_type = class_obj
+      else
+        #TODO(jtoman): should we run through the array now?
+      end
+    end
+  end
+end
+
 module Rtc::Types
 
     # Abstract base class for all types. Takes care of assigning unique ids to
@@ -59,6 +83,10 @@ module Rtc::Types
             else
               false
             end
+        end
+        
+        def parameterized?
+          false
         end
 
         def ==(other)  # :nodoc:
@@ -327,6 +355,10 @@ module Rtc::Types
             @_method_cache = {}
             super({},{})
         end
+        
+        def parameterized?
+          true
+        end
 
         def <=(other)
             case other
@@ -339,7 +371,7 @@ module Rtc::Types
                 end
                 true
             else
-                false
+                super(other)
             end
         end
 
@@ -381,6 +413,12 @@ module Rtc::Types
           when TypeParameter
             t_ind = @nominal.type_parameters.index(type)
             raise Exception.new("Unknown type id #{type}") if t_ind == nil
+            # this was a bad idea:
+            #if formal_type_parameters[t_ind].dynamic
+            #  formal_type_parameters[t_ind]
+            #else
+            #  formal_type_parameters[t_ind].wrapped_type
+            #end
             formal_type_parameters[t_ind]
           when OptionalArg
             OptionalArg.new(replace_type(type.type,formal_type_parameters))
@@ -480,7 +518,7 @@ module Rtc::Types
                 end
                 return true
             else
-                return false
+                super(other)
             end
         end
 
@@ -569,6 +607,14 @@ module Rtc::Types
         def hash
             31 + type.hash
         end
+        
+        def <=(other)
+          if other.instance_of(Vararg)
+            type <= other.type
+          else
+            super(other)
+          end
+        end
     end
 
     # An object used to wrap a type for an optional argument to a procedure.
@@ -603,7 +649,7 @@ module Rtc::Types
       end
       
       def eql?(other)
-        other.instance_of?(SymbolType) and other.symbol == @symbol
+        other.instance_of?(SymbolType) and other.symbol == symbol
       end
       
       def ==(other)
@@ -619,8 +665,9 @@ module Rtc::Types
         # that is, should :a <= [ :a | :b | :c ]
         # my intuition is yes as an :a can be used anywhere where the type
         # [:a | :b | :c ] is exptected
-        return true if other.instance_of?(VariantType) && other.variant_members.include?(@symbol)
-        eql?(other)
+        return true if other.instance_of?(VariantType) && other.variant_members.include?(symbol)
+        return eql?(other) if other.instance_of?(SymbolType)
+        super
       end
     end
     
@@ -646,7 +693,7 @@ module Rtc::Types
         if other.instanceof?(VariantType)
           @variant_members.subset?(other.variant_members)
         else
-          false
+          super(other)
         end
       end
       
@@ -875,5 +922,130 @@ module Rtc::Types
       end
 
       @@instance = nil
+    end
+    
+    class BottomType
+      def hash
+        13
+      end
+      def initialize()
+        super()
+      end
+      def to_s
+        "b"
+      end
+      def eql?(other)
+        other.instance_of?(BottomType)
+      end
+      def <=(other)
+        eql?(other)
+      end
+      def self.instance
+        return @@instance || (@@instance = BottomType.new)
+      end
+      
+      @@instance = nil
+    end
+    
+    class TypeVariable
+      
+      attr_accessor :id
+      attr_accessor :dynamic
+      alias :dynamic? :dynamic
+      @@instance_counter = 0
+      def self.create
+        @@instance_counter = @@instance_counter + 1
+        TypeVariable.new(@@instance_counter)
+      end
+      
+      def ==(other)
+        eql?(other)
+      end
+      
+      def eql?(other)
+        other.instance_of?(TypeVariable) && other.id == @id
+      end
+      
+      def constrain_to(type)
+        @dynamic = false
+        wrapped_type= type
+      end
+      
+      def wrapped_type
+        if !dynamic
+          @wrapped_type
+        elsif @dirty
+          gen_type
+        else
+          @type_cache
+        end
+      end
+      
+      def to_s
+        return "any" if dynamic
+        wrapped_type.to_s
+      end
+      
+      def hash
+        id * 151
+      end
+      
+      def initialize(id, type_it)
+        @wrapped_type = nil # maybe the bottom type?
+        @dynamic = true
+        @id = id
+        @it = type_it
+        @dirty = false
+        @type_cache = nil
+      end
+      
+      def <=(other)
+        return wrapped_type <= other if dynamic
+        # otherwise our type has been constrained! this means that the other type must
+        # match this type exactly
+        other <= wrapped_type && wrapped_type <= other
+      end
+      
+      private 
+      
+      def gen_type
+        curr_type = Set.new
+        @it.each {
+          |elem|
+          elem_type = elem.rtc_type
+          super_count = 0
+          if curr_type.size == 0 
+            curr_type << elem_type
+            next
+          end
+          was_subtype = curr_type.any? {
+            |seen_type|
+            if elem_type <= seen_type
+              true
+            elsif seen_type <= elem_type
+              super_count = super_count + 1
+              false
+            end
+          }
+          if was_subtype
+            next
+          elsif super_count == curr_type.size
+            curr_type = Set.new([elem_type])
+          else
+            curr_type << elem_type
+          end
+        }
+        if curr_type.size == 0
+          curr_type = BottomType.instance
+        elsif curr_type.size == 1
+          curr_type =curr_type_set.to_a[0]
+        end
+        @dirty = false          
+        @type_cache = curr_type
+      end
+      
+      def _mark_dirty
+        @dirty = true
+      end
     end
 end  # module Rtc::Types
