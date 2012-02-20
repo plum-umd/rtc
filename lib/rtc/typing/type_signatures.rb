@@ -44,20 +44,22 @@ module Rtc
         # intersection type and polymorphic type are special cases
         def to_s()
             str = 
-                if type.instance_of? IntersectionType
+                if type.instance_of? Rtc::Types::IntersectionType
                     then intertype_to_s()
-                elsif type.instance_of? PolyMethodType
-                    then polytype_to_s()
+                #TODO(jtoman): add in support for polymorphism
+                #elsif type.instance_of? PolyMethodType
+                #    then polytype_to_s()
                 else super() # otherwise same
                 end 
             return str
         end
 
         def format(ppf)
-            if type.instance_of? IntersectionType
+            if type.instance_of? Rtc::Types::IntersectionType
                 format_intertypes(ppf, @id)
-            elsif type.instance_of? PolyMethodType
-                format_polytypes(ppf, @type)
+            #TODO(jtoman): add in support for polymorphism    
+            #elsif type.instance_of? PolyMethodType
+            #    format_polytypes(ppf, @type)
             else
                 super
             end
@@ -85,7 +87,10 @@ module Rtc
         # TODO
         def intertype_to_s()
             strs = @type.types.map do |type|
-                (type.kind_of?(PolyMethodType) ? polytype_to_s() : "#{@id.to_s} : #{@type}")
+                (
+                #TODO(jtoman): add back in for polymorphism
+                #type.kind_of?(PolyMethodType) ? polytype_to_s() : 
+                "#{@id.to_s} : #{@type}")
             end
             return strs.join("\n")
         end
