@@ -1,6 +1,7 @@
 module Rtc
   class MethodWrapper
     class NoArgument; end
+    # for some reason I thought a static method was a good idea. Now I'm not so sure.
     def self.make_wrapper(class_obj, method_name)
       MethodWrapper.new(class_obj, method_name)
     end
@@ -14,7 +15,7 @@ module Rtc
         |p_f|
         passed,formal = p_f
         if formal[0] == :opt and passed.instance_of?(Rtc::MethodWrapper::NoArgument)
-          return
+          next
         elsif formal[0] == :rest
           arg_list += passed
         else
@@ -51,7 +52,11 @@ module Rtc
       when :opt
         "#{parameter[1].to_s} = Rtc::MethodWrapper::NoArgument.new"
       when :rest
-        "*#{parameter[1].to_s}"
+        if parameter.size == 1
+          "*__rest"
+        else
+          "*#{parameter[1].to_s}"
+        end
       when :block
         # TODO(jtoman): put error reporting here, I don't really what the method for ruby is...
         # this can't happen
@@ -68,7 +73,11 @@ module Rtc
     def gen_collapse_args()
       "{ :args => [" + @no_block_params.map {
         |param_spec|
-        param_spec[1].to_s
+        if param_spec[0] == :rest and param_spec.size == 1
+          "__rest"
+        else
+          param_spec[1].to_s
+        end
       }.join(", ") + "], :block => block}"
     end
   end
