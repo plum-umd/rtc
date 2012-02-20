@@ -35,7 +35,7 @@ class Foo
       return x + 3
     end
 
-    typesig("f3: (Numeric) -> t")
+    typesig("f3: (Numeric) -> .?")
     
     def f3(x)
       if (x < 0)
@@ -45,7 +45,7 @@ class Foo
       end
    end
 
-    typesig("f4: (Numeric, t) -> String")
+    typesig("f4: (Numeric, .?) -> String")
     
     def f4(x, y)
       if y.class.to_s == "Numeric"
