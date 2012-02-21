@@ -20,6 +20,8 @@ class Object
   def rtc_type
     if defined? @_rtc_type
       @_rtc_type
+    elsif self.class.name == "Symbol"
+      @_rtc_type = Rtc::Types::SymbolType.new(self)
     else
       class_obj = Rtc::Types::NominalType.of(self.class)
       if class_obj.type_parameters.size == 0 
@@ -35,6 +37,9 @@ class Object
         end
       end
     end
+  end
+  def rtc_typeof(method_name)
+    self.rtc_type.get_method(method_name)
   end
 end
 
@@ -402,9 +407,9 @@ module Rtc::Types
             true
         end
         
-        def type_of_param(p_name)
-          ind = @nominal.type_parameters.index(p_name)
-          @parameters[ind]
+        def type_of_param(param)
+          param = @nominal.type_parameters.index(p_name) if param.class.name == "Symbol"
+          @parameters[param].wrapped_type
         end
 
         #TODO: implement me
@@ -424,13 +429,11 @@ module Rtc::Types
           when TypeParameter
             t_ind = @nominal.type_parameters.index(type)
             raise Exception.new("Unknown type id #{type}") if t_ind == nil
-            # this was a bad idea:
             if formal_type_parameters[t_ind].dynamic
               formal_type_parameters[t_ind]
             else
               formal_type_parameters[t_ind].wrapped_type
             end
-            #formal_type_parameters[t_ind]
           when OptionalArg
             OptionalArg.new(replace_type(type.type,formal_type_parameters))
           when Vararg
@@ -676,56 +679,10 @@ module Rtc::Types
       end
       
       def <=(other)
-        # should a symbol be a subtype of a variant?
-        # that is, should :a <= [ :a | :b | :c ]
-        # my intuition is yes as an :a can be used anywhere where the type
-        # [:a | :b | :c ] is exptected
-        return true if other.instance_of?(VariantType) && other.variant_members.include?(symbol)
         return eql?(other) if other.instance_of?(SymbolType)
         super
       end
     end
-    
-    class VariantType < Type
-      attr_reader :variant_members
-      def initialize(variants_in)
-        @variant_members = Set.new
-        variants_in.each do |var|
-          @variant_members << var.to_sym
-        end
-      end
-      
-      def hash
-        builder = Rtc::HashBuilder.new(29, 71)
-        @variant_members.each do
-          |m|
-          builder.include(m)
-        end
-        builder.get_hash
-      end
-      
-      def <=(other)
-        if other.instanceof?(VariantType)
-          @variant_members.subset?(other.variant_members)
-        else
-          super(other)
-        end
-      end
-      
-      def eql?(other)
-        if other.instanceof?(VariantType)
-          other.variant_members.eql?(@variant_members)
-        else
-          false
-        end
-      end
-      
-      def ==(other)
-        eql?(other)
-      end
-    end
-    
-    
 
     # Type that represents the intersection of two other types. The intersection
     # of two types is the type that supports all of the operations of both
