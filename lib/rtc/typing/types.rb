@@ -13,7 +13,8 @@ class Object
       @_rtc_meta
     else
       @_rtc_meta = {
-        :annotated => false
+        :annotated => false,
+        :no_subtype => false
       }
     end
   end
@@ -50,19 +51,6 @@ module Rtc::Types
     # should never be instantiated directly.
     class Type
         @@next_id = 1
-        @@instances = []
-
-        # Set of all Type instances created, useful for iterating over all
-        # vertices (types) in the constraint graph.
-        def self.instances
-            @@instances
-        end
-
-        # Reset type ID counter and list of instances.
-        def self.reset
-            @@instances = []
-            @@next_id = 1
-        end
 
         # The unique id of this Type instance.
         attr_reader :id
@@ -73,7 +61,6 @@ module Rtc::Types
         def initialize()
             @id = @@next_id
             @@next_id += 1
-            @@instances << self
         end
 
         # Return true if +self+ is a subtype of +other+. Implemented in
@@ -287,9 +274,9 @@ module Rtc::Types
             when NominalType
                 return true if other.klass.name == @klass.name
                 other_class = other.klass
-                it_class = @klass.superclass
+                it_class = @klass
                 #TODO(jtoman): memoize this lookup for fast access?
-                while it_class != nil
+                while it_class != nil && !it_class.rtc_meta[:no_subtype]
                   return true if other_class == it_class
                   it_class = it_class.superclass 
                 end

@@ -4,6 +4,8 @@ require 'set'
 #program to write quick test cases to rapidly develop type code
 # run as ruby -Ilib type_test.rb
 
+#testing framework? what's that?
+
 include Rtc::Types
 
 def make_union(*r)
@@ -99,8 +101,26 @@ string_array = [ "bar" ]
 #puts string_array.rtc_type
 puts "should be true => #{string_array.rtc_type <= num_str_arr.rtc_type}"
 string_array.rtc_type.parameters[0].constrain_to(NominalType.of(String))
-puts "should now be false #{string_array.rtc_type <= num_str_arr.rtc_type}"
+puts "should now be false => #{string_array.rtc_type <= num_str_arr.rtc_type}"
 
 #string_array.rtc_type.parameters[0].constrain_to(NominalType.of(String))
 
 puts "should be false => #{["bar", 4, 4.0].rtc_type <= num_str_arr.rtc_type}"
+
+require 'rtc'
+
+class ParentClass
+  def my_method()
+    puts "I'm a method!"
+  end
+end
+
+class BreakingClass < ParentClass
+  rtc_no_subtype
+  undef_method :my_method
+end
+
+p = ParentClass.new
+b = BreakingClass.new
+
+puts "should be false => #{b.rtc_type <= p.rtc_type}"

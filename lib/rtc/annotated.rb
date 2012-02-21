@@ -32,6 +32,11 @@ module Rtc::Annotated
         end
     end
     
+    #FIXME(jtoman): needs a better and catchier name
+    def no_subtype
+      self.rtc_meta[:no_subtype] = true
+    end
+    
     def method_added(method_name)
       if @@deferred_methods.include?(method_name.to_s)
         @@deferred_methods.delete(method_name.to_s)
