@@ -14,7 +14,8 @@ class Object
     else
       @_rtc_meta = {
         :annotated => false,
-        :no_subtype => false
+        :no_subtype => false,
+        :iterators => {}
       }
     end
   end
@@ -25,16 +26,21 @@ class Object
       @_rtc_type = Rtc::Types::SymbolType.new(self)
     else
       class_obj = Rtc::Types::NominalType.of(self.class)
-      if class_obj.type_parameters.size == 0 
+      if class_obj.type_parameters.size == 0
         @_rtc_type = class_obj
       else
         if class_obj.klass == Array
           @_rtc_type = Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each)])
         elsif class_obj.klass == Hash
-          @_rtc_type = Rtc::types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each_key),
+          @_rtc_type = Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each_key),
             Rtc::Types::TypeVariable.create(self.each_value)])
         else
-          raise(Exception, "TODO: implement me")
+          #user defined parameterized classes
+          tv = class_obj.type_parameters.map {
+            |param|
+            Rtc::Types::TypeVariable.create(self.send(class_obj.klass.rtc_meta[:iterators][param.symbol]))
+          }
+          @_rtc_type = Rtc::Types::ParameterizedType.new(class_obj, tv)
         end
       end
     end
@@ -961,7 +967,6 @@ module Rtc::Types
       
       def <=(other)
         if dynamic
-          ret = wrapped_type <= other
           return wrapped_type <= other
         end
         # otherwise our type has been constrained! this means that the other type must

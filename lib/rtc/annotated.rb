@@ -37,6 +37,10 @@ module Rtc::Annotated
       self.rtc_meta[:no_subtype] = true
     end
     
+    def define_iterator(param_name,iterator_name)
+      rtc_meta.fetch(:iterators)[param_name] = iterator_name
+    end
+    
     def method_added(method_name)
       if @@deferred_methods.include?(method_name.to_s)
         @@deferred_methods.delete(method_name.to_s)
