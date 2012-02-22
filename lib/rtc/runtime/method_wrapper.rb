@@ -11,28 +11,72 @@ module Rtc
       passed_and_formals = regular_args.zip(@no_block_params)
       arg_list = []
       method_type = invokee.rtc_typeof(@method_name)
+
+      if method_type.instance_of?(Rtc::Types::IntersectionType) 
+        types = method_type.types
+      else
+        types = [method_type]
+      end
+
+      counter = 0
+
+      for mt in types
+        counter = counter + 1
+        arg_mismatch = false
+        arg_list = []
+
       passed_and_formals.each_with_index {
         |p_f,index|
         passed,formal = p_f
         if formal[0] == :opt
           next if passed.instance_of?(Rtc::MethodWrapper::NoArgument)
-          raise(Exception,"Type mismatch") unless passed.rtc_type <= method_type.arg_types[index].type
+          raise(Exception,"Type mismatch") unless passed.rtc_type <= mt.arg_types[index].type
           arg_list << passed
         elsif formal[0] == :rest
           actual_rest_type = passed.rtc_type.type_of_param(0) 
-          raise(Exception, "Type mismatch") unless actual_rest_type <= method_type.arg_types[index].type 
+          raise(Exception, "Type mismatch") unless actual_rest_type <= mt.arg_types[index].type 
           arg_list += passed
         else
-          raise(Exception, "Type mismatch") unless passed.rtc_type <= method_type.arg_types[index]
+          #raise(Exception, "Type mismatch") unless passed.rtc_type <= mt.arg_types[index]
+
+          if not passed.rtc_type <= mt.arg_types[index]
+            if counter == types.size
+              raise(Exception, "Type mismatch")
+            else
+              arg_mismatch = true
+            end
+          end  
+
           arg_list << passed
         end
       }
+
+      if arg_mismatch 
+        if counter == types.size
+          raise(Exception, "Type mismatch")
+        else
+          next
+        end
+      end
+
       if arg_vector[:block]
         ret_value = @original_method.bind(invokee).call(*arg_list, &arg_vector[:block])
       else
         ret_value = @original_method.bind(invokee).call(*arg_list)
       end
-      raise(Exception, "Return type mismatch") unless ret_value.rtc_type <= method_type.return_type
+
+        #raise(Exception, "Return type mismatch") unless ret_value.rtc_type <= mt.return_type
+
+      if ret_value.rtc_type <= mt.return_type
+        break
+      else
+        if counter == types.size
+          raise(Exception, "Return type mismatch")
+        end
+      end
+
+      end
+
       ret_value
     end
     private
