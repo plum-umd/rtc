@@ -218,7 +218,7 @@ module Rtc::Types
 
         # Compute a hash code for a symbol-to-type map.
         def type_map_hash(map)
-            builder = Rubydust::HashBuilder.new(19, 313)
+            builder = Rtc::HashBuilder.new(19, 313)
             map.each_pair do |sym, type|
                 builder.include(sym)
                 builder.include(type)
@@ -385,7 +385,7 @@ module Rtc::Types
         end
 
         def hash
-            builder = Rubydust::HashBuilder.new(23, 41)
+            builder = Rtc::HashBuilder.new(23, 41)
             builder.include(@nominal)
             @parameters.each do |p|
                 builder.include(p)
@@ -562,7 +562,7 @@ module Rtc::Types
         end
 
         def hash  # :nodoc:
-            builder = Rubydust::HashBuilder.new(17, 31)
+            builder = Rtc::HashBuilder.new(17, 31)
             builder.include(@return_type)
             if @block_type
                 builder.include(@block_type)
