@@ -8,7 +8,7 @@ module Rtc
     end
 
     def error(t, invokee, val, index=-1)
-      msg = "\nFunction " + @method_name.to_s + " argument type mismatch\n"
+      msg = "\nFunction " + @method_name.to_s + " type mismatch\n"
       msg += "  expected type: " + invokee.rtc_typeof(@method_name).to_s + "\n" 
 
       if t == "arg"
