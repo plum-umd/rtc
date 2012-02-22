@@ -6,58 +6,42 @@ module Rtc
     def self.make_wrapper(class_obj, method_name)
       MethodWrapper.new(class_obj, method_name)
     end
-    def invoke(invokee, arg_vector)
+
+    def error(t, invokee, val, index=-1)
+      msg = "\nFunction " + @method_name.to_s + " argument type mismatch\n"
+      msg += "  expected type: " + invokee.rtc_typeof(@method_name).to_s + "\n" 
+
+      if t == "arg"
+        msg += "  actual argument[" + index.to_s + "] has type: " + val.rtc_type.to_s
+      elsif t == "ret"
+        msg += "  actual return type: " + val.rtc_type.to_s
+      end
+
+      raise(Exception, msg)
+    end
+
+    def invoke_single(invokee, arg_vector, method_type)
       regular_args = arg_vector[:args]
       passed_and_formals = regular_args.zip(@no_block_params)
       arg_list = []
-      method_type = invokee.rtc_typeof(@method_name)
-
-      if method_type.instance_of?(Rtc::Types::IntersectionType) 
-        types = method_type.types
-      else
-        types = [method_type]
-      end
-
-      counter = 0
-
-      for mt in types
-        counter = counter + 1
-        arg_mismatch = false
-        arg_list = []
 
       passed_and_formals.each_with_index {
         |p_f,index|
         passed,formal = p_f
+
         if formal[0] == :opt
           next if passed.instance_of?(Rtc::MethodWrapper::NoArgument)
-          raise(Exception,"Type mismatch") unless passed.rtc_type <= mt.arg_types[index].type
+          raise(Exception,"Type mismatch") unless passed.rtc_type <= method_type.arg_types[index].type
           arg_list << passed
         elsif formal[0] == :rest
           actual_rest_type = passed.rtc_type.type_of_param(0) 
-          raise(Exception, "Type mismatch") unless actual_rest_type <= mt.arg_types[index].type 
+          raise(Exception, "Type mismatch") unless actual_rest_type <= method_type.arg_types[index].type 
           arg_list += passed
         else
-          #raise(Exception, "Type mismatch") unless passed.rtc_type <= mt.arg_types[index]
-
-          if not passed.rtc_type <= mt.arg_types[index]
-            if counter == types.size
-              raise(Exception, "Type mismatch")
-            else
-              arg_mismatch = true
-            end
-          end  
-
+          error("arg", invokee, passed, index) unless passed.rtc_type <= method_type.arg_types[index]
           arg_list << passed
         end
       }
-
-      if arg_mismatch 
-        if counter == types.size
-          raise(Exception, "Type mismatch")
-        else
-          next
-        end
-      end
 
       if arg_vector[:block]
         ret_value = @original_method.bind(invokee).call(*arg_list, &arg_vector[:block])
@@ -65,20 +49,37 @@ module Rtc
         ret_value = @original_method.bind(invokee).call(*arg_list)
       end
 
-        #raise(Exception, "Return type mismatch") unless ret_value.rtc_type <= mt.return_type
-
-      if ret_value.rtc_type <= mt.return_type
-        break
-      else
-        if counter == types.size
-          raise(Exception, "Return type mismatch")
-        end
-      end
-
-      end
+      error("ret", invokee, ret_value) unless ret_value.rtc_type <= method_type.return_type
 
       ret_value
     end
+
+    def invoke(invokee, arg_vector)
+      method_type = invokee.rtc_typeof(@method_name)
+
+      counter = 0
+
+      if method_type.instance_of?(Rtc::Types::IntersectionType)
+        for mt in method_type.types
+          counter += 1
+
+          if counter < method_type.types.size
+            begin
+              r = invoke_single(invokee, arg_vector, mt)
+              break if r
+            rescue Exception => e
+            end
+          else
+            r = invoke_single(invokee, arg_vector, mt)
+          end
+        end
+      else
+        r = invoke_single(invokee, arg_vector, method_type)
+      end
+
+      r
+    end
+
     private
     def initialize(class_obj,method_name)
       @method_name = method_name
