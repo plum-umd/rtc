@@ -26,8 +26,13 @@ class Object
       @_rtc_type = Rtc::Types::SymbolType.new(self)
     else
       class_obj = Rtc::Types::NominalType.of(self.class)
+
       if class_obj.type_parameters.size == 0
-        @_rtc_type = class_obj
+        if class_obj.klass == Array
+          @_rtc_type = Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each)])
+        else
+          @_rtc_type = class_obj
+        end
       else
         if class_obj.klass == Array
           @_rtc_type = Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each)])
@@ -74,6 +79,7 @@ module Rtc::Types
         def <=(other)
             case other
             when UnionType
+
               other.types.any? do |a|
                 self <= a
               end
@@ -355,7 +361,10 @@ module Rtc::Types
         # Creates a new ParameterizedType, parameterizing +nominal+ with
         # +parameters+. Note that +parameters+ must be listed in order.
         def initialize(nominal, parameters)
-            raise Exception.new("Type parameter mismatch") unless parameters.size == nominal.type_parameters.length
+            if nominal.type_parameters.size > 0
+              raise Exception.new("Type parameter mismatch") unless parameters.size == nominal.type_parameters.length
+            end
+
             @nominal = nominal
             @parameters = parameters.map {
               |t_param|
@@ -787,6 +796,7 @@ module Rtc::Types
                     types.delete(t)
                 end
             end
+
             return types[0] if types.size == 1
             return UnionType.new(types)
         end
