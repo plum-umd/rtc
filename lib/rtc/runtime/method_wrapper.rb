@@ -87,9 +87,9 @@ module Rtc
       end
 
       if not return_valid
-        puts "Function " + @method_name.to_s + " return type mismatch:"
+        puts "Function " + @method_name.to_s + " return type mismatch: "
         puts "   Expected function type: " + method_type.to_s
-        puts "   Actual return type: " + ret_value.rtc_type.to_s
+        puts "   Actual return type #{ret_value.rtc_type}"
         puts "   Actual return value: " + ret_value.to_s
 
         exit
