@@ -74,7 +74,6 @@ module Rtc::Types
         def <=(other)
             case other
             when UnionType
-
               other.types.any? do |a|
                 self <= a
               end
@@ -111,6 +110,10 @@ module Rtc::Types
 
         def to_s  # :nodoc:
             "Type #{@id}"
+        end
+        
+        def inspect()
+          "#{self.class.name}(#{@id}): #{to_s}" 
         end
 
         protected
@@ -443,6 +446,7 @@ module Rtc::Types
               }
             )
           when StructuralType
+            #TODO(jtoman): implement me?
             type
           when NominalType
             type
@@ -473,7 +477,7 @@ module Rtc::Types
             )
           when TypeVariable
             if type.dynamic
-              type 
+              type
             else
               replace_type(type.wrapped_type, formal_type_parameters)
             end
@@ -563,6 +567,72 @@ module Rtc::Types
                 return false unless a == b
             end
             true
+        end
+        
+        def min_args
+          p_layout = parameter_layout
+          p_layout[:required][0] + p_layout[:required][1]
+        end
+        
+        def max_args
+          p_layout = parameter_layout
+          if p_layout[:rest]
+            -1
+          else
+            min_args + p_layout[:opt]
+          end
+        end
+        
+        def parameter_layout
+          return @param_layout_cache if defined? @param_layout_cache
+          a_list = arg_types + [nil]
+          to_return = {
+            :required => [0,0],
+            :rest => false,
+            :opt => 0
+          }
+          def param_type(arg_type)
+            case arg_type
+            when NilClass
+              :end
+            when OptionalArg
+              :opt
+            when Vararg
+              :rest
+            else
+              :req
+            end
+          end
+          counter = 0
+          i = 0
+          p_type = param_type(a_list[i])
+          while p_type == :req
+            counter+=1
+            i+=1
+            p_type = param_type(a_list[i])
+          end
+          to_return[:required][0] = counter
+          counter = 0
+          while p_type == :opt
+            counter+=1
+            i+=1
+            p_type = param_type(a_list[i])
+          end
+          to_return[:opt] = counter
+          counter = 0
+          if p_type == :rest
+            to_return[:rest] = true
+            i+=1
+            p_type = param_type(a_list[i])
+          end
+          while p_type == :req
+            counter+=1
+            i+=1
+            p_type = param_type(a_list[i])
+          end
+          to_return[:required][1] = counter
+          raise "Invalid argument string detected" unless p_type == :end
+          @param_layout_cache = to_return
         end
 
         def hash  # :nodoc:
@@ -894,7 +964,7 @@ module Rtc::Types
       @@instance = nil
     end
     
-    class BottomType
+    class BottomType < Type
       def hash
         13
       end
@@ -928,10 +998,6 @@ module Rtc::Types
       
       def ==(other)
         eql?(other)
-      end
-      
-      def inspect
-        to_s
       end
       
       def eql?(other)

@@ -1,3 +1,5 @@
+require 'rtc/runtime/master_switch.rb'
+
 module Rtc
   class MethodWrapper
     class NoArgument; end
@@ -7,144 +9,148 @@ module Rtc
       MethodWrapper.new(class_obj, method_name)
     end
 
-    def check_args(passed_and_formals, method_type, invokee)
-      arg_list = []
-      error_indices = []
-
-      passed_and_formals.each_with_index {
-        |p_f,index|
-        passed,formal = p_f
-        if formal[0] == :opt
-          next if passed.instance_of?(Rtc::MethodWrapper::NoArgument)
-          error_indices.push(index) unless passed.rtc_type <= method_type.arg_types[index]
-          arg_list << passed
-        elsif formal[0] == :rest
-          actual_rest_type = passed.rtc_type.type_of_param(0) 
-          error_indices.push(index) unless actual_rest_type <= method_type.arg_types[index]
-          arg_list += passed
-        else
-          error_indices.push(index) unless passed.rtc_type <= method_type.arg_types[index]
-          arg_list << passed
-        end
-      }
-
-      return arg_list, error_indices
+    def check_args(passed_arguments, method_type)
+      return false unless method_type.min_args <= passed_arguments.size
+      return false unless passed_arguments.size <= method_type.max_args or method_type.max_args == -1
+      #check the first set of required arguments
+      i = 0
+      parameter_layout = method_type.parameter_layout
+      while i < parameter_layout[:required][0]
+        return false unless passed_arguments[i].rtc_type <= method_type.arg_types[i]
+        i+=1
+      end
+      
+      #check the second set of required arguments
+      i = 1
+      while i <= parameter_layout[:required][1]
+        return false unless passed_arguments[-i].rtc_type <= method_type.arg_types[-i]
+        i += 1
+      end
+      
+      
+      #check the optional arguments
+      opt_offset = parameter_layout[:required][0]
+      iter_end = passed_arguments.size - parameter_layout[:required][1]
+      i = 0
+      while i < parameter_layout[:opt] and opt_offset + i < iter_end
+        return false unless passed_arguments[opt_offset + i].rtc_type <= method_type.arg_types[opt_offset + i].type
+        i += 1
+      end
+      
+      #we still have some left for the rest argument (which must come after the optional arguments)
+      #so check that
+      if i + opt_offset < iter_end
+        rest_args = passed_arguments.slice(i+opt_offset, iter_end - (i+opt_offset))
+        return false unless
+          rest_args.rtc_type.type_of_param(0) <= method_type.arg_types[parameter_layout[:required][0] + parameter_layout[:opt]].type
+      end
+      return true
     end
 
     def invoke(invokee, arg_vector)
       regular_args = arg_vector[:args]
-      passed_and_formals = regular_args.zip(@no_block_params)
+      
       method_type = invokee.rtc_typeof(@method_name)
       candidate_types = []
-      error_indices = []
-      return_valid = false
-
+      
       if method_type.instance_of?(Rtc::Types::IntersectionType)
-        for mt in method_type.types
-          arg_list, error_indices = check_args(passed_and_formals, mt, invokee)
-
-          if error_indices.empty?
-            candidate_types.push(mt)
-          end
-        end
+        possible_method_types = method_type.types
       else
-        arg_list, error_indices = check_args(passed_and_formals, method_type, invokee)
+        possible_method_types = [method_type]
       end
 
-      if (method_type.instance_of?(Rtc::Types::IntersectionType) and candidate_types.size == 0) or 
-          ((not method_type.instance_of?(Rtc::Types::IntersectionType)) and (not error_indices.empty?))
-        arg_types = []
-        arg_values = []
-        puts "Function " + @method_name.to_s + " argument type mismatch:"
-        puts "   Expected function type: " + method_type.to_s
-
-        for a in arg_list
-          arg_types.push(a.rtc_type)
-          arg_values.push(a)
+      for mt in possible_method_types
+        if check_args(regular_args, mt)
+          candidate_types.push(mt)
         end
+      end
+      
+      if candidate_types.empty?
+        #arg_types = []
+        #arg_values = []
+        #puts "Function " + @method_name.to_s + " argument type mismatch:"
+        #puts "   Expected function type: " + method_type.to_s
 
-        puts "   Actual argument types: " + arg_types.to_s
-        puts "   Actual argument values: " + arg_values.to_s
+        #for a in arg_list
+        #  arg_types.push(a.rtc_type)
+        #  arg_values.push(a)
+        #end
 
-        #TODO(jtoman): more flexible error reporting here
-        exit
+        #puts "   Actual argument types: " + arg_types.to_s
+        #puts "   Actual argument values: " + arg_values.to_s
+        on_error()
       end
 
-      if arg_vector[:block]
-        ret_value = @original_method.bind(invokee).call(*arg_list, &arg_vector[:block])
+      blk = arg_vector[:block]
+
+      Rtc::MasterSwitch.turn_on
+      if blk
+        ret_value = @original_method.bind(invokee).call(*regular_args, &blk)
       else
-        ret_value = @original_method.bind(invokee).call(*arg_list)
+        ret_value = @original_method.bind(invokee).call(*regular_args)
       end
+      Rtc::MasterSwitch.turn_off
 
-      if method_type.instance_of?(Rtc::Types::IntersectionType)
-        for ct in candidate_types
-          if ret_value.rtc_type <= ct.return_type
-            return_valid = true
-            break
-          end
-        end
-      else
-        return_valid = true unless not ret_value.rtc_type <= method_type.return_type
-      end
-
+      return_valid = candidate_types.any? {
+        |ct|
+        ret_value.rtc_type <= ct.return_type 
+      }
+      
       if not return_valid
-        puts "Function " + @method_name.to_s + " return type mismatch: "
-        puts "   Expected function type: " + method_type.to_s
-        puts "   Actual return type #{ret_value.rtc_type}"
-        puts "   Actual return value: " + ret_value.to_s
+        #puts "Function " + @method_name.to_s + " return type mismatch: "
+        #puts "   Expected function type: " + method_type.to_s
+        #puts "   Actual return type #{ret_value.rtc_type}"
+        #puts "   Actual return value: " + ret_value.to_s
         #TODO(jtoman): more flexible error reporting here
-        exit
+        on_error
       end
 
       ret_value
     end
 
     private
+    
+    def on_error()
+      puts "Error"
+      # for now just die
+      exit
+    end
+    
+    @@arg_vector_name = "__rtc_args"
+    @@block_name = "__rtc_block"
+    @@no_check_invoke = "
+    if #{@@block_name}.nil?
+      return original_method.bind(self).call(*#{@@arg_vector_name})
+    else
+      return original_method.bind(self).call(*#{@@arg_vector_name}, &#{@@block_name})
+    end
+    "
+    
     def initialize(class_obj,method_name)
       @method_name = method_name
       @class_obj = class_obj
       this_obj = self
-      @original_method = class_obj.instance_method(method_name)
-      @no_block_params = @original_method.parameters.reject { |param_spec| param_spec[0] == :block }
+      original_method = @original_method = class_obj.instance_method(method_name)
       wrapper_lambda = eval("lambda {
         |#{gen_arg_string()}|
-        args = #{gen_collapse_args()}
-        this_obj.invoke(self, args)
+        if Rtc::MasterSwitch.is_on?
+          Rtc::MasterSwitch.turn_off 
+          args = #{gen_collapse_args()}
+          ret = this_obj.invoke(self, args)
+          Rtc::MasterSwitch.turn_on
+          ret
+        else
+          #{@@no_check_invoke}
+        end
       }")
       class_obj.send(:define_method, method_name, wrapper_lambda)
     end
     
-    def make_single_arg_string(parameter)
-      case parameter[0]
-      when :req
-        parameter[1].to_s
-      when :opt
-        "#{parameter[1].to_s} = Rtc::MethodWrapper::NoArgument.new"
-      when :rest
-        if parameter.size == 1
-          "*__rtc_rest"
-        else
-          "*#{parameter[1].to_s}"
-        end
-      else
-        raise "FATAL: Unrecognized parameter type"
-      end
-    end
     def gen_arg_string()
-      (@no_block_params.map {
-        |param_spec|
-        make_single_arg_string(param_spec)
-      } + ["&__rtc_block"]).join(", ")
+      return "*#{@@arg_vector_name}, &#{@@block_name}"
     end
     def gen_collapse_args()
-      "{ :args => [" + @no_block_params.map {
-        |param_spec|
-        if param_spec[0] == :rest and param_spec.size == 1
-          "__rtc_rest"
-        else
-          param_spec[1].to_s
-        end
-      }.join(", ") + "], :block => __rtc_block}"
+      "{ :args => #{@@arg_vector_name}, :block => #{@@block_name}}"
     end
   end
 end

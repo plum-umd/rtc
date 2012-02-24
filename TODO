@@ -1,0 +1,12 @@
+The following are major tasks for Rtc, marked with trivial, hard, or simply tedious:
+- Polymorphic functions (hard)
+- Class annotations (trivial)
+- Field support/syntatic sugar (trivial)
+- Options (error on type mismatch, or log) (trivial)
+- Tuple types (trivial)
+- Symbol support in the grammar (trivial)
+- block annotations (hard)
+- grammar cleanup (tedious)
+- standard library annotations (very tedious)
+- Recursive type checks (type checking code requires arrays, manipulation of which requires type checked code...)
+- supposrt for intersection types in annotations
