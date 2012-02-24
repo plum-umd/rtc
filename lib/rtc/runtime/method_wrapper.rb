@@ -7,28 +7,12 @@ module Rtc
       MethodWrapper.new(class_obj, method_name)
     end
 
-    def error(t, invokee, val, index=-1)
-      msg = "\nFunction " + @method_name.to_s + " type mismatch\n"
-      msg += "  expected type: " + invokee.rtc_typeof(@method_name).to_s + "\n" 
-
-      if t == "arg"
-        msg += "  actual argument[" + index.to_s + "] has type: " + val.rtc_type.to_s
-      elsif t == "ret"
-        msg += "  actual return type: " + val.rtc_type.to_s
-      end
-
-      raise(Exception, msg)
-    end
-
-    def invoke_single(invokee, arg_vector, method_type)
-      regular_args = arg_vector[:args]
-      passed_and_formals = regular_args.zip(@no_block_params)
+    def check_args(passed_and_formals, method_type)
       arg_list = []
 
       passed_and_formals.each_with_index {
         |p_f,index|
         passed,formal = p_f
-
         if formal[0] == :opt
           next if passed.instance_of?(Rtc::MethodWrapper::NoArgument)
           raise(Exception,"Type mismatch") unless passed.rtc_type <= method_type.arg_types[index].type
@@ -38,10 +22,36 @@ module Rtc
           raise(Exception, "Type mismatch") unless actual_rest_type <= method_type.arg_types[index].type 
           arg_list += passed
         else
-          error("arg", invokee, passed, index) unless passed.rtc_type <= method_type.arg_types[index]
+          raise(Exception, "Type mismatch") unless passed.rtc_type <= method_type.arg_types[index]
+
           arg_list << passed
         end
       }
+
+      return arg_list
+    end
+
+    def invoke(invokee, arg_vector)
+      regular_args = arg_vector[:args]
+      passed_and_formals = regular_args.zip(@no_block_params)
+      method_type = invokee.rtc_typeof(@method_name)
+      candidate_types = []
+
+      if method_type.instance_of?(Rtc::Types::IntersectionType)
+        for mt in method_type.types
+          begin
+            arg_list = check_args(passed_and_formals, mt)
+            candidate_types.push(mt)
+          rescue Exception => e
+          end
+        end
+
+        if candidate_types.size == 0
+          raise(Exception, "No matching arguments in IntersectionType")
+        end
+      else
+        arg_list = check_args(passed_and_formals, method_type)
+      end
 
       if arg_vector[:block]
         ret_value = @original_method.bind(invokee).call(*arg_list, &arg_vector[:block])
@@ -49,35 +59,24 @@ module Rtc
         ret_value = @original_method.bind(invokee).call(*arg_list)
       end
 
-      error("ret", invokee, ret_value) unless ret_value.rtc_type <= method_type.return_type
-
-      ret_value
-    end
-
-    def invoke(invokee, arg_vector)
-      method_type = invokee.rtc_typeof(@method_name)
-
-      counter = 0
-
       if method_type.instance_of?(Rtc::Types::IntersectionType)
-        for mt in method_type.types
-          counter += 1
+        ret_valid = false
 
-          if counter < method_type.types.size
-            begin
-              r = invoke_single(invokee, arg_vector, mt)
-              break if r
-            rescue Exception => e
-            end
-          else
-            r = invoke_single(invokee, arg_vector, mt)
+        for ct in candidate_types
+          if ret_value.rtc_type <= ct.return_type
+            ret_valid = true
+            break
           end
         end
+        
+        if ret_valid == false
+          raise(Exception, "Return type mismatch (Intersection Type)")
+        end
       else
-        r = invoke_single(invokee, arg_vector, method_type)
+        raise(Exception, "Return type mismatch") unless ret_value.rtc_type <= method_type.return_type
       end
 
-      r
+      ret_value
     end
 
     private
