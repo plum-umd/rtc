@@ -41,6 +41,10 @@ module Rtc::Annotated
       rtc_meta.fetch(:iterators)[param_name] = iterator_name
     end
     
+    def define_iterators(iter_hash)
+      rtc_meta.fetch(:iterators).merge(iter_hash)
+    end
+    
     def method_added(method_name)
       if @@deferred_methods.include?(method_name.to_s)
         @@deferred_methods.delete(method_name.to_s)

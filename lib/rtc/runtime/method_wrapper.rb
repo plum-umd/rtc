@@ -66,6 +66,7 @@ module Rtc
         puts "   Actual argument types: " + arg_types.to_s
         puts "   Actual argument values: " + arg_values.to_s
 
+        #TODO(jtoman): more flexible error reporting here
         exit
       end
 
@@ -91,7 +92,7 @@ module Rtc
         puts "   Expected function type: " + method_type.to_s
         puts "   Actual return type #{ret_value.rtc_type}"
         puts "   Actual return value: " + ret_value.to_s
-
+        #TODO(jtoman): more flexible error reporting here
         exit
       end
 
