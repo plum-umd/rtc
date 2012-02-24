@@ -26,13 +26,8 @@ class Object
       @_rtc_type = Rtc::Types::SymbolType.new(self)
     else
       class_obj = Rtc::Types::NominalType.of(self.class)
-
       if class_obj.type_parameters.size == 0
-        if class_obj.klass == Array
-          @_rtc_type = Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each)])
-        else
           @_rtc_type = class_obj
-        end
       else
         if class_obj.klass == Array
           @_rtc_type = Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each)])
