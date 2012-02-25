@@ -1,6 +1,9 @@
 require 'rtc/runtime/master_switch.rb'
 
 module Rtc
+  
+  class TypeMismatchException < StandardError; end
+  
   class MethodWrapper
     class NoArgument; end
     #TODO(jtoman): Make error reporting better
@@ -70,7 +73,8 @@ module Rtc
         #arg_values = []
         #puts "Function " + @method_name.to_s + " argument type mismatch:"
         #puts "   Expected function type: " + method_type.to_s
-
+        message = "Function " + @method_name.to_s + " argument type mismatch:" +
+          "   Expected function type: " + method_type.to_s
         #for a in arg_list
         #  arg_types.push(a.rtc_type)
         #  arg_values.push(a)
@@ -78,7 +82,7 @@ module Rtc
 
         #puts "   Actual argument types: " + arg_types.to_s
         #puts "   Actual argument values: " + arg_values.to_s
-        on_error()
+        on_error(message)
       end
 
       blk = arg_vector[:block]
@@ -97,12 +101,11 @@ module Rtc
       }
       
       if not return_valid
-        #puts "Function " + @method_name.to_s + " return type mismatch: "
-        #puts "   Expected function type: " + method_type.to_s
+        message = "Function " + @method_name.to_s + " return type mismatch: " + "   Expected function type: " + method_type.to_s
         #puts "   Actual return type #{ret_value.rtc_type}"
         #puts "   Actual return value: " + ret_value.to_s
         #TODO(jtoman): more flexible error reporting here
-        on_error
+        on_error(message)
       end
 
       ret_value
@@ -110,10 +113,8 @@ module Rtc
 
     private
     
-    def on_error()
-      puts "Error"
-      # for now just die
-      exit
+    def on_error(message)
+      raise TypeMismatchException,message
     end
     
     @@arg_vector_name = "__rtc_args"
