@@ -38,6 +38,7 @@ token T_STRING
 token T_IVAR T_CVAR T_GVAR
 token T_CONST_ID
 token T_TYPE_ID
+token T_SYMBOL
 # token T_METHOD_NAME
 token T_LOCAL_ID T_TICKED_ID T_SUFFIXED_ID T_SCOPED_ID
 
@@ -248,6 +249,9 @@ rule
 
   single_type_expr:
       type_var { result = val[0] }
+    | T_SYMBOL {
+    	return = Rtc::Types::SymbolType.new(eval(val[0]))
+      }
     | type_ident {
         id = handle_type_ident(val[0])
         if(id.class == Class)
