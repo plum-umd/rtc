@@ -422,6 +422,10 @@ module Rtc::Types
           @_method_cache[name] = replace_type(@nominal.get_method(name),@parameters)
         end
         
+        def to_s
+          "#{@nominal.klass.name}<#{parameters.join(", ")}>"
+        end
+        
         private
         # perform type replacement recursively
         def replace_type(type, formal_type_parameters)
@@ -482,10 +486,6 @@ module Rtc::Types
               replace_type(type.wrapped_type, formal_type_parameters)
             end
           end
-        end
-        
-        def to_s
-          "#{@nominal.klass.name}<#{parameters.join(", ")}>"
         end
     end
 
@@ -743,6 +743,10 @@ module Rtc::Types
       
       def hash
         symbol.to_s.hash
+      end
+      
+      def to_s
+        ":#{@symbol}"
       end
       
       def <=(other)

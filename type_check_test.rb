@@ -20,6 +20,11 @@ class MyClass
   end
 end
 
+class Array
+  rtc_annotated
+  typesig("push: t -> Array<t>")
+end
+
 test_instance = MyClass.new
 f_sig = test_instance.rtc_typeof("f")
 
@@ -27,3 +32,6 @@ MyClass.new.f(1,2)
 puts "success!"
 MyClass.new.my_method(:foo)
 MyClass.new.my_other_method([:subscribers, :talks])
+
+my_arr = [1,2]
+my_arr.push(4)
