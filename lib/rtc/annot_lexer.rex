@@ -56,7 +56,7 @@ rule
   #{SPACE_RE}*\n{SPACE_RE}*\#\#\%      # nothing
   ##\%                                 { [:T_BEGIN_LINE, text] }
   #(?:[^\#\n][^\n]*)?                  # nothing
-  \n{SPACE_RE}*\=begin                 { state = :COMMENT }
+  \n{SPACE_RE}*\=begin                 { @state = :COMMENT }
 
 # keywords
   {CLASS_RE}                                { [:K_CLASS, text] }
@@ -119,7 +119,7 @@ rule
   \n                                   { }
   \=                                   { [:T_EQUAL, text] }
 
-  $                                   { state = :END; [:T_EOF, ""] }
+  $                                   { @state = :END; [:T_EOF, ""] }
   :END $ { }
 
 

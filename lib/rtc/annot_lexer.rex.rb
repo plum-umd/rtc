@@ -76,7 +76,7 @@ class TypeAnnotationParser < Racc::Parser
         ;
 
       when (text = @ss.scan(/\n[\t ]*\=begin/))
-         action { state = :COMMENT }
+         action { @state = :COMMENT }
 
       when (text = @ss.scan(/class /))
          action { [:K_CLASS, text] }
@@ -205,7 +205,7 @@ class TypeAnnotationParser < Racc::Parser
          action { [:T_EQUAL, text] }
 
       when (text = @ss.scan(/$/))
-         action { state = :END; [:T_EOF, ""] }
+         action { @state = :END; [:T_EOF, ""] }
 
             when @@ss.scan(/$/)
          ;
