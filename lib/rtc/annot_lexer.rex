@@ -12,7 +12,7 @@
 # Adapted directly from DRuby source file typeAnnotationLexer.mll
 # Version of GitHub DRuby repo commit 0cda0264851bcdf6b301c3d7f564e9a3ee220e45
 # ######################################################################
-
+module Rtc
 class TypeAnnotationParser
 
 macro
@@ -38,6 +38,7 @@ macro
 #in order to match spaces, you have to define an RE. Yes this is ridiculous
   CLASS_RE class\ 
   METACLASS_RE metaclass\ 
+  REQUIRE_RE require\ 
   ALIAS_RE alias\ 
   MODULE_RE require\  
   END_RE end\ 
@@ -72,14 +73,14 @@ rule
   or                                   { [:K_OR, text] }
   self                                 { [:K_SELF, text] }
 
-  #{TYPE_ID_RE}                        { [:T_TYPE_ID, text] }
-  #{TYPE_ID_RE}						   { [:T_TICKED_ID, text] }
+# {TYPE_ID_RE}                        { [:T_TYPE_ID, text] }
+# {TYPE_ID_RE}						   { [:T_TICKED_ID, text] }
   {TYPE_ID_RE}						   { [:T_LOCAL_ID, text] }
   {CONST_ID_RE}                        { [:T_CONST_ID, text] }
-  #{METH_NAME_RE}                       { [:T_METHOD_NAME, text] }
+# {METH_NAME_RE}                       { [:T_METHOD_NAME, text] }
 # this is a new one to handle the fact that we'll be deaing with
 # annotations *within* ruby strings
-  {METH_SYM_RE}                        { [:T_METHOD_NAME, text] }
+#  {METH_SYM_RE}                        { [:T_METHOD_NAME, text] }
   {SCOPED_ID_RE}					   { [:T_SCOPED_ID, text] }
   {SUFFIXED_ID_RE}					   { [:T_SUFFIXED_ID, text] }
   {SYMBOL_RE}						   { [:T_SYMBOL, text] }
@@ -149,5 +150,7 @@ inner
     end
     r
   end
+
+end
 
 end

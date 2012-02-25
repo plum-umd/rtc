@@ -250,7 +250,7 @@ rule
   single_type_expr:
       type_var { result = val[0] }
     | T_SYMBOL {
-    	return = Rtc::Types::SymbolType.new(eval(val[0]))
+    	result = Rtc::Types::SymbolType.new(eval(val[0]))
       }
     | type_ident {
         id = handle_type_ident(val[0])

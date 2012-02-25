@@ -5,12 +5,21 @@
 #++
 
 require 'racc/parser'
+########################################################################
+# Warning: By default, the rex lexer generator does not allow matching
+# against end of string characters. A modified version of the rex
+# lexer (available here: https://github.com/jtoman/rexical) should
+# should be used to generate the resulting file until the above
+# modifications are (hopefully) accepted into rexical
+########################################################################
+
+
 # ######################################################################
 # DRuby annotation language parser
 # Adapted directly from DRuby source file typeAnnotationLexer.mll
 # Version of GitHub DRuby repo commit 0cda0264851bcdf6b301c3d7f564e9a3ee220e45
 # ######################################################################
-
+module Rtc
 class TypeAnnotationParser < Racc::Parser
   require 'strscan'
 
@@ -81,7 +90,7 @@ class TypeAnnotationParser < Racc::Parser
       when (text = @ss.scan(/alias /))
          action { [:K_ALIAS, text] }
 
-      when (text = @ss.scan(/{REQUIRE_RE}/))
+      when (text = @ss.scan(/require /))
          action { [:K_REQUIRE, text] }
 
       when (text = @ss.scan(/end /))
@@ -105,14 +114,14 @@ class TypeAnnotationParser < Racc::Parser
       when (text = @ss.scan(/[A-Z]+\w*/))
          action { [:T_CONST_ID, text] }
 
-      when (text = @ss.scan(/(?:[%&\*\+\-\/\<\>\^\|\~]|\*\*|\+\@|\-\@|\<\<|\<\=|\<\=\>|\=\=|\>\=|\>\>|\[\]|\=\=\=|\<\=\=\>|\[\]\=|\=\~)/))
-         action { [:T_METHOD_NAME, text] }
-
       when (text = @ss.scan(/([A-Za-z_]+\w*|self)\.(\w|\[|\]|=)+[\?\!\=]?/))
          action { [:T_SCOPED_ID, text] }
 
       when (text = @ss.scan(/[A-Za-z_]+\w*[\?\!\=]/))
          action { [:T_SUFFIXED_ID, text] }
+
+      when (text = @ss.scan(/:[A-Za-z_][A-Za-z_0-9]*/))
+         action { [:T_SYMBOL, text] }
 
       when (text = @ss.scan(/\*/))
          action { [:T_STAR, text] }
@@ -260,3 +269,5 @@ class TypeAnnotationParser < Racc::Parser
     r
   end
 end # class
+
+end

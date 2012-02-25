@@ -1016,7 +1016,7 @@ module_eval(<<'.,.,', 'annot_parser.racc', 250)
 
 module_eval(<<'.,.,', 'annot_parser.racc', 252)
   def _reduce_67(val, _values, result)
-        	return = Rtc::Types::SymbolType.new(eval(val[0]))
+        	result = Rtc::Types::SymbolType.new(eval(val[0]))
       
     result
   end
