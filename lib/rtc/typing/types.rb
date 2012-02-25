@@ -277,6 +277,23 @@ module Rtc::Types
         end
         
         attr_accessor :type_parameters
+        
+        def type_parameters
+          @type_parameters
+        end
+        
+        def type_parameters=(t_params)
+          @type_parameters = t_params.each {
+            |t_param|
+            if t_param.instance_of?(Symbol)
+              TypeParameter.new(t_param)
+            elsif t_param.instance_of?(TypeParameter)
+              t_param
+            else
+              raise "invalid type parameter specified"
+            end
+          }
+        end
 
         # Return +true+ if +self+ represents a subtype of +other+.
         def <=(other)
@@ -320,7 +337,15 @@ module Rtc::Types
         end
         
         def add_method(name, type)
-          # TODO(jtoman): generate an intersection type?
+          if @method_types[name]
+            extant_type = @method_types[name]
+            if extant_type.instance_of?(IntersectionType)
+              type = [type] + extant_type.types
+            else
+              type = [type, extant_type]
+            end
+            type = IntersectionType.of(type)
+          end
           @method_types[name] = type
         end
 
