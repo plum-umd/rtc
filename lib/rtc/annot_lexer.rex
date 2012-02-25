@@ -1,9 +1,7 @@
 ########################################################################
-# Warning: By default, the rex lexer generator does not allow matching
-# against end of string characters. A modified version of the rex
-# lexer (available here: https://github.com/jtoman/rexical) should
-# should be used to generate the resulting file until the above
-# modifications are (hopefully) accepted into rexical
+# The latest rexical generator on github supports matching against the 
+# end of string. For this file to work correctly, you MUST use the
+# latest upstream rexical.
 ########################################################################
 
 
