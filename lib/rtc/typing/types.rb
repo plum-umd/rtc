@@ -15,39 +15,54 @@ class Object
       @_rtc_meta = {
         :annotated => false,
         :no_subtype => false,
-        :iterators => {}
+        :iterators => {},
+        :_type => nil
       }
     end
   end
-  def rtc_type
-    if defined? @_rtc_type
-      @_rtc_type
-    elsif self.class.name == "Symbol"
-      @_rtc_type = Rtc::Types::SymbolType.new(self)
-    else
-      class_obj = Rtc::Types::NominalType.of(self.class)
-      if class_obj.type_parameters.size == 0
-          @_rtc_type = class_obj
-      else
-        if class_obj.klass == Array
-          @_rtc_type = Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each)])
-        elsif class_obj.klass == Hash
-          @_rtc_type = Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each_key),
-            Rtc::Types::TypeVariable.create(self.each_value)])
-        else
-          #user defined parameterized classes
-          tv = class_obj.type_parameters.map {
-            |param|
-            Rtc::Types::TypeVariable.create(self.send(class_obj.klass.rtc_meta[:iterators][param.symbol]))
-          }
-          @_rtc_type = Rtc::Types::ParameterizedType.new(class_obj, tv)
-        end
-      end
-    end
+  
+  @@old_freeze_meth = Object.instance_method(:freeze)
+  
+  def freeze
+    # force the meta property to be intialized
+    rtc_meta
+    @@old_freeze_meth.bind(self).call()
   end
+  
+  def rtc_type
+    meta_hash = rtc_meta
+    if meta_hash[:_type]
+      meta_hash[:_type]
+    else
+      type_obj = 
+        if self.class.name == "Symbol"
+          Rtc::Types::SymbolType.new(self)
+        else
+          class_obj = Rtc::Types::NominalType.of(self.class)
+          if class_obj.type_parameters.size == 0
+              class_obj
+          elsif class_obj.klass == Array
+              Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each)])
+          elsif class_obj.klass == Hash
+              Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each_key),
+                Rtc::Types::TypeVariable.create(self.each_value)])
+          else
+              #user defined parameterized classes
+            tv = class_obj.type_parameters.map {
+              |param|
+              Rtc::Types::TypeVariable.create(self.send(class_obj.klass.rtc_meta[:iterators][param.symbol]))
+            }
+            Rtc::Types::ParameterizedType.new(class_obj, tv)
+          end
+        end
+       meta_hash[:_type] = type_obj
+     end
+  end
+  
   def rtc_typeof(method_name)
     self.rtc_type.get_method(method_name)
   end
+  
 end
 
 module Rtc::Types
