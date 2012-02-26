@@ -62,7 +62,6 @@ class Object
   def rtc_typeof(method_name)
     self.rtc_type.get_method(method_name)
   end
-  
 end
 
 module Rtc::Types
@@ -97,8 +96,12 @@ module Rtc::Types
                 self <= a
               end
             when TypeVariable
-              typ = other.wrapped_type
-              return self <= typ
+              if other.dynamic
+                true
+              else
+                typ = other.wrapped_type
+                self <= typ
+              end
             when TopType
               true
             else
@@ -1066,6 +1069,11 @@ module Rtc::Types
       def to_s
         wrapped_type.to_s
       end
+      
+      def inspect
+        "TVar(#{id},#{dynamic}): #{wrapped_type.inspect}"
+      end
+      
       def initialize(type)
         if type.instance_of?(Enumerator)
           @wrapped_type = nil # maybe the bottom type?
@@ -1081,13 +1089,22 @@ module Rtc::Types
       end
       
       def <=(other)
-        if dynamic
-          return wrapped_type <= other
+        if other.instance_of?(TypeVariable)
+          if dynamic
+            wrapped_type <= other.wrapped_type
+          else
+            typ = wrapped_type
+            other.wrapped_type <= typ && typ <= other.wrapped_type
+          end
+        else
+          if dynamic
+            return wrapped_type <= other
+          end
+          # otherwise our type has been constrained! this means that the other type must
+          # match this type exactly
+          typ = wrapped_type
+          other <= typ && typ <= other
         end
-        # otherwise our type has been constrained! this means that the other type must
-        # match this type exactly
-        typ = wrapped_type
-        other <= typ && typ <= other
       end
       
       private 

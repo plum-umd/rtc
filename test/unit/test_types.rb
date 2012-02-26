@@ -144,4 +144,27 @@ class TestTypeSystem < Test::Unit::TestCase
     assert_equal(false, sym1 <= sym2)
     assert(sym1 <= SymbolType.new(:a))
   end
+
+  def test_dynamic_subtype
+    test_obj = [1,2]
+    type_parameter = test_obj.rtc_type.parameters[0]
+    # type_parameter is still open
+    assert("foo".rtc_type <= type_parameter)
+    # type_paremter is now Fixnum or String
+    test_obj.push("foo")
+
+    other_test_obj = [1,"foo",:foo]
+    other_type_parameter = other_test_obj.rtc_type.parameters[0]
+    # tests that when subtyping two type variables, the "everything goes" is not
+    # in place, we do proper subtyping checks
+    assert_equal(false, other_type_parameter <= type_parameter)
+    assert(type_parameter <= other_type_parameter)
+    type_parameter.constrain_to(make_union(Fixnum, String))
+
+    # ensure that after constraining t <= t' iff t == t' holds
+    assert_equal(false, type_parametexr <= other_type_parameter)
+
+    # test that after constraining, proper subtyping takes place
+    assert_equal(false, :foo.rtc_type <= type_parameter)
+  end
 end
