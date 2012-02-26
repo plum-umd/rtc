@@ -22,7 +22,19 @@ module Rtc::Annotated
         
         this_type = Rtc::Types::NominalType.of(self)
         
-        signatures.each do |signature|
+        (signatures.map {
+          |sig|
+          if sig.instance_of?(Rtc::InstanceVariableTypeSignature)
+            field_name = sig.id.to_s[1..-1]
+            field_type = sig.type
+            getter_type = Rtc::Types::ProceduralType.new(field_type, [])
+            setter_type = Rtc::Types::ProceduralType.new(field_type, [field_type])
+            [Rtc::MethodTypeSignature.new(sig.pos,field_name,getter_type),
+              Rtc::MethodTypeSignature.new(sig.pos,field_name+"=",setter_type)]
+          else
+            sig
+          end
+        }).flatten.each do |signature|
           this_type.add_method(signature.id.to_s, signature.type)
           if self.method_defined?(signature.id.to_s)
             @@method_wrappers = Rtc::MethodWrapper.make_wrapper(self, signature.id.to_s)
