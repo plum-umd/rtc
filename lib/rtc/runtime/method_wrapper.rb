@@ -30,7 +30,6 @@ module Rtc
         i += 1
       end
       
-      
       #check the optional arguments
       opt_offset = parameter_layout[:required][0]
       iter_end = passed_arguments.size - parameter_layout[:required][1]
@@ -137,9 +136,11 @@ module Rtc
         if Rtc::MasterSwitch.is_on?
           Rtc::MasterSwitch.turn_off 
           args = #{gen_collapse_args()}
-          ret = this_obj.invoke(self, args)
-          Rtc::MasterSwitch.turn_on
-          ret
+          begin
+            this_obj.invoke(self, args)
+          ensure
+            Rtc::MasterSwitch.turn_on
+          end
         else
           #{@@no_check_invoke}
         end
