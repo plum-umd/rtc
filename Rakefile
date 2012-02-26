@@ -4,6 +4,7 @@
 
 require 'rake'
 require 'rake/clean'
+require 'rake/testtask'
 
 # Prevent OS X from including extended attribute junk in the tar output
 ENV['COPY_EXTENDED_ATTRIBUTES_DISABLE'] = 'true'
@@ -29,3 +30,7 @@ task :parser => [:lexer,"lib/rtc/annot_parser.tab.rb"]
 
 desc "Builds rtc"
 task :rtc => :parser
+
+Rake::TestTask.new do |t|
+  t.test_files = FileList["test/unit/*.rb"]
+end
