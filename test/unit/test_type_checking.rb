@@ -68,6 +68,16 @@ class MyClass
   end
 end
 
+class FieldClass
+  rtc_annotated
+  typesig('@foo: Fixnum')
+  attr_accessor :foo
+  
+  typesig('@bar: String')
+  typesig('@bar: Fixnum')
+  attr_accessor :bar
+end
+
 
 class TestTypeChecking < Test::Unit::TestCase
  
@@ -180,5 +190,28 @@ class TestTypeChecking < Test::Unit::TestCase
        test_instance.multi_candidate(-1,-1)
      end
      
+   end
+   
+   def test_field_checking
+     field_instance = FieldClass.new
+     assert_nothing_raised do
+       field_instance.foo = 4
+     end
+     check_failure(field_instance.method(:foo=),[
+       [:foo],
+       ["4"]
+     ])
+   end
+   
+   def test_intersection_field
+     field_instance = FieldClass.new
+     assert_nothing_raised do
+       field_instance.bar = 4
+       field_instance.bar = "3"
+     end
+     
+     assert_raise Rtc::TypeMismatchException do
+       field_instance.bar = :foo
+     end
    end
 end
