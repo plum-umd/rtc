@@ -1,56 +1,86 @@
 require "test/unit"
 require 'rtc'
 
-include Rtc::Types
-
-def make_union(*r)
-  UnionType.of(r.map {
-                 |klass|
-                 NominalType.of(klass)
-               })
-end
-
 class A
 end
+
 class B < A
 end
+
 class C
 end
+
 class D
 end
 
+class TestTypeSystem < Test::Unit::TestCase
+  include Rtc::Types
+  def make_union(*r)
+    Rtc::Types::UnionType.of(r.map {
+       |klass|
+       Rtc::Types::NominalType.of(klass)
+    })
+  end
+  
+  class ParentClass
+    def my_method()
+      puts "I'm a method!"
+    end
+  end
 
-class TestMyClass < Test::Unit::TestCase
+  class BreakingClass < ParentClass
+    rtc_no_subtype
+    undef_method :my_method
+  end
+  
+  def initialize(*)
+    [A,B,C,D].each do
+      |klass|
+      class_obj = Rtc::Types::NominalType.of(klass)
+      accessor_name = (klass.name.downcase + "_class").to_sym
+      define_singleton_method(accessor_name) {
+        ||
+        class_obj
+      }
+    end
+    @boolean_type = UnionType.of([NominalType.of(TrueClass), NominalType.of(FalseClass)])
+    #arrays are parameterized over types T
+    NominalType.of(Array).type_parameters = [TypeParameter.new(:T)]
+    #sets are parameterized over types K
+    NominalType.of(Set).type_parameters = [TypeParameter.new(:K)]
+    super
+  end
+
+  attr_reader :boolean_type
  
-  def test_various
-    c_class = Rtc::Types::NominalType.of(C)
-    b_class = Rtc::Types::NominalType.of(B)
-    a_class = Rtc::Types::NominalType.of(A)
-
-    boolean_type = UnionType.of([NominalType.of(TrueClass), NominalType.of(FalseClass)])
-
+  def test_nominal
     assert_equal(false, a_class <= b_class)
-    assert_equal(true, b_class <= a_class)
+    assert(b_class <= a_class)
     assert_equal(false, c_class <= b_class)
-    assert_equal(true, a_class <= a_class)
-    assert_equal(true, b_class <= b_class)
-    assert_equal(true, c_class <= c_class)
+    [a_class,b_class,c_class].each {
+      |klass_obj|
+      assert(klass_obj <= klass_obj)
+    }
+  end
+  
+  def test_no_subtype
+    assert_equal(false, NominalType.of(BreakingClass) <= NominalType.of(ParentClass))
+  end
 
+  def test_proc_type
     proc_type_a = Rtc::Types::ProceduralType.new(c_class, [a_class, a_class])
     proc_type_b = Rtc::Types::ProceduralType.new(c_class, [b_class, b_class])
 
-    assert_equal(true, proc_type_a <= proc_type_b)
-
+    assert(proc_type_a <= proc_type_b)
+  end
+  
+  def test_parameterized_type
     #the base types
     set_type = NominalType.of(Set)
     array_type = NominalType.of(Array)
 
-    #arrays are parameterized over types T
-    array_type.type_parameters = [TypeParameter.new(:T)]
-    array_type.add_method(:[], ProceduralType.new(TypeParameter.new(:T), [ NominalType.of(Fixnum) ]))
     
-    #sets are parameterized over types K
-    set_type.type_parameters = [TypeParameter.new(:K)]
+    array_type.add_method(:[], ProceduralType.new(TypeParameter.new(:T), [ NominalType.of(Fixnum) ]))
     
     #This is the type Array<K>
     array_ret = ParameterizedType.new(array_type, [TypeParameter.new(:K)])
@@ -69,16 +99,21 @@ class TestMyClass < Test::Unit::TestCase
     assert_equal("[ () -> Array<NominalType<A>> ]", a_set.get_method(:to_a).to_s)
     assert_equal("[ (NominalType<Fixnum>) -> NominalType<A> ]", a_set.get_method(:to_a).return_type.get_method(:[]).to_s)
     assert_equal("[ (NominalType<A>) -> (NominalType<TrueClass> or NominalType<FalseClass>) ]", a_set.get_method(:includes?).to_s)
-
+  end
+  def test_union
     union_type = UnionType.of([c_class, a_class])
-    assert_equal(true, a_class <= union_type)
+    assert(a_class <= union_type)
 
     union_type2 = UnionType.of([NominalType.of(D), a_class, c_class])
     union_type3 = UnionType.of([b_class, c_class])
-    assert_equal(true, union_type3 <= union_type2)
-
+    assert(union_type3 <= union_type2)
+  end
+  
+  def test_rtc_type
     my_type = A.new.rtc_type
     assert_equal("NominalType<A>", my_type.to_s)
+  end
+  def test_dynamic_types
     my_array = []
     my_array << 2
     array_type = my_array.rtc_type
@@ -94,7 +129,7 @@ class TestMyClass < Test::Unit::TestCase
     string_array = [ "bar" ]
     assert_equal("Array<NominalType<String>>", string_array.rtc_type.to_s)
 
-    assert_equal(true, string_array.rtc_type <= num_str_arr.rtc_type)
+    assert(string_array.rtc_type <= num_str_arr.rtc_type)
     string_array.rtc_type.parameters[0].constrain_to(NominalType.of(String))
     assert_equal(false, string_array.rtc_type <= num_str_arr.rtc_type)
 
@@ -107,6 +142,6 @@ class TestMyClass < Test::Unit::TestCase
     sym3 = SymbolType.new(:c)
 
     assert_equal(false, sym1 <= sym2)
-    assert_equal(true, sym1 <= SymbolType.new(:a))
+    assert(sym1 <= SymbolType.new(:a))
   end
 end
