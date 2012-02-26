@@ -54,6 +54,18 @@ class MyClass
       a + b + 5
     end
   end
+  
+  typesig("multi_candidate: (Fixnum,Fixnum) -> String")
+  typesig("multi_candidate: (Fixnum,Fixnum) -> Fixnum")
+  def multi_candidate(a,b)
+    if a + b > 5
+      "Foo"
+    elsif a + b > 0
+      4
+    else
+      :foo
+    end
+  end
 end
 
 
@@ -65,6 +77,15 @@ class TestTypeChecking < Test::Unit::TestCase
     @test_instance = MyClass.new
     Rtc::Types::NominalType.of(Array).type_parameters = [Rtc::Types::TypeParameter.new(:t)]
     super
+  end
+ 
+  def check_failure(method,arg_vectors)
+    arg_vectors.each {
+      |arg_vector|
+      assert_raise Rtc::TypeMismatchException do
+        method.call(*arg_vector)
+      end
+    }
   end
  
   def test_simple
@@ -114,17 +135,12 @@ class TestTypeChecking < Test::Unit::TestCase
       test_instance.different_formals(1,4)
       test_instance.different_formals(1,"foo",4,5,6,7,8)
     end
-    assert_raise Rtc::TypeMismatchException do
-      test_instance.different_formals(1,2,5)
-    end
     
-    assert_raise Rtc::TypeMismatchException do
-      test_instance.different_formals(1,"foo","bar",5)
-    end
-    
-    assert_raise Rtc::TypeMismatchException do
-      test_instance.different_formals(1,"foo",4,"bar",5)
-    end
+    check_failure(test_instance.method(:different_formals),[
+      [1,2,5],
+      [1,"foo","bar",5],
+      [1,"foo",4,"bar",5]
+    ])
   end
    
    def test_parameterized_arg
@@ -135,13 +151,34 @@ class TestTypeChecking < Test::Unit::TestCase
        test_instance.parameterized_arg([:subscribed_talks])
      end
      
-     assert_raise Rtc::TypeMismatchException do
-       # misspelled symbol
-       test_instance.parameterized_arg([:tals])
-     end
-     assert_raise Rtc::TypeMismatchException do
-      test_instance.parameterized_arg([:talks, :foobar])
-     end
+     check_failure(test_instance.method(:parameterized_arg),[
+       [:tals],
+       [:talks,:foorbar]
+     ])
    end
    
+   def test_intersection_type
+     assert_nothing_raised do
+       test_instance.intersection_type(4,4)
+       test_instance.intersection_type("foo")
+     end
+     
+     check_failure(test_instance.method(:intersection_type),[
+       [4],
+       ["foo","bar"],
+       [4,"boo"],
+     ])
+   end
+   
+   def test_multi_candidate
+     assert_nothing_raised do
+       test_instance.multi_candidate(1,0)
+       test_instance.multi_candidate(3,3)
+     end
+     
+     assert_raise Rtc::TypeMismatchException do
+       test_instance.multi_candidate(-1,-1)
+     end
+     
+   end
 end
