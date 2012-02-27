@@ -162,7 +162,7 @@ class TestTypeSystem < Test::Unit::TestCase
     type_parameter.constrain_to(make_union(Fixnum, String))
 
     # ensure that after constraining t <= t' iff t == t' holds
-    assert_equal(false, type_parametexr <= other_type_parameter)
+    assert_equal(false, type_parameter <= other_type_parameter)
 
     # test that after constraining, proper subtyping takes place
     assert_equal(false, :foo.rtc_type <= type_parameter)
