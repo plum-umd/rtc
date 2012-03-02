@@ -1074,7 +1074,8 @@ module Rtc::Types
         "TVar(#{id},#{dynamic}): #{wrapped_type.inspect}"
       end
       
-      def initialize(type)
+      #this should not be called externally
+      def initialize(type, is_hint = false)
         if type.instance_of?(Enumerator)
           @wrapped_type = nil # maybe the bottom type?
           @dynamic = true        
@@ -1083,7 +1084,7 @@ module Rtc::Types
           @type_cache = nil
         elsif type.kind_of?(Type)
           @wrapped_type = type
-          @dynamic = false
+          @dynamic = is_hint
         end
         super()
       end
@@ -1111,6 +1112,7 @@ module Rtc::Types
       
       def gen_type
         curr_type = Set.new
+        has_parameterized_type = false
         @it.each {
           |elem|
           elem_type = elem.rtc_type
@@ -1141,12 +1143,57 @@ module Rtc::Types
         elsif curr_type.size == 1
           curr_type = curr_type.to_a[0]
         else
-          curr_type = UnionType.of(curr_type.to_a)
+          curr_type = UnionType.of(unify_param_types(curr_type))
         end
         @dirty = true
         @type_cache = curr_type
       end
       
+      #FIXME(jtoman): see if we can lift this step into the gen_type step
+      def unify_param_types(type_set)
+        non_param_classes = []
+        parameterized_classes = {}
+        type_set.each {
+          |member_type|
+          if member_type.parameterized?
+            nominal_type = member_type.nominal
+            tparam_set = parameterized_classes.fetch(nominal_type) {
+              |n_type|
+              [].fill([], 0, n_type.type_parameters.size)
+            }
+            ((0..(nominal_type.type_parameters.size - 1)).map {
+              |tparam_index|
+              extract_types(member_type.parameters[tparam_index])
+            }).each_with_index {
+              |type_parameter,index|
+              tparam_set[index]+=type_parameter
+            }
+            parameterized_classes[nominal_type] = tparam_set
+          else
+            non_param_classes << member_type
+          end
+        }
+        parameterized_classes.each {
+          |nominal,type_set|
+          non_param_classes << ParameterizedType.new(nominal,
+          type_set.map {
+            |unioned_type_parameter|
+            TypeVariable.new(UnionType.of(unify_param_types(unioned_type_parameter)),true)
+          })
+        }
+        non_param_classes
+      end
+      
+      def extract_types(param_type)
+        wrapped_type = param_type.wrapped_type
+        wrapped_type.instance_of?(UnionType) ? wrapped_type.types.to_a : [wrapped_type]
+      end
+      
+      # this could be used to implement caching of wrapped types
+      # we could add an annotation that would say which functions would mark a type
+      # as dirty, and then at each call to those functions mark the wrapped type as
+      # dirty. It is a questionable optimization, so at the moment this method
+      # remains unused
       def _mark_dirty
         @dirty = true
       end
