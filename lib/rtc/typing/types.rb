@@ -7,23 +7,37 @@ require 'singleton'
 
 require 'rtc/tools/hash-builder.rb'
 
+class Rtc::GlobalCache
+  @@cache = {}
+  def self.cache
+    @@cache
+  end
+end
+
 class Object
   def rtc_meta
     if defined? @_rtc_meta
       @_rtc_meta
     else
+      if frozen? and Rtc::GlobalCache.cache[object_id] 
+        return Rtc::GlobalCache.cache[object_id]
+      end
       to_return = {
         :annotated => false,
         :no_subtype => false,
         :iterators => {},
         :_type => nil
       }
-      if not frozen?
-        @_rtc_meta = to_return
+      if frozen?
+        Rtc::GlobalCache.cache[object_id] = to_return
       else
-        to_return
+        @_rtc_meta = to_return
       end
     end
+  end
+  
+  def rtc_gc
+    Rtc::GlobalCache.cache[object_id] = nil
   end
   
   @@old_freeze_meth = Object.instance_method(:freeze)
