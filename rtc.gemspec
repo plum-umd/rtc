@@ -13,4 +13,5 @@ Gem::Specification.new do |s|
   s.files       = Dir.glob("*") + Dir.glob("*/*")  + Dir.glob("*/*/*") + Dir.glob("*/*/*/*") + Dir.glob("*/*/*/*/*") + ["lib/rtc.rb"]
   s.homepage    =
     'https://github.com/jeffrey-s-foster/rtc'
+  s.add_dependency 'racc'
 end
