@@ -167,4 +167,13 @@ class TestTypeSystem < Test::Unit::TestCase
     # test that after constraining, proper subtyping takes place
     assert_equal(false, :foo.rtc_type <= type_parameter)
   end
+  
+  def test_nested_polytypes
+    #FIXME(jtoman): these tests rely very much on the ordering of types within type parameters, and should
+    # be changed from string comparisons
+    nested_type = [[:foo],[:bar]]
+    assert_equal( "Array<Array<(:foo or :bar)>>", nested_type.rtc_type.to_s)
+    assert_equal("Array<Array<(:foo or :bar or Array<(:baz or :gorp)>)>>", [[:foo,:bar], [[:baz,:gorp]]].rtc_type.to_s)
+    assert_equal("Array<(:qux or Array<:bar>)>", [:qux, [:bar]].rtc_type.to_s)
+  end
 end
