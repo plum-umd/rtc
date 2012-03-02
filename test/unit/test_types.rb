@@ -96,9 +96,9 @@ class TestTypeSystem < Test::Unit::TestCase
 
     # this is Set<A>
     a_set = ParameterizedType.new(set_type, [a_class])
-    assert_equal("[ () -> Array<NominalType<A>> ]", a_set.get_method(:to_a).to_s)
-    assert_equal("[ (NominalType<Fixnum>) -> NominalType<A> ]", a_set.get_method(:to_a).return_type.get_method(:[]).to_s)
-    assert_equal("[ (NominalType<A>) -> (NominalType<TrueClass> or NominalType<FalseClass>) ]", a_set.get_method(:includes?).to_s)
+    assert_equal("[ () -> Array<A> ]", a_set.get_method(:to_a).to_s)
+    assert_equal("[ (Fixnum) -> A ]", a_set.get_method(:to_a).return_type.get_method(:[]).to_s)
+    assert_equal("[ (A) -> (TrueClass or FalseClass) ]", a_set.get_method(:includes?).to_s)
   end
   def test_union
     union_type = UnionType.of([c_class, a_class])
@@ -111,23 +111,23 @@ class TestTypeSystem < Test::Unit::TestCase
   
   def test_rtc_type
     my_type = A.new.rtc_type
-    assert_equal("NominalType<A>", my_type.to_s)
+    assert_equal("A", my_type.to_s)
   end
   def test_dynamic_types
     my_array = []
     my_array << 2
     array_type = my_array.rtc_type
-    assert_equal("Array<NominalType<Fixnum>>", array_type.to_s)
+    assert_equal("Array<Fixnum>", array_type.to_s)
     my_array << "hi!"
-    assert_equal("Array<(NominalType<Fixnum> or NominalType<String>)>", array_type.to_s)
+    assert_equal("Array<(Fixnum or String)>", array_type.to_s)
     my_array.delete_at(0)
-    assert_equal("Array<NominalType<String>>", array_type.to_s)
+    assert_equal("Array<String>", array_type.to_s)
 
     num_str_arr = [ "foo", 2 ]
-    assert_equal("Array<(NominalType<String> or NominalType<Fixnum>)>", num_str_arr.rtc_type.to_s)
+    assert_equal("Array<(String or Fixnum)>", num_str_arr.rtc_type.to_s)
 
     string_array = [ "bar" ]
-    assert_equal("Array<NominalType<String>>", string_array.rtc_type.to_s)
+    assert_equal("Array<String>", string_array.rtc_type.to_s)
 
     assert(string_array.rtc_type <= num_str_arr.rtc_type)
     string_array.rtc_type.parameters[0].constrain_to(NominalType.of(String))

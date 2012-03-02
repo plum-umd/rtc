@@ -353,7 +353,11 @@ module Rtc::Types
         end
 
         def to_s # :nodoc:
-            return "NominalType<#{@klass}>"
+            return @klass.to_s
+        end
+        
+        def inspect
+          return "NominalType(#{id})<#{@klass}>"
         end
 
         # Return +true+ if +other+ is a NominalType with the same +klass+ as
