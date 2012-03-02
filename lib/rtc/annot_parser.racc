@@ -44,54 +44,12 @@ token T_LOCAL_ID T_TICKED_ID T_SUFFIXED_ID T_SCOPED_ID
 
 rule
 
-  entry: /* TODO:  get interfaces working */
+  entry:
       e_method { result = val[0] }
     | e_field { result = val[0] }
     | e_named { result = val[0] }
     | e_class  { result = val[0] }
-    /* | e_expr   { result = val[0] } */
-    /*| interface_file { result = val[0] } */
 
-  interface_file:
-      require_list class_def_list T_EOF {
-        fatal("Interface parsing not yet implemented")
-      }
-
-  require_list:
-      /* none */ { [] }
-    | require_stmt require_list { result = [val[0]] + val[1] }
-
-  require_stmt:
-      K_REQUIRE T_STRING { result = strip_quotes(token_text(val[1])) }
-
-  class_def_list:
-      { [] }
-    | class_def class_def_list { result = [val[0]] + val[1] }
-
-  class_def:
-      K_METACLASS class_elem_list K_END {
-        fatal("Metaclass type annotations not yet supported")
-      }
-    | K_CLASS class_annotation class_elem_list K_END {
-        fatal("Class type annotations not yet supported")
-      }
-    | K_MODULE class_annotation class_elem_list K_END {
-        fatal("Module type annotations not yet supported")
-      }
-
-  class_elem_list:
-      { result = [] }
-    | class_elem class_elem_list { result = [val[0]] + val[1] }
-
-  alias_name:
-      relative_method_name { result = token_text(val[0]) } 
-
-  class_elem:
-      K_ALIAS alias_name alias_name { fatal("Alias not yet implemented") }
-    | class_def   { result = val[0] }
-    | method_type { result = val[0] }
-    | field_sig   { result = val[0] }
-    | const_expr  { result = val[0] }
 
   field_sig:
       T_IVAR T_COLON type_expr {
@@ -102,8 +60,6 @@ rule
         result = handle_var(:gvar, token_text(val[0]), val[2]) }
 
 /* entry points, presumably for non-IF annotations */
-  e_expr:
-      type_expr T_EOF { fatal("Expr parsing not yet implemented") }
 
 /* NOTE:  none of these actually register the types -- that has to be
    done at a higher level (where the use for the signature will be known) */
@@ -138,12 +94,6 @@ rule
       field_start field_sig { result = [val[1]] }
     | field_start field_sig field_annotation_list { result = [val[1]] + val[2] }
 
-/* Since "Constants" can appear as either values, or method names,
-   we need to inline these cases explicitly to make the parser happy */
-  const_expr:
-      T_CONST_ID T_COLON type_expr {
-        result = handle_constant(token_text(val[0]).to_sym, val[2])
-      }
 
   const_method_type:
       method_name T_LESS type_id_list T_GREATER constraint_list T_COLON method_sig
