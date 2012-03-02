@@ -12,12 +12,17 @@ class Object
     if defined? @_rtc_meta
       @_rtc_meta
     else
-      @_rtc_meta = {
+      to_return = {
         :annotated => false,
         :no_subtype => false,
         :iterators => {},
         :_type => nil
       }
+      if not frozen?
+        @_rtc_meta = to_return
+      else
+        to_return
+      end
     end
   end
   
@@ -25,7 +30,9 @@ class Object
   
   def freeze
     # force the meta property to be intialized
-    rtc_meta
+    if not frozen?
+      rtc_meta
+    end
     @@old_freeze_meth.bind(self).call()
   end
   
@@ -662,12 +669,12 @@ module Rtc::Types
             p_type = param_type(a_list[i])
           end
           to_return[:opt] = counter
-          counter = 0
           if p_type == :rest
             to_return[:rest] = true
             i+=1
             p_type = param_type(a_list[i])
           end
+          counter = 0
           while p_type == :req
             counter+=1
             i+=1
