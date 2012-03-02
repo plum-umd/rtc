@@ -1059,8 +1059,10 @@ module Rtc::Types
       def wrapped_type
         if !dynamic
           @wrapped_type
-        elsif @dirty
+        elsif @dirty and !@wrapped_type
           gen_type
+        elsif @wrapped_type
+          @wrapped_type
         else
           @type_cache
         end
