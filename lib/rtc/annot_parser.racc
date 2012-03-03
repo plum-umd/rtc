@@ -105,7 +105,7 @@ rule
       { result = handle_mtype(val[0], nil, val[2]) }
     | T_CONST_ID T_LESS type_id_list T_GREATER T_COLON method_sig
       { result = handle_mtype(val[0], val[2], val[6]) }
-    | T_CONST_ID T_COLON method_sig 
+    | T_CONST_ID T_COLON method_sig
       { result = handle_mtype(val[0], nil, val[2]) }
     | method_sig {
        result = handle_mtype("__rtc_next_method", nil, val[0])

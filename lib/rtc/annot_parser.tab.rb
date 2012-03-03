@@ -13,14 +13,6 @@ require 'rtc/typing/types.rb'
 
 module Rtc
 
-#  FIXME(rwsims): this is never called
-#  def str_typedef(s)
-#    pos = Rtc::Positioning.caller_pos(caller(), 0)
-#    ctx = Rtc::ErrorReporting::Context.new(pos, s.to_s)
-#    sigs = parse_typesig(s, pos, ctx)
-#    sigs.each {|sig| __alias_type(@pos, sig.id, sig.type) }
-#  end
-
   class TypeAnnotationParser < Racc::Parser
 
     attr_accessor :pos, :proxy
@@ -48,7 +40,7 @@ module Rtc
 
 class TypeAnnotationParser < Racc::Parser
 
-module_eval(<<'...end annot_parser.racc/module_eval...', 'annot_parser.racc', 326)
+module_eval(<<'...end annot_parser.racc/module_eval...', 'annot_parser.racc', 317)
 
 ...end annot_parser.racc/module_eval...
 ##### State transition tables begin ###
@@ -605,20 +597,21 @@ module_eval(<<'.,.,', 'annot_parser.racc', 119)
 
 module_eval(<<'.,.,', 'annot_parser.racc', 122)
   def _reduce_28(val, _values, result)
-            result = handle_scoped_id(val[0]) 
+          	#FIXME(jtoman): this is broken
+        result = handle_scoped_id(val[0]) 
       
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 126)
+module_eval(<<'.,.,', 'annot_parser.racc', 127)
   def _reduce_29(val, _values, result)
      result = val[0] 
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 130)
+module_eval(<<'.,.,', 'annot_parser.racc', 131)
   def _reduce_30(val, _values, result)
             result = construct_msig([], val[2], val[4])
       
@@ -626,7 +619,7 @@ module_eval(<<'.,.,', 'annot_parser.racc', 130)
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 133)
+module_eval(<<'.,.,', 'annot_parser.racc', 134)
   def _reduce_31(val, _values, result)
             result = construct_msig(val[1], val[3], val[5])
       
@@ -634,70 +627,70 @@ module_eval(<<'.,.,', 'annot_parser.racc', 133)
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 138)
+module_eval(<<'.,.,', 'annot_parser.racc', 139)
   def _reduce_32(val, _values, result)
      result = nil 
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 139)
+module_eval(<<'.,.,', 'annot_parser.racc', 140)
   def _reduce_33(val, _values, result)
      result = handle_btype(val[1]) 
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 142)
+module_eval(<<'.,.,', 'annot_parser.racc', 143)
   def _reduce_34(val, _values, result)
      result = [val[0]] 
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 143)
+module_eval(<<'.,.,', 'annot_parser.racc', 144)
   def _reduce_35(val, _values, result)
      result = [val[0]] + val[2] 
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 146)
+module_eval(<<'.,.,', 'annot_parser.racc', 147)
   def _reduce_36(val, _values, result)
      result = handle_type_param(:id, val[0]) 
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 147)
+module_eval(<<'.,.,', 'annot_parser.racc', 148)
   def _reduce_37(val, _values, result)
      result = handle_type_param(:self, val[0]) 
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 150)
+module_eval(<<'.,.,', 'annot_parser.racc', 151)
   def _reduce_38(val, _values, result)
      result = val[0] 
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 152)
+module_eval(<<'.,.,', 'annot_parser.racc', 153)
   def _reduce_39(val, _values, result)
             result = handle_type_param(:varargs, val[1]) 
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 156)
+module_eval(<<'.,.,', 'annot_parser.racc', 157)
   def _reduce_40(val, _values, result)
      result = [val[0]] 
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 158)
+module_eval(<<'.,.,', 'annot_parser.racc', 159)
   def _reduce_41(val, _values, result)
           result = [val[0]] + val[2]
       
@@ -705,7 +698,7 @@ module_eval(<<'.,.,', 'annot_parser.racc', 158)
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 163)
+module_eval(<<'.,.,', 'annot_parser.racc', 164)
   def _reduce_42(val, _values, result)
        	  	result = {
    	  		:type => :absolute,
@@ -716,7 +709,7 @@ module_eval(<<'.,.,', 'annot_parser.racc', 163)
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 169)
+module_eval(<<'.,.,', 'annot_parser.racc', 170)
   def _reduce_43(val, _values, result)
             result = {
         	:type => :relative,
@@ -727,13 +720,11 @@ module_eval(<<'.,.,', 'annot_parser.racc', 169)
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 176)
+module_eval(<<'.,.,', 'annot_parser.racc', 177)
   def _reduce_44(val, _values, result)
             list = val[0][:or_list]
         if(list.length > 1)
-          # args = list + [pos]
-          result = # proxy.utype(*args)
-                   Rtc::Types::UnionType.new(list)
+          result = Rtc::Types::UnionType.new(list)
         else
           # flatten if there is no union
           result = list[0]
@@ -743,14 +734,14 @@ module_eval(<<'.,.,', 'annot_parser.racc', 176)
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 188)
+module_eval(<<'.,.,', 'annot_parser.racc', 187)
   def _reduce_45(val, _values, result)
      result = {:or_list => [val[0]]} 
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 190)
+module_eval(<<'.,.,', 'annot_parser.racc', 189)
   def _reduce_46(val, _values, result)
             # need to differientiate OR lists from tuples (which are just arrays)
         val[2][:or_list] = [val[0]] + val[2][:or_list]
@@ -760,14 +751,14 @@ module_eval(<<'.,.,', 'annot_parser.racc', 190)
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 196)
+module_eval(<<'.,.,', 'annot_parser.racc', 195)
   def _reduce_47(val, _values, result)
      result = val[0] 
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 198)
+module_eval(<<'.,.,', 'annot_parser.racc', 197)
   def _reduce_48(val, _values, result)
         	result = Rtc::Types::SymbolType.new(eval(val[0]))
       
@@ -775,7 +766,7 @@ module_eval(<<'.,.,', 'annot_parser.racc', 198)
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 201)
+module_eval(<<'.,.,', 'annot_parser.racc', 200)
   def _reduce_49(val, _values, result)
             id = handle_type_ident(val[0])
         if(id.class == Class)
@@ -788,14 +779,14 @@ module_eval(<<'.,.,', 'annot_parser.racc', 201)
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 208)
+module_eval(<<'.,.,', 'annot_parser.racc', 207)
   def _reduce_50(val, _values, result)
      result = val[0] 
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 210)
+module_eval(<<'.,.,', 'annot_parser.racc', 209)
   def _reduce_51(val, _values, result)
             result = Rtc::Types::TopType.instance
       
@@ -803,7 +794,7 @@ module_eval(<<'.,.,', 'annot_parser.racc', 210)
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 213)
+module_eval(<<'.,.,', 'annot_parser.racc', 212)
   def _reduce_52(val, _values, result)
             result = Rtc::Types::OptionalArg.new(val[1])
       
@@ -811,7 +802,7 @@ module_eval(<<'.,.,', 'annot_parser.racc', 213)
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 216)
+module_eval(<<'.,.,', 'annot_parser.racc', 215)
   def _reduce_53(val, _values, result)
             result = Rtc::Types::Vararg.new(val[1])
       
@@ -819,7 +810,7 @@ module_eval(<<'.,.,', 'annot_parser.racc', 216)
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 219)
+module_eval(<<'.,.,', 'annot_parser.racc', 218)
   def _reduce_54(val, _values, result)
             result = handle_structural_type(val[1])
       
@@ -827,7 +818,7 @@ module_eval(<<'.,.,', 'annot_parser.racc', 219)
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 222)
+module_eval(<<'.,.,', 'annot_parser.racc', 221)
   def _reduce_55(val, _values, result)
             id = handle_type_ident(val[0])
         nominal = Rtc::Types::NominalType.of(id)
@@ -837,28 +828,28 @@ module_eval(<<'.,.,', 'annot_parser.racc', 222)
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 228)
+module_eval(<<'.,.,', 'annot_parser.racc', 227)
   def _reduce_56(val, _values, result)
      result = val[1] 
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 231)
+module_eval(<<'.,.,', 'annot_parser.racc', 230)
   def _reduce_57(val, _values, result)
      result = [val[0]] 
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 233)
+module_eval(<<'.,.,', 'annot_parser.racc', 232)
   def _reduce_58(val, _values, result)
             result = [val[0]] + val[2] 
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 238)
+module_eval(<<'.,.,', 'annot_parser.racc', 237)
   def _reduce_59(val, _values, result)
             id = val[0]
         type_vars = val[2]
@@ -868,7 +859,7 @@ module_eval(<<'.,.,', 'annot_parser.racc', 238)
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 243)
+module_eval(<<'.,.,', 'annot_parser.racc', 242)
   def _reduce_60(val, _values, result)
             id = val[0]
         result = handle_class_decl(id)
@@ -877,7 +868,7 @@ module_eval(<<'.,.,', 'annot_parser.racc', 243)
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 249)
+module_eval(<<'.,.,', 'annot_parser.racc', 248)
   def _reduce_61(val, _values, result)
             result = val[1]
       
@@ -885,7 +876,7 @@ module_eval(<<'.,.,', 'annot_parser.racc', 249)
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 252)
+module_eval(<<'.,.,', 'annot_parser.racc', 251)
   def _reduce_62(val, _values, result)
             result = val[1]
       
@@ -893,7 +884,7 @@ module_eval(<<'.,.,', 'annot_parser.racc', 252)
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 258)
+module_eval(<<'.,.,', 'annot_parser.racc', 257)
   def _reduce_63(val, _values, result)
             result = handle_var(:ivar, val[0], val[2])
       
@@ -901,21 +892,21 @@ module_eval(<<'.,.,', 'annot_parser.racc', 258)
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 263)
+module_eval(<<'.,.,', 'annot_parser.racc', 262)
   def _reduce_64(val, _values, result)
             result = {:fields => [val[0]], :methods => []}       
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 265)
+module_eval(<<'.,.,', 'annot_parser.racc', 264)
   def _reduce_65(val, _values, result)
             result = {:fields => [],       :methods => [val[0]]} 
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 267)
+module_eval(<<'.,.,', 'annot_parser.racc', 266)
   def _reduce_66(val, _values, result)
             field_method_hash = val[2]
         field_method_hash[:fields] += [val[0]]
@@ -925,7 +916,7 @@ module_eval(<<'.,.,', 'annot_parser.racc', 267)
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 272)
+module_eval(<<'.,.,', 'annot_parser.racc', 271)
   def _reduce_67(val, _values, result)
             field_method_hash = val[2]
         field_method_hash[:methods] += [val[0]]
@@ -935,14 +926,14 @@ module_eval(<<'.,.,', 'annot_parser.racc', 272)
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 278)
+module_eval(<<'.,.,', 'annot_parser.racc', 277)
   def _reduce_68(val, _values, result)
      result = {:fields => [], :methods => []} 
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'annot_parser.racc', 279)
+module_eval(<<'.,.,', 'annot_parser.racc', 278)
   def _reduce_69(val, _values, result)
      result = val[0] 
     result
