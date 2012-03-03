@@ -29,9 +29,9 @@ macro
   SCOPED_ID_RE ([A-Za-z_]+\w*|self)\.(\w|\[|\]|=)+[\?\!\=]?
   SUFFIXED_ID_RE [A-Za-z_]+\w*[\?\!\=]
 
-  METH_SYM_RE (?:[%&\*\+\-\/\<\>\^\|\~]|\*\*|\+\@|\-\@|\<\<|\<\=|\<\=\>|\=\=|\>\=|\>\>|\[\]|\=\=\=|\<\=\=\>|\[\]\=|\=\~)
+#unused: METH_SYM_RE (?:[%&\*\+\-\/\<\>\^\|\~]|\*\*|\+\@|\-\@|\<\<|\<\=|\<\=\>|\=\=|\>\=|\>\>|\[\]|\=\=\=|\<\=\=\>|\[\]\=|\=\~)
 
-  METH_NAME_RE [A-Za-z_]+\w*[\!\=\?]
+# unused: METH_NAME_RE [A-Za-z_]+\w*[\!\=\?]
   SYMBOL_RE :[A-Za-z_][A-Za-z_0-9]*
 #in order to match spaces, you have to define an RE. Yes this is ridiculous
   CLASS_RE class\ 

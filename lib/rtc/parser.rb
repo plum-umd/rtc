@@ -7,6 +7,13 @@ require 'rtc/typing/type_signatures'
 
 module Rtc
 
+    class DeferredClasses
+      @@cache = {}
+      def self.cache
+        @@cache
+      end
+    end
+    
     class TypeAnnotationParser < Racc::Parser
         @logger = Logging.get_logger('TypeAnnotationParser')
 
@@ -16,8 +23,8 @@ module Rtc
         def handle_scoped_id(name)
             names = name.split(/::|\./)
             if names.length == 2
-                meta = class << proxy; self end
-            return MethodIdentifier.new(meta, names[1])
+              meta = class << proxy; self end
+              return MethodIdentifier.new(names[1])
             else
                 fail "Internal error. Only A.foo is allowed"
             end
@@ -30,7 +37,6 @@ module Rtc
             return {:domain => domain, :block => block, :range => range}
         end
 
-        # TODO
         def handle_btype(msig)
             msig
         end
@@ -40,145 +46,58 @@ module Rtc
             return Rtc::Types::TypeParameter.new(text.to_sym)
         end
 
-        def handle_type_constructor(x)
-            fatal("type constructs not yet supported")
+        def ident_exists(name_list,scope)
+          find_type_ident(name_list,scope) != nil
         end
 
-        # Turn a list of type variables/type parameters into a list of strings
-        # or symbols for output.
-        def prepare_type_vars_for_sig(tvars)
-            r = []
-            case tvars
-            when Array
-                tvars.each do |t|
-                    if (t.to_s.index('^') == 0)
-                        raise(NotImplementedError,
-                              "Varargs type variables (of form ^args) " +
-                              "are not yet supported")
-                    end
-                    if t.instance_of?(Rtc::Types::TypeParameter)
-                        r << t.symbol
-                    else
-                        r << t
-                    end
-                end
-            when Rtc::Types::TypeParameter
-                t = tvars
-                if(t.to_s.index('^') == 0) #varargs
-                    warn("Varargs type variables (of form ^args) are not " +
-                         "yet supported")
-                end
-                r << t.name.to_sym
-            else
-                raise(ArgumentError,
-                      "Unexpected type variable collection: #{tvars.inspect})")
-            end
-            return r
-        end
-
-        def handle_type_ident(ident)
+        def find_type_ident(name_list, scope)
             # cname = x.class == Array ? x.join("::") : x
-
-            if ident.instance_of?(Array)
-                curr_scope = Object
-                ident.each {|id| curr_scope = curr_scope.const_get(id) }
-                return curr_scope
-            else
-                return Object.const_get(ident)
+            curr_scope = scope
+            name_list.each {|id|
+              if curr_scope.const_defined?(id)
+                curr_scope = curr_scope.const_get(id)
+              else
+                return nil
+              end }
+            return curr_scope
+        end
+        
+        def handle_type_ident(ident)
+          if ident[:type] == :absolute or @proxy.instance_of?(Object)
+            eval(ident[:name_list].join("::"))
+          else
+            scopes = @proxy.name.split("::")
+            while scopes.size != 0
+              curr_scope = eval(scopes.join("::"))
+              obj = find_type_ident(ident[:name_list], curr_scope)
+              return obj if obj != nil
+              scopes.pop()
             end
+            return find_type_ident(ident[:name_list], Object)
+          end
         end
 
-        def handle_class_decl(name, ids=[])
-            puts "handling class decl for #{name}, #{ids}"
-            return {:kind => :class_decl,
-                :name => name,
-                :type_ids => ids }
-        end
-
-        private
-
-        # obtains the module/class itself by evaluating the name at the top scope
-        #--
-        # TODO(rwsims): This might not handle classes defined within modules
-        # correctly.
-        def get_class(name, is_class=true)
-            keyword = is_class ? "class" : "module"
-            scope = @proxy.to_s == "main" ? "" : @proxy.name
-            eval_string = "#{keyword} ::#{name}; end" # in case, declare it
-            eval eval_string
-            mod = Object.const_get(name) # then get the actual module/class
-            return mod
-        end
-
-        # sets type parameters and constraints for the module/class.
-        # NOTE: we no longer use temporary place holder
-        def set_tparams(name, tparams, cons, is_class=true)
-            tparams.map! do |tparam| 
-                case tparam
-                when Rtc::Types::TypeParameter
-                    tparam
-                else
-                    Rtc::Types::TypeParameter.new(tparam)
-                end
-            end
-            mod = get_class(name, is_class)
-            mod.instance_variable_set(:@__class_type_params, tparams)
-            mod.instance_variable_set(:@__class_type_constraints, cons)
-            return [tparams, cons]
-        end
-
-        # replaces duplicate type parameters with the original type parameters
-        # (that are *declared* and not being used); for example,
-        #   foo<t> : t -> t 
-        # the second and third t are replaced with the first t
-        def coalesce_tparams(mod, tparams, type, include_class_tparams=false)
-            map = {}
-            if include_class_tparams
-                cls_tparams = mod.instance_variable_get(:@__class_type_params)
-                if cls_tparams
-                    cls_tparams.each {|tparam| map[tparam.name] = tparam }
-                end
-            end
-            tparams.each {|tparam| map[tparam.name] = tparam } if tparams
-            if map.length > 0 
-                return TypeParamCoalescer.visit(type, map, {})
-            else 
-                return type
-            end
-        end
-
-        # helper method for coalescing type parameters in a single constraint
-        def coalesce_tparams_in_constraint(mod, tparams, con, 
-                                           include_class_tparams=false)
-            new_con = con.clone
-            new_con.tvar = coalesce_tparams(mod, tparams, con.tvar, 
-                                            include_class_tparams)
-            new_con.supertype = 
-                coalesce_tparams(mod, tparams, con.supertype, include_class_tparams)
-            return new_con
+        def handle_class_decl(ident, ids=[])
+          if ident[:type] == :absolute
+            qualified_name = ident[:name_list].join("::")
+          else
+            qualified_name = (@proxy.instance_of?(Object)? "" : (@proxy.name + "::")) + ident[:name_list].join("::")
+          end
+          begin
+            the_obj = eval(qualified_name)
+            Rtc::Types::NominalType.of(the_obj).type_parameters = ids
+            the_obj
+          rescue => e
+            Rtc::DeferredClasses.cache[qualified_name] = ids
+            nil
+          end
         end
 
         public
 
-        # handles a class annotation. it does two things--setting the type
-        # parameters and refined constraints to the corresponding module/class.
-        def handle_class_annot(decl, subs, cons, is_class=true)
-            name = decl[:name]
-            ids = decl[:type_ids]
-            (tparams, cons) = set_tparams(name, ids, cons, is_class)
-            if cons
-                cons.map! {|con|
-                    mod = get_class(name, is_class)
-                    coalesce_tparams_in_constraint(mod, tparams, con, false)
-                }
-            end
-            # subs.each {|s| proxy.__subtype(name, s, @pos) } if subs != nil
-            return []
-        end
-
         # constructs a method type (mono or poly) and coalesces type parameters
         # appearing in the method type (including the constraints)
-        def handle_mtype(meth_id, parameters, cons, msig)
+        def handle_mtype(meth_id, parameters, msig)
             # expect msig to be result from construct_msig
             domain = msig[:domain]
             block  = msig[:block]
@@ -216,23 +135,13 @@ module Rtc
             return r
         end
 
-        def handle_constant(name, type)
-            id = ConstantIdentifier(name.to_sym)
-            return ConstantTypeSignature(@pos, id, type)
-        end
-
         def handle_structural_type(list)
             field_types = {}
             method_types = {}
-            list[:fields].each {|f| field_types[f.id.to_s.to_sym] = f.type }
-            list[:methods].each {|m| method_types[m.id.to_s.to_sym] = m.type }
+            list[:fields].each {|f| field_types[f.id.to_sym] = f.type }
+            list[:methods].each {|m| method_types[m.id.to_sym] = m.type }
             t = Rtc::Types::StructuralType.new(field_types, method_types)
             return t
-        end
-
-        def handle_named_type_expr(name, type)
-            id = Identifier.new(name.to_sym) # XXX????
-            Rtc::DynamicTyping::TypeSignature.new(pos, id, type)
         end
 
         def warn(msg, lineno = nil)
@@ -273,19 +182,9 @@ module Rtc
     end
 
     class MethodIdentifier < Identifier
-
-        attr_accessor :target 
-
-        def initialize(target, name)
-            @target = target 
+        def initialize(name) 
             super(name)
         end
-
-        def eql?(other); (super) && @target == other.target end
-        def hash(); (@target.hash + @name.hash) end
-        # def to_s(); "#{@target ? "self." : ""}#{@name}" end
-        def to_s(); "#{@name}" end
-
     end
 
     # TODO
