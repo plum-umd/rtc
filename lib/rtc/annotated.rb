@@ -73,6 +73,7 @@ module Rtc::Annotated
           |m_sig|
           this_type.add_method(method_name.to_s, m_sig)
         }
+        @@next_methods = []
         if not @@method_wrappers[method_name.to_s]
           @@method_wrappers[method_name.to_s] = Rtc::MethodWrapper.make_wrapper(self, method_name.to_s)
         end
