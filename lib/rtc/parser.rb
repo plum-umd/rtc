@@ -47,7 +47,11 @@ module Rtc
         end
 
         def handle_type_ident(ident)
-          Rtc::Types::NominalType.of(Rtc::ClassLoader.load_class(ident, @proxy))
+          begin
+            Rtc::Types::NominalType.of(Rtc::ClassLoader.load_class(ident, @proxy))
+          rescue Rtc::ClassNotFoundException => e
+            Rtc::Types::LazyNominalType.new(ident, @proxy)
+          end
         end
 
         def handle_class_decl(ident, ids=[])

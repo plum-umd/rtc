@@ -6,6 +6,7 @@ require 'set'
 require 'singleton'
 
 require 'rtc/tools/hash-builder.rb'
+require 'rtc/runtime/class_loader'
 
 class Rtc::GlobalCache
   @@cache = {}
@@ -206,12 +207,14 @@ module Rtc::Types
                 other.field_names do |f_name|
                   return false unless @field_types.has_key?(f_name)
                   mine = get_field(f_name)
+                  theirs = other.get_field(f_name)
                   return false unless mine <= theirs and theirs <= mine 
                 end
                 
                 other.method_names do |m_name|
                   return false unless @method_types.has_key?(m_name)
-                  mind = get_method(m_name)
+                  mine = get_method(m_name)
+                  theirs = other.get_method(m_name)
                   return false unless mine <= theirs
                 end
                 return true
@@ -315,8 +318,6 @@ module Rtc::Types
             return t
         end
         
-        attr_accessor :type_parameters
-        
         def type_parameters
           @type_parameters
         end
@@ -415,6 +416,34 @@ module Rtc::Types
         end
     end
     
+    class LazyNominalType < NominalType
+      proxied_methods = NominalType.instance_methods(true) + [:method_names, :field_names]
+      proxied_methods.each do
+        |proxied_mname|
+        define_method(proxied_mname, lambda {
+          |*args|
+          concrete_obj.send(proxied_mname, *args)
+        })
+      end
+      
+      
+      def initialize(ident, context)
+        @ident = ident
+        @context = context
+        @concrete_obj = nil
+      end
+      
+      private
+      
+      def concrete_obj
+        if @concrete_obj
+          @concrete_obj
+        else
+          @concrete_obj = NominalType.of(Rtc::ClassLoader.load_class(@ident, @context))
+        end
+      end
+      
+    end
     
     # A type that is parameterized on one or more other types. The base type
     # must be a NominalType, while the parameters can be any type.
