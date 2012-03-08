@@ -1,5 +1,11 @@
 # File to be included by client code.
 
+module Rtc
+  def self.setup
+    yield self
+  end
+end
+
 require 'rtc/annotated'
 
 def rtc_annotated

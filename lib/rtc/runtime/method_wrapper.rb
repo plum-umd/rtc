@@ -103,7 +103,6 @@ module Rtc
         message = "Function " + @method_name.to_s + " return type mismatch: " + "   Expected function type: " + method_type.to_s
         #puts "   Actual return type #{ret_value.rtc_type}"
         #puts "   Actual return value: " + ret_value.to_s
-        #TODO(jtoman): more flexible error reporting here
         on_error(message)
       end
 
@@ -113,7 +112,18 @@ module Rtc
     private
     
     def on_error(message)
-      raise TypeMismatchException,message
+      case Rtc::Options[:on_type_error]
+      when :ignore
+        ;
+      when :exception
+        raise TypeMismatchException,message
+      when :file
+        Rtc::Options[:error_config].write(message)
+      when :callback
+        Rtc::Options[:error_config].call(message)
+      when :exit
+        exit -1
+      end
     end
     
     @@arg_vector_name = "__rtc_args"
