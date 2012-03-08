@@ -91,6 +91,19 @@ class Object
   end
 end
 
+
+class Class
+  def rtc_instance_typeof(name)
+    my_type = Rtc::Types::NominalType.of(self)
+    name = name.to_s
+    if name[0] == "@"
+      my_type.get_field(name[1..-1])
+    else
+      my_type.get_method(name)
+    end
+  end
+end
+
 module Rtc::Types
 
     # Abstract base class for all types. Takes care of assigning unique ids to
