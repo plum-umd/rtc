@@ -222,14 +222,7 @@ module Rtc::Types
         def <=(other)
             case other
             when StructuralType
-                other.field_names do |f_name|
-                  return false unless @field_types.has_key?(f_name)
-                  mine = get_field(f_name)
-                  theirs = other.get_field(f_name)
-                  return false unless mine <= theirs and theirs <= mine 
-                end
-                
-                other.method_names do |m_name|
+                other.method_names.each do |m_name|
                   return false unless @method_types.has_key?(m_name)
                   mine = get_method(m_name)
                   theirs = other.get_method(m_name)

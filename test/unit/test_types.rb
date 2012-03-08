@@ -153,4 +153,32 @@ class TestTypeSystem < Test::Unit::TestCase
     assert_equal("Array<Array<(:foo or :bar or Array<(:baz or :gorp)>)>>", [[:foo,:bar], [[:baz,:gorp]]].rtc_type.to_s)
     assert_equal("Array<(:qux or Array<:bar>)>", [:qux, [:bar]].rtc_type.to_s)
   end
+  
+ 
+  class MyClass
+    rtc_annotated
+    typesig("foo: (A, A) -> C")
+  end
+  
+  def test_structural_types
+    my_class_type = NominalType.of(MyClass)
+    foo_method_type = ProceduralType.new(c_class, [a_class, a_class])
+    structural_type = StructuralType.new({}, {"foo"=>foo_method_type})
+    # test basic subtype rules
+    assert(my_class_type <= structural_type)
+    
+    # depth subtyping
+    foo_super_method_type = ProceduralType.new(c_class, [b_class, b_class])
+    assert(my_class_type <= StructuralType.new({}, {"foo" => foo_super_method_type}))
+    
+    #failure cases, when the structual type is wider
+    assert_equal(false, my_class_type <= StructuralType.new({}, {
+      "foo" => foo_method_type,
+      "bar" => ProceduralType.new(c_class, [])
+    }))
+    
+    assert_equal(false, my_class_type <= StructuralType.new({},{
+      "foo" => ProceduralType.new(c_class, [])
+    }))
+  end
 end
