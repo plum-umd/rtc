@@ -81,8 +81,13 @@ class Object
      end
   end
   
-  def rtc_typeof(method_name)
-    self.rtc_type.get_method(method_name)
+  def rtc_typeof(name)
+    name = name.to_s
+    if name[0] == "@"
+      self.rtc_type.get_field(name[1..-1])
+    else
+      self.rtc_type.get_method(name)
+    end
   end
 end
 
@@ -373,11 +378,16 @@ module Rtc::Types
             return @klass.name.hash
         end
         
-        # jtoman: is this necessary? can't we transform add_field into
-        # add_method(name,() -> type) and add_method(name=,type -> type)?
         def add_field(name,type)
-          # TODO(jtoman): generate an intersection type?
-          @field_types[name] = type
+          if extant_type = @field_types[name]
+            if extant_type.instance_of?(UnionType)
+              @field_types[name] = UnionType.of(extant_type.types + [type])
+            else
+              @field_types[name] = UnionType.of([extant_type, type])
+            end
+          else
+            @field_types[name] = type
+          end
         end
         
         def add_method(name, type)

@@ -28,6 +28,7 @@ module Rtc::Annotated
           if sig.instance_of?(Rtc::InstanceVariableTypeSignature)
             field_name = sig.id.to_s[1..-1]
             field_type = sig.type
+            this_type.add_field(field_name, field_type)
             getter_type = Rtc::Types::ProceduralType.new(field_type, [])
             setter_type = Rtc::Types::ProceduralType.new(field_type, [field_type])
             [Rtc::MethodTypeSignature.new(sig.pos,field_name,getter_type),

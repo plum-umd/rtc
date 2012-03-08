@@ -214,4 +214,20 @@ class TestTypeChecking < Test::Unit::TestCase
        field_instance.bar = :foo
      end
    end
+   
+   # also tests for automatic unioning
+   def test_field_query
+     field_instance = FieldClass.new
+     assert(field_instance.rtc_typeof(:@foo) == Rtc::Types::NominalType.of(Fixnum))
+     assert(field_instance.rtc_typeof(:@bar) == Rtc::Types::UnionType.of([
+      Rtc::Types::NominalType.of(Fixnum),
+      Rtc::Types::NominalType.of(String)
+     ]))
+     assert(field_instance.rtc_typeof("@foo") == Rtc::Types::NominalType.of(Fixnum))
+     assert(field_instance.rtc_typeof("@bar") == Rtc::Types::UnionType.of([
+      Rtc::Types::NominalType.of(Fixnum),
+      Rtc::Types::NominalType.of(String)
+     ]))
+     
+   end
 end
