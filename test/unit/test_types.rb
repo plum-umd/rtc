@@ -44,10 +44,6 @@ class TestTypeSystem < Test::Unit::TestCase
       }
     end
     @boolean_type = UnionType.of([NominalType.of(TrueClass), NominalType.of(FalseClass)])
-    #arrays are parameterized over types T
-    NominalType.of(Array).type_parameters = [TypeParameter.new(:T)]
-    #sets are parameterized over types K
-    NominalType.of(Set).type_parameters = [TypeParameter.new(:K)]
     super
   end
 
@@ -75,30 +71,11 @@ class TestTypeSystem < Test::Unit::TestCase
   end
   
   def test_parameterized_type
-    #the base types
     set_type = NominalType.of(Set)
-    array_type = NominalType.of(Array)
-
-    
-    array_type.add_method(:[], ProceduralType.new(TypeParameter.new(:T), [ NominalType.of(Fixnum) ]))
-    
-    #This is the type Array<K>
-    array_ret = ParameterizedType.new(array_type, [TypeParameter.new(:K)])
-    
-    #This is the type () -> Array<K>
-    to_a_type = ProceduralType.new(array_ret, [])
-    
-    set_type.add_method(:to_a, to_a_type)
-    
-    include_type = ProceduralType.new(boolean_type, [TypeParameter.new(:K)])
-
-    set_type.add_method(:includes?, include_type)
-
-    # this is Set<A>
     a_set = ParameterizedType.new(set_type, [a_class])
-    assert_equal("[ () -> Array<A> ]", a_set.get_method(:to_a).to_s)
-    assert_equal("[ (Fixnum) -> A ]", a_set.get_method(:to_a).return_type.get_method(:[]).to_s)
-    assert_equal("[ (A) -> (TrueClass or FalseClass) ]", a_set.get_method(:includes?).to_s)
+    assert_equal("[ () -> Array<A> ]", a_set.get_method("to_a").to_s)
+    assert_equal("[ (Fixnum) -> A ]", a_set.get_method("to_a").return_type.get_method("[]").to_s)
+    assert_equal("[ (A) -> (TrueClass or FalseClass) ]", a_set.get_method("includes?").to_s)
   end
   def test_union
     union_type = UnionType.of([c_class, a_class])

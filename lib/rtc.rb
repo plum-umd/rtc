@@ -15,3 +15,5 @@ def rtc_typesig(my_sig)
   parser = Rtc::TypeAnnotationParser.new(self)
   parser.scan_str(my_sig)
 end
+
+require 'rtc/typing/base_types.rb'

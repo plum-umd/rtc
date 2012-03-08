@@ -78,14 +78,12 @@ class FieldClass
   attr_accessor :bar
 end
 
-
 class TestTypeChecking < Test::Unit::TestCase
  
   attr_reader :test_instance 
  
   def initialize(*)
     @test_instance = MyClass.new
-    Rtc::Types::NominalType.of(Array).type_parameters = [Rtc::Types::TypeParameter.new(:t)]
     super
   end
  
@@ -228,6 +226,14 @@ class TestTypeChecking < Test::Unit::TestCase
       Rtc::Types::NominalType.of(Fixnum),
       Rtc::Types::NominalType.of(String)
      ]))
+   end
+   
+   
+   def test_parameterized_instance_typeof
+     expected_method_type = Rtc::Types::ProceduralType.new(Rtc::Types::UnionType.of([
+       Rtc::Types::NominalType.of(TrueClass), Rtc::Types::NominalType.of(FalseClass)
+     ]),[ Rtc::Types::TypeParameter.new(:t) ])
+     assert_equal(Set.rtc_instance_typeof("includes?"),expected_method_type)
    end
    
    
