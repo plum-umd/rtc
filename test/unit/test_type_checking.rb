@@ -216,13 +216,13 @@ class TestTypeChecking < Test::Unit::TestCase
    # also tests for automatic unioning
    def test_field_query
      field_instance = FieldClass.new
-     assert(field_instance.rtc_typeof(:@foo) == Rtc::Types::NominalType.of(Fixnum))
-     assert(field_instance.rtc_typeof(:@bar) == Rtc::Types::UnionType.of([
+     assert_equal(field_instance.rtc_typeof(:@foo),Rtc::Types::NominalType.of(Fixnum))
+     assert_equal(field_instance.rtc_typeof(:@bar),Rtc::Types::UnionType.of([
       Rtc::Types::NominalType.of(Fixnum),
       Rtc::Types::NominalType.of(String)
      ]))
-     assert(field_instance.rtc_typeof("@foo") == Rtc::Types::NominalType.of(Fixnum))
-     assert(field_instance.rtc_typeof("@bar") == Rtc::Types::UnionType.of([
+     assert_equal(field_instance.rtc_typeof("@foo"),Rtc::Types::NominalType.of(Fixnum))
+     assert_equal(field_instance.rtc_typeof("@bar"),Rtc::Types::UnionType.of([
       Rtc::Types::NominalType.of(Fixnum),
       Rtc::Types::NominalType.of(String)
      ]))
@@ -242,13 +242,11 @@ class TestTypeChecking < Test::Unit::TestCase
        Rtc::Types::NominalType.of(Fixnum)
      ])
      test_instance = MyClass.new
-     assert(test_instance.rtc_typeof("simple_method") == expected_method_type)
-     assert(test_instance.rtc_typeof("simple_method") == MyClass.rtc_instance_typeof("simple_method"))
-     assert(FieldClass.rtc_instance_typeof("@foo") == (fixnum_type = Rtc::Types::NominalType.of(Fixnum)))
-     assert(FieldClass.rtc_instance_typeof(:@foo) == fixnum_type)
-     
-     assert(MyClass.rtc_instance_typeof(:simple_method) == expected_method_type)
-     assert(MyClass.rtc_instance_typeof("simple_method") == expected_method_type)
-     
+     assert_equal(test_instance.rtc_typeof("simple_method"),expected_method_type)
+     assert_equal(test_instance.rtc_typeof("simple_method"),MyClass.rtc_instance_typeof("simple_method"))
+     assert_equal(FieldClass.rtc_instance_typeof("@foo"),(fixnum_type = Rtc::Types::NominalType.of(Fixnum)))
+     assert_equal(FieldClass.rtc_instance_typeof(:@foo),fixnum_type)
+     assert_equal(MyClass.rtc_instance_typeof(:simple_method),expected_method_type)
+     assert_equal(MyClass.rtc_instance_typeof("simple_method"),expected_method_type)
    end
 end
