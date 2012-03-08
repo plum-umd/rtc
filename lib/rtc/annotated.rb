@@ -60,7 +60,7 @@ module Rtc::Annotated
     end
     
     def define_iterators(iter_hash)
-      rtc_meta.fetch(:iterators).merge(iter_hash)
+      rtc_meta.fetch(:iterators).merge!(iter_hash)
     end
     
     def method_added(method_name)
