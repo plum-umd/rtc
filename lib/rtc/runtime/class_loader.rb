@@ -20,7 +20,7 @@ module Rtc
     end
     
     def ClassLoader.ident_to_s(ident)
-      if class_spec[:type] == :absolute
+      if ident[:type] == :absolute
         "::" + ident[:name_list].join("::")
       else
         ident[:name_list].join("::")
