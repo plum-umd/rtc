@@ -198,12 +198,7 @@ rule
     	result = Rtc::Types::SymbolType.new(eval(val[0]))
       }
     | type_ident {
-        id = handle_type_ident(val[0])
-        if(id.class == Class)
-          result = Rtc::Types::NominalType.of(id)
-        else
-          result = id
-        end
+        result = handle_type_ident(val[0])
       }
     | tuple { result = val[0] } /* tuples are just arrays */
     | T_DOT T_QUESTION { 
@@ -219,8 +214,7 @@ rule
         result = handle_structural_type(val[1])
       }
     | type_ident T_LESS type_expr_comma_list T_GREATER {
-        id = handle_type_ident(val[0])
-        nominal = Rtc::Types::NominalType.of(id)
+        nominal = handle_type_ident(val[0])
         result = Rtc::Types::ParameterizedType.new(nominal, val[2])
       }
 

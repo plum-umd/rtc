@@ -4,7 +4,7 @@ require 'rtc/logging'
 require 'rtc/position'
 require 'rtc/typing/types'
 require 'rtc/typing/type_signatures'
-
+require 'rtc/runtime/class_loader'
 module Rtc
 
     class DeferredClasses
@@ -46,35 +46,8 @@ module Rtc
             return Rtc::Types::TypeParameter.new(text.to_sym)
         end
 
-        def ident_exists(name_list,scope)
-          find_type_ident(name_list,scope) != nil
-        end
-
-        def find_type_ident(name_list, scope)
-            # cname = x.class == Array ? x.join("::") : x
-            curr_scope = scope
-            name_list.each {|id|
-              if curr_scope.const_defined?(id)
-                curr_scope = curr_scope.const_get(id)
-              else
-                return nil
-              end }
-            return curr_scope
-        end
-        
         def handle_type_ident(ident)
-          if ident[:type] == :absolute or @proxy.instance_of?(Object)
-            eval(ident[:name_list].join("::"))
-          else
-            scopes = @proxy.name.split("::")
-            while scopes.size != 0
-              curr_scope = eval(scopes.join("::"))
-              obj = find_type_ident(ident[:name_list], curr_scope)
-              return obj if obj != nil
-              scopes.pop()
-            end
-            return find_type_ident(ident[:name_list], Object)
-          end
+          Rtc::Types::NominalType.of(Rtc::ClassLoader.load_class(ident, @proxy))
         end
 
         def handle_class_decl(ident, ids=[])
