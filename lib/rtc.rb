@@ -1,6 +1,8 @@
 # File to be included by client code.
 
 module Rtc
+  Disabled = ENV.fetch("RTC_DISABLE", false)
+  
   def self.setup
     yield self
   end

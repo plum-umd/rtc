@@ -1,14 +1,15 @@
 require 'rtc/runtime/master_switch.rb'
-
+require 'rtc/options'
 module Rtc
   
   class TypeMismatchException < StandardError; end
   
   class MethodWrapper
     class NoArgument; end
-    #TODO(jtoman): Make error reporting better
-    #XXX(jtoman): for some reason I thought a static method was a good idea. Now I'm not so sure.
     def self.make_wrapper(class_obj, method_name)
+      if Rtc::Disabled
+        return nil
+      end
       MethodWrapper.new(class_obj, method_name)
     end
 
