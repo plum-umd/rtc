@@ -118,9 +118,9 @@ module Rtc
       when :exception
         raise TypeMismatchException,message
       when :file
-        Rtc::Options[:error_config].write(message)
+        Rtc::Options[:type_error_config].write(message)
       when :callback
-        Rtc::Options[:error_config].call(message)
+        Rtc::Options[:type_error_config].call(message)
       when :exit
         exit -1
       end
