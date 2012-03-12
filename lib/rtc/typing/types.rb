@@ -223,7 +223,7 @@ module Rtc::Types
             case other
             when StructuralType
                 other.method_names.each do |m_name|
-                  return false unless @method_types.has_key?(m_name)
+                  return false unless method_names.include?(m_name)
                   mine = get_method(m_name)
                   theirs = other.get_method(m_name)
                   return false unless mine <= theirs
@@ -449,6 +449,15 @@ module Rtc::Types
             (sc = superclass) ? sc.get_field(name) : nil
           end
         end
+        
+        def method_names
+          super + ((sc = superclass) ? sc.method_names : [])
+        end
+        
+        def field_names
+          super + ((sc = superclass) ? sc.field_names : [])
+        end
+        
         protected
 
         def can_subtype?(other)
@@ -1199,6 +1208,8 @@ module Rtc::Types
       attr_reader :dynamic
       alias :dynamic? :dynamic
       def self.create(type_param)
+        puts type_param.inspect if
+          !type_param.instance_of?(Enumerator) && !type_param.kind_of?(Type)
         raise(Exception, "Type Parameter must be an enumerator (for dynamic types) or a type class (for annotated types)") if
           !type_param.instance_of?(Enumerator) && !type_param.kind_of?(Type)
         TypeVariable.new(type_param)

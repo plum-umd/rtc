@@ -168,6 +168,16 @@ class TestTypeSystem < Test::Unit::TestCase
     typesig("foo: (A, A) -> C")
   end
   
+  class StructuralPartA
+    rtc_annotated
+    typesig("foo: (C) -> C")
+  end
+  
+  class StructuralPartB < StructuralPartA
+    rtc_annotated
+    typesig("bar: (A) -> A")
+  end
+  
   def test_structural_types
     my_class_type = NominalType.of(MyClass)
     foo_method_type = ProceduralType.new(c_class, [a_class, a_class])
@@ -188,5 +198,13 @@ class TestTypeSystem < Test::Unit::TestCase
     assert_equal(false, my_class_type <= StructuralType.new({},{
       "foo" => ProceduralType.new(c_class, [])
     }))
+  end
+  
+  def test_structural_respects_inheritance
+    struct_type = StructuralType.new({},{
+      "foo" => ProceduralType.new(c_class, [c_class]),
+      "bar" => ProceduralType.new(a_class, [a_class])
+    })
+    assert(NominalType.of(StructuralPartB) <= struct_type)
   end
 end
