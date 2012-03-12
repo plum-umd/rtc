@@ -249,4 +249,42 @@ class TestTypeChecking < Test::Unit::TestCase
      assert_equal(MyClass.rtc_instance_typeof(:simple_method),expected_method_type)
      assert_equal(MyClass.rtc_instance_typeof("simple_method"),expected_method_type)
    end
+   
+   
+   class SuperClass
+    rtc_annotated
+    typesig("foo: (Fixnum) -> String")
+    typesig("bar: (Fixnum) -> Fixnum")
+   end
+  
+   class ChildClass < SuperClass
+    rtc_annotated
+    typesig("bar: (String) -> String")
+   end
+   
+   class NoSubtypeChildClass < SuperClass
+     rtc_no_subtype
+   end
+   
+   def test_inheritance_typeof
+     rtc_of = Rtc::Types::NominalType.method(:of)
+     proc_type = Rtc::Types::ProceduralType
+     foo_type = proc_type.new(rtc_of[String], [
+       rtc_of[Fixnum]
+     ])
+     child_instance = ChildClass.new
+     assert_equal(child_instance.rtc_typeof("foo"), foo_type)
+     assert_equal(ChildClass.rtc_instance_typeof("foo"), foo_type)
+     
+     bar_type = proc_type.new(rtc_of[String],[
+       rtc_of[String]
+     ])
+     assert_equal(ChildClass.rtc_instance_typeof("bar"), bar_type)
+     assert_equal(child_instance.rtc_typeof("bar"), bar_type)
+     assert_equal("adsf".rtc_typeof("adfadfadfsasdf"), nil)
+     assert_equal(String.rtc_instance_typeof("adfadfadfadf"), nil)
+     
+     assert_equal(NoSubtypeChildClass.rtc_instance_typeof("foo"), nil)
+   end
+   
 end

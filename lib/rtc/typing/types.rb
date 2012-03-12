@@ -309,6 +309,23 @@ module Rtc::Types
     # The simplest kind of type, where the name is the same as the type, such as
     # Fixnum, String, Object, etc.
     class NominalType < StructuralType
+        class InheritanceChainIterator
+          #TODO(jtoman): add support for Enumerators?
+          def initialize(class_obj)
+            @it_class = class_obj
+          end
+          def next
+            return nil if @it_class.nil?
+            to_return = @it_class
+            if @it_class.rtc_meta[:no_subtype]
+              @it_class = nil
+            else
+              @it_class = @it_class.superclass
+            end
+            to_return
+          end
+        end
+      
         # A cache of NominalType instances, keyed by Class constants.
         @@cache = Hash.new
 
@@ -333,6 +350,14 @@ module Rtc::Types
           @type_parameters
         end
         
+        def superclass
+          if @klass.rtc_meta[:no_subtype] or not @klass.superclass
+            nil
+          else
+            NominalType.of(@klass.superclass)
+          end
+        end
+        
         def type_parameters=(t_params)
           @type_parameters = t_params.each {
             |t_param|
@@ -354,11 +379,10 @@ module Rtc::Types
             when NominalType
                 return true if other.klass.name == @klass.name
                 other_class = other.klass
-                it_class = @klass
+                it = InheritanceChainIterator.new(@klass)
                 #TODO(jtoman): memoize this lookup for fast access?
-                while it_class != nil && !it_class.rtc_meta[:no_subtype]
-                  return true if other_class == it_class
-                  it_class = it_class.superclass 
+                while (it_class = it.next)
+                  return true if other_class == it_class 
                 end
                 return false
             else
@@ -410,7 +434,21 @@ module Rtc::Types
           end
           @method_types[name] = type
         end
-
+        def get_method(name)
+          if @method_types[name]
+            @method_types[name]
+          else
+            (sc = superclass) ? sc.get_method(name) : nil
+          end
+        end
+        
+        def get_field(name)
+          if @field_types[name]
+            @field_types[name]
+          else
+            (sc = superclass) ? sc.get_field(name) : nil
+          end
+        end
         protected
 
         def can_subtype?(other)
@@ -1175,6 +1213,7 @@ module Rtc::Types
       end
       
       def constrain_to(type)
+        #FIXME(jtoman): this should check that the constrained type is a subtype of the currently wrapped type
         @dynamic = false
         wrapped_type = type
       end
