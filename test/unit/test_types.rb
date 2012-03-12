@@ -154,6 +154,14 @@ class TestTypeSystem < Test::Unit::TestCase
     assert_equal("Array<(:qux or Array<:bar>)>", [:qux, [:bar]].rtc_type.to_s)
   end
   
+  def test_nested_polytypes_subtype
+    a_instance = A.new
+    single_arr = [a_instance]
+    double_arr = [[a_instance]]
+    assert_equal(single_arr.rtc_type <= double_arr.rtc_type, false)
+    assert_equal(double_arr.rtc_type <= single_arr.rtc_type, false)
+  end
+  
  
   class MyClass
     rtc_annotated

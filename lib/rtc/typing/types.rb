@@ -349,6 +349,8 @@ module Rtc::Types
         # Return +true+ if +self+ represents a subtype of +other+.
         def <=(other)
             case other
+            when ParameterizedType
+              false
             when NominalType
                 return true if other.klass.name == @klass.name
                 other_class = other.klass
@@ -548,6 +550,8 @@ module Rtc::Types
                     t <= u
                 end
                 true
+            when NominalType
+              false
             else
                 super(other)
             end
@@ -1213,7 +1217,9 @@ module Rtc::Types
       def <=(other)
         if other.instance_of?(TypeVariable)
           if dynamic
-            wrapped_type <= other.wrapped_type
+            my_type = wrapped_type
+            their_type = other.wrapped_type
+            my_type <= their_type
           else
             typ = wrapped_type
             other.wrapped_type <= typ && typ <= other.wrapped_type

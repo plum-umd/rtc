@@ -7,6 +7,7 @@ module Rtc
 end
 
 require 'rtc/annotated'
+require 'rtc/options'
 
 def rtc_annotated
   extend Rtc::Annotated
