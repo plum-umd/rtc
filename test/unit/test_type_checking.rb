@@ -14,6 +14,11 @@ class MyClass
     "foo"
   end
   
+  typesig("bad_return_2: (.?) -> String")
+  def bad_return_2(my_obj)
+    return my_obj && true
+  end
+  
   typesig("subtype_arg: (Integer) -> Integer")
   def subtype_checking(arg)
     arg + 1
@@ -108,6 +113,10 @@ class TestTypeChecking < Test::Unit::TestCase
   def test_bad_return
     assert_raise Rtc::TypeMismatchException do
       test_instance.bad_return
+    end
+    
+    assert_raise Rtc::TypeMismatchException do
+      test_instance.bad_return_2(3)
     end
   end
   
