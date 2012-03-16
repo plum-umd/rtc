@@ -42,6 +42,7 @@ macro
   END_RE end\ 
   TYPE_RE type\ 
   TYPEVAR_RE typevar\ 
+  DOUBLE_HASH \#\#
 rule
 # rules take the form:
 # [:state] pattern [actions]
@@ -82,6 +83,7 @@ rule
   {SCOPED_ID_RE}					   { [:T_SCOPED_ID, text] }
   {SUFFIXED_ID_RE}					   { [:T_SUFFIXED_ID, text] }
   {SYMBOL_RE}						   { [:T_SYMBOL, text] }
+  {DOUBLE_HASH}						   { [:T_DOUBLE_HASH, text] }
 
 # built in type constructors
   \*                                   { [:T_STAR, text] }
