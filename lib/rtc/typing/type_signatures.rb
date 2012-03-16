@@ -1,6 +1,14 @@
 # Type signature classes.
 
 module Rtc
+    class ClassAnnotation
+      attr_reader :qualified_name
+      attr_reader :parameters
+      def initialize(qualified_name, parameters)
+        @qualified_name = qualified_name
+        @parameters = parameters
+      end
+    end
 
     class TypeSignature
 
@@ -21,7 +29,7 @@ module Rtc
         end
 
         def format(ppf)
-            ppf.text("str_typesig(\"")
+            ppf.text("typesig(\"")
             ppf.group(5) do
                 mname = @id.to_s 
                 mname = "'#{mname}'" unless mname =~ /^\w.*$/

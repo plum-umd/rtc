@@ -6,14 +6,6 @@ require 'rtc/typing/types'
 require 'rtc/typing/type_signatures'
 require 'rtc/runtime/class_loader'
 module Rtc
-
-    class DeferredClasses
-      @@cache = {}
-      def self.cache
-        @@cache
-      end
-    end
-    
     class TypeAnnotationParser < Racc::Parser
         @logger = Logging.get_logger('TypeAnnotationParser')
 
@@ -55,19 +47,13 @@ module Rtc
         end
 
         def handle_class_decl(ident, ids=[])
+          return nil if ids.empty?
           if ident[:type] == :absolute
             qualified_name = ident[:name_list].join("::")
           else
             qualified_name = (@proxy.instance_of?(Object)? "" : (@proxy.name + "::")) + ident[:name_list].join("::")
           end
-          begin
-            the_obj = eval(qualified_name)
-            Rtc::Types::NominalType.of(the_obj).type_parameters = ids
-            the_obj
-          rescue => e
-            Rtc::DeferredClasses.cache[qualified_name] = ids
-            nil
-          end
+          return ClassAnnotation.new(qualified_name, ids)
         end
 
         public

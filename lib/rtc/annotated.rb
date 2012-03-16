@@ -4,6 +4,7 @@
 
 require 'rtc/annot_parser.tab'
 require 'rtc/runtime/method_wrapper.rb'
+require 'rtc/runtime/class_modifier.rb'
 require 'set'
 # Mixin for annotated classes. The module defines class methods for declaring
 # type annotations and querying a class for the types of various methods.
@@ -21,6 +22,10 @@ module Rtc::Annotated
         signatures = @@annot_parser.scan_str(string_signature)
         return unless signatures
         
+        if signatures.instance_of?(Rtc::ClassAnnotation)
+           Rtc::ClassModifier.handle_class_annot(sig)
+           return
+        end
         this_type = Rtc::Types::NominalType.of(self)
         
         (signatures.map {
@@ -82,9 +87,8 @@ module Rtc::Annotated
     end
     
     def self.extended(extendee)
-      if Rtc::DeferredClasses.cache[extendee.name]
-        Rtc::Types::NominalType.of(extendee).type_parameters = Rtc::DeferredClasses.cache[extendee.name]
-        Rtc::DeferredClasses.cache.delete(extendee.name)
+      if Rtc::ClassModifier.deferred?(extendee)
+        Rtc::ClassModifier.modify_class(extendee)
       end
       @@annot_parser = Rtc::TypeAnnotationParser.new(extendee)
     end
