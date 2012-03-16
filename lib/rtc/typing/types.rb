@@ -625,9 +625,8 @@ module Rtc::Types
           @parameters[param].wrapped_type
         end
 
-        #TODO: implement me
         def get_field(name)
-          raise Exception.new("Not yet implemented")
+          return replace_type(@nominal.get_field(name), @parameters)
         end
         
         def get_method(name)
