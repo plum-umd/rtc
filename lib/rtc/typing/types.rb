@@ -481,6 +481,8 @@ module Rtc::Types
         end
     end
     
+    #this class still has a lot of limitations. For a list of the limitations
+    # see the comment on commit a8c57329554a8616f2f1a742275d66bbc6424923
     class LazyNominalType < NominalType
       proxied_methods = (NominalType.instance_methods(false) + [:method_names, :field_names]) - [:to_s, :inspect, :eql?, :==, :hash]
       proxied_methods.each do
@@ -692,6 +694,12 @@ module Rtc::Types
               end
             )
           when TypeVariable
+            # it's unclear how exactly a type could be dynamic
+            # in a method signature, but put this here just in case...?
+            # fixed type variables however may appear in the type signature of a function
+            # if the type signature is (for instance) foo: () -> Array<Bar>
+            # where the type variable that is a paremter to the Array return value is
+            # wrapping "Bar"
             if type.dynamic
               type
             else
@@ -780,12 +788,14 @@ module Rtc::Types
             end
             true
         end
-        
+        #returns the minimum number of arguments required by this function
+        # i.e. a count of the required arguments.
         def min_args
           p_layout = parameter_layout
           p_layout[:required][0] + p_layout[:required][1]
         end
-        
+        #gets the maximum number of arguments this function can take. If there is a rest
+        # argument, this function returns -1 (unlimited)
         def max_args
           p_layout = parameter_layout
           if p_layout[:rest]
@@ -795,6 +805,13 @@ module Rtc::Types
           end
         end
         
+        # gets a hash describing the layout of the arguments to a function
+        # the requied member is a two member array that indicates the number of
+        # required arugments at the beginning of the parameter list and the number
+        # at the end respectively. The opt member indicates the number of optional
+        # arguments. If rest is true, then there is a rest argument.
+        # For reference, parameter lists are described by the following grammar
+        # required*, optional*, rest?, required*
         def parameter_layout
           return @param_layout_cache if defined? @param_layout_cache
           a_list = arg_types + [nil]
@@ -1207,8 +1224,6 @@ module Rtc::Types
       attr_reader :dynamic
       alias :dynamic? :dynamic
       def self.create(type_param)
-        puts type_param.inspect if
-          !type_param.instance_of?(Enumerator) && !type_param.kind_of?(Type)
         raise(Exception, "Type Parameter must be an enumerator (for dynamic types) or a type class (for annotated types)") if
           !type_param.instance_of?(Enumerator) && !type_param.kind_of?(Type)
         TypeVariable.new(type_param)
