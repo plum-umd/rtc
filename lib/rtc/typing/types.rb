@@ -621,7 +621,7 @@ module Rtc::Types
         end
         
         def type_of_param(param)
-          param = @nominal.type_parameters.index(p_name) if param.class.name == "Symbol"
+          param = @nominal.type_parameters.index(TypeParameter.new(param)) if param.class.name == "Symbol"
           @parameters[param].wrapped_type
         end
 
