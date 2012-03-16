@@ -83,6 +83,13 @@ class FieldClass
   attr_accessor :bar
 end
 
+class Array
+  typesig("my_push: (t) -> Array<t>")
+  def my_push(obj)
+    self.push(obj)
+  end
+end
+
 class TestTypeChecking < Test::Unit::TestCase
  
   attr_reader :test_instance 
@@ -294,6 +301,22 @@ class TestTypeChecking < Test::Unit::TestCase
      assert_equal(String.rtc_instance_typeof("adfadfadfadf"), nil)
      
      assert_equal(NoSubtypeChildClass.rtc_instance_typeof("foo"), nil)
+   end
+   
+   def test_constrained()
+     my_arr = [1]
+     assert_nothing_raised do
+       my_arr.push("foo")
+     end
+     assert_raise Rtc::TypeNarrowingError do
+       my_arr.rtc_annotate("Array<Fixnum>")
+     end
+     assert_nothing_raised do
+       my_arr.rtc_annotate("Array<String or Fixnum>")
+     end
+     assert_raise Rtc::TypeMismatchException do
+       my_arr.my_push(4.0)
+     end
    end
    
 end

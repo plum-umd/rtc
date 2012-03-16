@@ -6,6 +6,20 @@ require 'rtc/annot_parser.tab'
 require 'rtc/runtime/method_wrapper.rb'
 require 'rtc/runtime/class_modifier.rb'
 require 'set'
+class Object
+  def rtc_annotate(annotation_string)
+    parser = Rtc::TypeAnnotationParser.new(self.class)
+    annotated_type = parser.scan_str("##"+annotation_string)
+    raise Rtc::TypeMismatchException, "Invalid type annotation: annotation was for #{annotated_type.nominal.klass}" +
+      " but self is #{self.class.name}" unless self.class == annotated_type.nominal.klass
+    my_type = self.rtc_type
+    annotated_type.parameters.each_with_index {
+      |type_param,index|
+      my_type.parameters[index].constrain_to(type_param.wrapped_type)
+    }
+  end
+end
+
 # Mixin for annotated classes. The module defines class methods for declaring
 # type annotations and querying a class for the types of various methods.
 #

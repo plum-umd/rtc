@@ -104,6 +104,8 @@ class Class
   end
 end
 
+class Rtc::TypeNarrowingError < StandardError; end
+
 module Rtc::Types
 
     # Abstract base class for all types. Takes care of assigning unique ids to
@@ -1238,9 +1240,10 @@ module Rtc::Types
       end
       
       def constrain_to(type)
-        #FIXME(jtoman): this should check that the constrained type is a subtype of the currently wrapped type
+        raise Rtc::TypeNarrowingError, "Constrained #{type} is too narrow for type #{wrapped_type}" unless
+          wrapped_type <= type
         @dynamic = false
-        wrapped_type = type
+        @wrapped_type = type
       end
       
       def wrapped_type

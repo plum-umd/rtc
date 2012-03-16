@@ -107,7 +107,8 @@ class TestTypeSystem < Test::Unit::TestCase
     assert_equal("Array<String>", string_array.rtc_type.to_s)
 
     assert(string_array.rtc_type <= num_str_arr.rtc_type)
-    string_array.rtc_type.parameters[0].constrain_to(NominalType.of(String))
+    string_array.rtc_annotate("Array<String>")
+    #string_array.rtc_type.parameters[0].constrain_to(NominalType.of(String))
     assert_equal(false, string_array.rtc_type <= num_str_arr.rtc_type)
 
     assert_equal(false, ["bar", 4, 4.0].rtc_type <= num_str_arr.rtc_type)

@@ -75,7 +75,7 @@ rule
       class_annotation T_EOF { result = val[0] }
 
   e_annotation:
-  	  T_DOUBLE_HASH type_ident T_LESS type_expr_comma_list T_GREATER {
+  	  T_DOUBLE_HASH type_ident T_LESS type_expr_comma_list T_GREATER T_EOF {
   	  	result = Rtc::Types::ParameterizedType.new(handle_type_ident(val[1]), val[3])
   	  }
   	  
