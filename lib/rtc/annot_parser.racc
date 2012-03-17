@@ -141,7 +141,13 @@ rule
     | T_LPAREN type_expr_comma_list T_RPAREN block T_RARROW /*named_*/ type_expr {
         result = construct_msig(val[1], val[3], val[5])
       }
-  
+    | T_LPAREN type_expr_comma_list T_RPAREN block {
+    	result = construct_msig(val[1], val[3], Rtc::Types::TopType.instance)
+      }
+    | T_LPAREN T_RPAREN block {
+        result = construct_msig([], val[2], Rtc::Types::TopType.instance)
+      }
+
 
   block:
       { result = nil }

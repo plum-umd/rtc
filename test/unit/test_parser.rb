@@ -38,6 +38,12 @@ class MyClass
   def mixed_annotations(a)
     a
   end
+  
+  typesig("no_return: (Fixnum)")
+  def no_return(a)
+    
+  end
+  
 end
 
 class TestParser < Test::Unit::TestCase
@@ -67,5 +73,9 @@ class TestParser < Test::Unit::TestCase
       my_parser.scan_str("(D) -> Fixnum")
       my_parser.scan_str("(Bar::C) -> Bar::B")
     end
+  end
+  
+  def test_no_return
+    assert_equal(MyClass.rtc_instance_typeof("no_return").return_type, Rtc::Types::TopType.instance)
   end
 end
