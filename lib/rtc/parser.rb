@@ -141,7 +141,7 @@ module Rtc
         def eql?(other); @name == other.name end
         def hash(); @name.hash end
         def to_s(); @name.to_s end
-
+        def to_sym(); @name end
     end
 
     class MethodIdentifier < Identifier
