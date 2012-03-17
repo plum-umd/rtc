@@ -121,6 +121,9 @@ class TypeAnnotationParser < Racc::Parser
       when (text = @ss.scan(/:[A-Za-z_][A-Za-z_0-9]*/))
          action { [:T_SYMBOL, text] }
 
+      when (text = @ss.scan(/\#\#/))
+         action { [:T_DOUBLE_HASH, text] }
+
       when (text = @ss.scan(/\*/))
          action { [:T_STAR, text] }
 

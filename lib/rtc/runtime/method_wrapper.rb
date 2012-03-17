@@ -53,7 +53,7 @@ module Rtc
     def invoke(invokee, arg_vector)
       regular_args = arg_vector[:args]
       
-      method_type = invokee.rtc_typeof(@method_name)
+      method_type = invokee.rtc_typeof(@method_name, @class_obj)
       candidate_types = []
       
       if method_type.instance_of?(Rtc::Types::IntersectionType)
@@ -73,7 +73,7 @@ module Rtc
         #arg_values = []
         #puts "Function " + @method_name.to_s + " argument type mismatch:"
         #puts "   Expected function type: " + method_type.to_s
-        message = "Function " + @method_name.to_s + " argument type mismatch:" +
+        message = "Function #{@class_obj.name.to_s}##{@method_name.to_s}  argument type mismatch:" +
           "   Expected function type: " + method_type.to_s
         #for a in arg_list
         #  arg_types.push(a.rtc_type)
@@ -101,9 +101,8 @@ module Rtc
       }
       
       if not return_valid
-        message = "Function " + @method_name.to_s + " return type mismatch: " + "   Expected function type: " + method_type.to_s
-        #puts "   Actual return type #{ret_value.rtc_type}"
-        #puts "   Actual return value: " + ret_value.to_s
+        message = "Function #{@class_obj.name.to_s}##{@method_name.to_s} return type mismatch: " + "   Expected function type: " + method_type.to_s + 
+          ", actual return type #{ret_value.rtc_type.to_s}"
         on_error(message)
       end
 
@@ -127,43 +126,30 @@ module Rtc
       end
     end
     
-    @@arg_vector_name = "__rtc_args"
-    @@block_name = "__rtc_block"
-    @@no_check_invoke = "
-    if #{@@block_name}.nil?
-      return original_method.bind(self).call(*#{@@arg_vector_name})
-    else
-      return original_method.bind(self).call(*#{@@arg_vector_name}, &#{@@block_name})
-    end
-    "
-    
     def initialize(class_obj,method_name)
       @method_name = method_name
       @class_obj = class_obj
       this_obj = self
       original_method = @original_method = class_obj.instance_method(method_name)
-      wrapper_lambda = eval("lambda {
-        |#{gen_arg_string()}|
+      wrapper_lambda = lambda {
+        |*__rtc_args, &__rtc_block|
         if Rtc::MasterSwitch.is_on?
           Rtc::MasterSwitch.turn_off 
-          args = #{gen_collapse_args()}
+          args = {:args => __rtc_args, :block => __rtc_block }
           begin
             this_obj.invoke(self, args)
           ensure
             Rtc::MasterSwitch.turn_on
           end
         else
-          #{@@no_check_invoke}
+          if __rtc_block.nil?
+            return original_method.bind(self).call(*__rtc_args)
+          else
+            return original_method.bind(self).call(*__rtc_args, &__rtc_block)
+          end
         end
-      }")
+      }
       class_obj.send(:define_method, method_name, wrapper_lambda)
-    end
-    
-    def gen_arg_string()
-      return "*#{@@arg_vector_name}, &#{@@block_name}"
-    end
-    def gen_collapse_args()
-      "{ :args => #{@@arg_vector_name}, :block => #{@@block_name}}"
     end
   end
 end

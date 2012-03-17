@@ -107,7 +107,8 @@ class TestTypeSystem < Test::Unit::TestCase
     assert_equal("Array<String>", string_array.rtc_type.to_s)
 
     assert(string_array.rtc_type <= num_str_arr.rtc_type)
-    string_array.rtc_type.parameters[0].constrain_to(NominalType.of(String))
+    string_array.rtc_annotate("Array<String>")
+    #string_array.rtc_type.parameters[0].constrain_to(NominalType.of(String))
     assert_equal(false, string_array.rtc_type <= num_str_arr.rtc_type)
 
     assert_equal(false, ["bar", 4, 4.0].rtc_type <= num_str_arr.rtc_type)
@@ -154,10 +155,28 @@ class TestTypeSystem < Test::Unit::TestCase
     assert_equal("Array<(:qux or Array<:bar>)>", [:qux, [:bar]].rtc_type.to_s)
   end
   
+  def test_nested_polytypes_subtype
+    a_instance = A.new
+    single_arr = [a_instance]
+    double_arr = [[a_instance]]
+    assert_equal(single_arr.rtc_type <= double_arr.rtc_type, false)
+    assert_equal(double_arr.rtc_type <= single_arr.rtc_type, false)
+  end
+  
  
   class MyClass
     rtc_annotated
     typesig("foo: (A, A) -> C")
+  end
+  
+  class StructuralPartA
+    rtc_annotated
+    typesig("foo: (C) -> C")
+  end
+  
+  class StructuralPartB < StructuralPartA
+    rtc_annotated
+    typesig("bar: (A) -> A")
   end
   
   def test_structural_types
@@ -180,5 +199,13 @@ class TestTypeSystem < Test::Unit::TestCase
     assert_equal(false, my_class_type <= StructuralType.new({},{
       "foo" => ProceduralType.new(c_class, [])
     }))
+  end
+  
+  def test_structural_respects_inheritance
+    struct_type = StructuralType.new({},{
+      "foo" => ProceduralType.new(c_class, [c_class]),
+      "bar" => ProceduralType.new(a_class, [a_class])
+    })
+    assert(NominalType.of(StructuralPartB) <= struct_type)
   end
 end

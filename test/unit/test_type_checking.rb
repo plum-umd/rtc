@@ -14,6 +14,11 @@ class MyClass
     "foo"
   end
   
+  typesig("bad_return_2: (.?) -> String")
+  def bad_return_2(my_obj)
+    return my_obj && true
+  end
+  
   typesig("subtype_arg: (Integer) -> Integer")
   def subtype_checking(arg)
     arg + 1
@@ -78,6 +83,13 @@ class FieldClass
   attr_accessor :bar
 end
 
+class Array
+  typesig("my_push: (t) -> Array<t>")
+  def my_push(obj)
+    self.push(obj)
+  end
+end
+
 class TestTypeChecking < Test::Unit::TestCase
  
   attr_reader :test_instance 
@@ -108,6 +120,10 @@ class TestTypeChecking < Test::Unit::TestCase
   def test_bad_return
     assert_raise Rtc::TypeMismatchException do
       test_instance.bad_return
+    end
+    
+    assert_raise Rtc::TypeMismatchException do
+      test_instance.bad_return_2(3)
     end
   end
   
@@ -248,5 +264,106 @@ class TestTypeChecking < Test::Unit::TestCase
      assert_equal(FieldClass.rtc_instance_typeof(:@foo),fixnum_type)
      assert_equal(MyClass.rtc_instance_typeof(:simple_method),expected_method_type)
      assert_equal(MyClass.rtc_instance_typeof("simple_method"),expected_method_type)
+   end
+   
+   
+   class SuperClass
+    rtc_annotated
+    typesig("foo: (Fixnum) -> String")
+    typesig("bar: (Fixnum) -> Fixnum")
+   end
+  
+   class ChildClass < SuperClass
+    rtc_annotated
+    typesig("bar: (String) -> String")
+   end
+   
+   class NoSubtypeChildClass < SuperClass
+     rtc_no_subtype
+   end
+   
+   def test_inheritance_typeof
+     rtc_of = Rtc::Types::NominalType.method(:of)
+     proc_type = Rtc::Types::ProceduralType
+     foo_type = proc_type.new(rtc_of[String], [
+       rtc_of[Fixnum]
+     ])
+     child_instance = ChildClass.new
+     assert_equal(child_instance.rtc_typeof("foo"), foo_type)
+     assert_equal(ChildClass.rtc_instance_typeof("foo"), foo_type)
+     
+     bar_type = proc_type.new(rtc_of[String],[
+       rtc_of[String]
+     ])
+     assert_equal(ChildClass.rtc_instance_typeof("bar"), bar_type)
+     assert_equal(child_instance.rtc_typeof("bar"), bar_type)
+     assert_equal("adsf".rtc_typeof("adfadfadfsasdf"), nil)
+     assert_equal(String.rtc_instance_typeof("adfadfadfadf"), nil)
+     
+     assert_equal(NoSubtypeChildClass.rtc_instance_typeof("foo"), nil)
+   end
+   
+   def test_constrained()
+     my_arr = [1]
+     assert_nothing_raised do
+       my_arr.push("foo")
+     end
+     assert_raise Rtc::TypeNarrowingError do
+       my_arr.rtc_annotate("Array<Fixnum>")
+     end
+     assert_nothing_raised do
+       my_arr.rtc_annotate("Array<String or Fixnum>")
+     end
+     assert_raise Rtc::TypeMismatchException do
+       my_arr.my_push(4.0)
+     end
+   end
+   
+   
+   class ParentSig
+     rtc_annotated
+     typesig("foo: (Fixnum) -> Fixnum")
+     def foo(x)
+       x + 1
+     end
+     typesig("bar: () -> Fixnum")
+     def bar
+       4
+     end
+     typesig("@baz_field: Fixnum")
+   end
+  
+  class OverrideSig < ParentSig
+    rtc_annotated
+    typesig("foo: (String) -> String")
+    def foo(x)
+      super(Integer x).to_s
+    end
+  end
+   
+   def test_override_typesig
+     assert_nothing_raised do
+      OverrideSig.new.foo("2")
+     end
+     assert_raise Rtc::TypeMismatchException do
+     
+       OverrideSig.new.foo(4)
+     end
+     
+     assert_raise Rtc::TypeMismatchException do
+       ParentSig.new.foo("2")
+     end
+     
+     assert_nothing_raised do
+       ParentSig.new.foo(4)
+     end
+   end
+   
+   def test_typeof_include_super
+     expected_type = Rtc::Types::ProceduralType.new(Rtc::Types::NominalType.of(Fixnum), [])
+     assert_equal(expected_type,OverrideSig.rtc_instance_typeof("bar"))
+     assert_equal(nil, OverrideSig.rtc_instance_typeof("bar", false))
+     assert_equal(Rtc::Types::NominalType.of(Fixnum), OverrideSig.rtc_instance_typeof(:@baz_field))
+     assert_equal(nil, OverrideSig.rtc_instance_typeof(:baz_field, false))
    end
 end

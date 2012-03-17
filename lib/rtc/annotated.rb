@@ -4,7 +4,22 @@
 
 require 'rtc/annot_parser.tab'
 require 'rtc/runtime/method_wrapper.rb'
+require 'rtc/runtime/class_modifier.rb'
 require 'set'
+class Object
+  def rtc_annotate(annotation_string)
+    parser = Rtc::TypeAnnotationParser.new(self.class)
+    annotated_type = parser.scan_str("##"+annotation_string)
+    raise Rtc::TypeMismatchException, "Invalid type annotation: annotation was for #{annotated_type.nominal.klass}" +
+      " but self is #{self.class.name}" unless self.class == annotated_type.nominal.klass
+    my_type = self.rtc_type
+    annotated_type.parameters.each_with_index {
+      |type_param,index|
+      my_type.parameters[index].constrain_to(type_param.wrapped_type)
+    }
+  end
+end
+
 # Mixin for annotated classes. The module defines class methods for declaring
 # type annotations and querying a class for the types of various methods.
 #
@@ -21,6 +36,10 @@ module Rtc::Annotated
         signatures = @@annot_parser.scan_str(string_signature)
         return unless signatures
         
+        if signatures.instance_of?(Rtc::ClassAnnotation)
+           Rtc::ClassModifier.handle_class_annot(sig)
+           return
+        end
         this_type = Rtc::Types::NominalType.of(self)
         
         (signatures.map {
@@ -42,7 +61,7 @@ module Rtc::Annotated
             next
           end
           this_type.add_method(signature.id.to_s, signature.type)
-          if self.method_defined?(signature.id.to_s)
+          if self.instance_methods(false).include?(signature.id)
             @@method_wrappers[signature.id.to_s] = Rtc::MethodWrapper.make_wrapper(self, signature.id.to_s)
           else
             @@deferred_methods << signature.id.to_s
@@ -82,9 +101,8 @@ module Rtc::Annotated
     end
     
     def self.extended(extendee)
-      if Rtc::DeferredClasses.cache[extendee.name]
-        Rtc::Types::NominalType.of(extendee).type_parameters = Rtc::DeferredClasses.cache[extendee.name]
-        Rtc::DeferredClasses.cache.delete(extendee.name)
+      if Rtc::ClassModifier.deferred?(extendee)
+        Rtc::ClassModifier.modify_class(extendee)
       end
       @@annot_parser = Rtc::TypeAnnotationParser.new(extendee)
     end

@@ -81,28 +81,30 @@ class Object
      end
   end
   
-  def rtc_typeof(name)
+  def rtc_typeof(name, which_class = nil)
     name = name.to_s
     if name[0] == "@"
-      self.rtc_type.get_field(name[1..-1])
+      self.rtc_type.get_field(name[1..-1], which_class)
     else
-      self.rtc_type.get_method(name)
+      self.rtc_type.get_method(name, which_class)
     end
   end
 end
 
 
 class Class
-  def rtc_instance_typeof(name)
+  def rtc_instance_typeof(name, include_super = true)
     my_type = Rtc::Types::NominalType.of(self)
     name = name.to_s
     if name[0] == "@"
-      my_type.get_field(name[1..-1])
+      my_type.get_field(name[1..-1], include_super ? nil : self)
     else
-      my_type.get_method(name)
+      my_type.get_method(name, include_super ? nil : self)
     end
   end
 end
+
+class Rtc::TypeNarrowingError < StandardError; end
 
 module Rtc::Types
 
@@ -223,7 +225,7 @@ module Rtc::Types
             case other
             when StructuralType
                 other.method_names.each do |m_name|
-                  return false unless @method_types.has_key?(m_name)
+                  return false unless method_names.include?(m_name)
                   mine = get_method(m_name)
                   theirs = other.get_method(m_name)
                   return false unless mine <= theirs
@@ -309,6 +311,23 @@ module Rtc::Types
     # The simplest kind of type, where the name is the same as the type, such as
     # Fixnum, String, Object, etc.
     class NominalType < StructuralType
+        class InheritanceChainIterator
+          #TODO(jtoman): add support for Enumerators?
+          def initialize(class_obj)
+            @it_class = class_obj
+          end
+          def next
+            return nil if @it_class.nil?
+            to_return = @it_class
+            if @it_class.rtc_meta[:no_subtype]
+              @it_class = nil
+            else
+              @it_class = @it_class.superclass
+            end
+            to_return
+          end
+        end
+      
         # A cache of NominalType instances, keyed by Class constants.
         @@cache = Hash.new
 
@@ -333,6 +352,14 @@ module Rtc::Types
           @type_parameters
         end
         
+        def superclass
+          if @klass.rtc_meta[:no_subtype] or not @klass.superclass
+            nil
+          else
+            NominalType.of(@klass.superclass)
+          end
+        end
+        
         def type_parameters=(t_params)
           @type_parameters = t_params.each {
             |t_param|
@@ -349,14 +376,15 @@ module Rtc::Types
         # Return +true+ if +self+ represents a subtype of +other+.
         def <=(other)
             case other
+            when ParameterizedType
+              false
             when NominalType
                 return true if other.klass.name == @klass.name
                 other_class = other.klass
-                it_class = @klass
+                it = InheritanceChainIterator.new(@klass)
                 #TODO(jtoman): memoize this lookup for fast access?
-                while it_class != nil && !it_class.rtc_meta[:no_subtype]
-                  return true if other_class == it_class
-                  it_class = it_class.superclass 
+                while (it_class = it.next)
+                  return true if other_class == it_class 
                 end
                 return false
             else
@@ -408,7 +436,30 @@ module Rtc::Types
           end
           @method_types[name] = type
         end
-
+        def get_method(name, which = nil)
+          if @method_types[name] && (which.nil? or which == @klass)
+            @method_types[name]
+          else
+            (sc = superclass) ? sc.get_method(name, which) : nil
+          end
+        end
+        
+        def get_field(name, which = nil)
+          if @field_types[name] && (which.nil? or which == @klass)
+            @field_types[name]
+          else
+            (sc = superclass) ? sc.get_field(name) : nil
+          end
+        end
+        
+        def method_names
+          super + ((sc = superclass) ? sc.method_names : [])
+        end
+        
+        def field_names
+          super + ((sc = superclass) ? sc.field_names : [])
+        end
+        
         protected
 
         def can_subtype?(other)
@@ -432,6 +483,8 @@ module Rtc::Types
         end
     end
     
+    #this class still has a lot of limitations. For a list of the limitations
+    # see the comment on commit a8c57329554a8616f2f1a742275d66bbc6424923
     class LazyNominalType < NominalType
       proxied_methods = (NominalType.instance_methods(false) + [:method_names, :field_names]) - [:to_s, :inspect, :eql?, :==, :hash]
       proxied_methods.each do
@@ -548,6 +601,8 @@ module Rtc::Types
                     t <= u
                 end
                 true
+            when NominalType
+              false
             else
                 super(other)
             end
@@ -570,18 +625,19 @@ module Rtc::Types
         end
         
         def type_of_param(param)
-          param = @nominal.type_parameters.index(p_name) if param.class.name == "Symbol"
+          param = @nominal.type_parameters.index(TypeParameter.new(param)) if param.class.name == "Symbol"
           @parameters[param].wrapped_type
         end
 
-        #TODO: implement me
-        def get_field(name)
-          raise Exception.new("Not yet implemented")
+        def get_field(name, which = nil)
+          return replace_type(@nominal.get_field(name, which), @parameters)
         end
         
-        def get_method(name)
-          return @_method_cache[name] if @_method_cache.has_key?(name)
-          @_method_cache[name] = replace_type(@nominal.get_method(name),@parameters)
+        def get_method(name, which = nil)
+          #TODO(jtoman): get caching to work with which parameter
+          #return @_method_cache[name] if @_method_cache.has_key?(name)
+          #@_method_cache[name] = 
+          replace_type(@nominal.get_method(name, which),@parameters)
         end
         
         def to_s
@@ -642,6 +698,12 @@ module Rtc::Types
               end
             )
           when TypeVariable
+            # it's unclear how exactly a type could be dynamic
+            # in a method signature, but put this here just in case...?
+            # fixed type variables however may appear in the type signature of a function
+            # if the type signature is (for instance) foo: () -> Array<Bar>
+            # where the type variable that is a paremter to the Array return value is
+            # wrapping "Bar"
             if type.dynamic
               type
             else
@@ -730,12 +792,14 @@ module Rtc::Types
             end
             true
         end
-        
+        #returns the minimum number of arguments required by this function
+        # i.e. a count of the required arguments.
         def min_args
           p_layout = parameter_layout
           p_layout[:required][0] + p_layout[:required][1]
         end
-        
+        #gets the maximum number of arguments this function can take. If there is a rest
+        # argument, this function returns -1 (unlimited)
         def max_args
           p_layout = parameter_layout
           if p_layout[:rest]
@@ -745,6 +809,13 @@ module Rtc::Types
           end
         end
         
+        # gets a hash describing the layout of the arguments to a function
+        # the requied member is a two member array that indicates the number of
+        # required arugments at the beginning of the parameter list and the number
+        # at the end respectively. The opt member indicates the number of optional
+        # arguments. If rest is true, then there is a rest argument.
+        # For reference, parameter lists are described by the following grammar
+        # required*, optional*, rest?, required*
         def parameter_layout
           return @param_layout_cache if defined? @param_layout_cache
           a_list = arg_types + [nil]
@@ -1171,8 +1242,10 @@ module Rtc::Types
       end
       
       def constrain_to(type)
+        raise Rtc::TypeNarrowingError, "Constrained #{type} is too narrow for type #{wrapped_type}" unless
+          wrapped_type <= type
         @dynamic = false
-        wrapped_type = type
+        @wrapped_type = type
       end
       
       def wrapped_type
@@ -1213,7 +1286,9 @@ module Rtc::Types
       def <=(other)
         if other.instance_of?(TypeVariable)
           if dynamic
-            wrapped_type <= other.wrapped_type
+            my_type = wrapped_type
+            their_type = other.wrapped_type
+            my_type <= their_type
           else
             typ = wrapped_type
             other.wrapped_type <= typ && typ <= other.wrapped_type
