@@ -84,7 +84,7 @@ class Object
   def rtc_typeof(name, which_class = nil)
     name = name.to_s
     if name[0] == "@"
-      self.rtc_type.get_field(name[1..-1])
+      self.rtc_type.get_field(name[1..-1], which_class)
     else
       self.rtc_type.get_method(name, which_class)
     end
@@ -97,7 +97,7 @@ class Class
     my_type = Rtc::Types::NominalType.of(self)
     name = name.to_s
     if name[0] == "@"
-      my_type.get_field(name[1..-1])
+      my_type.get_field(name[1..-1], include_super ? nil : self)
     else
       my_type.get_method(name, include_super ? nil : self)
     end
@@ -444,8 +444,8 @@ module Rtc::Types
           end
         end
         
-        def get_field(name)
-          if @field_types[name]
+        def get_field(name, which = nil)
+          if @field_types[name] && (which.nil? or which == @klass)
             @field_types[name]
           else
             (sc = superclass) ? sc.get_field(name) : nil
@@ -629,8 +629,8 @@ module Rtc::Types
           @parameters[param].wrapped_type
         end
 
-        def get_field(name)
-          return replace_type(@nominal.get_field(name), @parameters)
+        def get_field(name, which = nil)
+          return replace_type(@nominal.get_field(name, which), @parameters)
         end
         
         def get_method(name, which = nil)
