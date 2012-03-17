@@ -103,7 +103,7 @@ A field may be annotated using the following:
 From a type checking stand point this is shorthand for the following:
   typesig("number_field: () -> Fixnum")
   typesig("'number_field=': (Fixnum) -> Fixnum")
-However, annotating a field using the above syntax allows the type of a field to be queried at runtime (see the "Using annotations" below).
+However, annotating a field using the above syntax allows the type of a field to be queried at runtime (see the "Using Annotations" below).
 
 Like method annotations, multiple annotation may be applied to a field. For example, the following:
   typesig("@foo: String")
@@ -113,16 +113,107 @@ From a type checking stand point, this is shorthand for:
   typesig("foo: () -> Fixnum")
   typesig("'foo=': (Fixnum) -> Fixnum")
   typesig("'foo=': (String) -> String")
-Recall that multiple annotations are intersected automatically.  Note that the type of field is automatically _unioned_ at runtime, so that if one were to query the type of foo field at runtime (see below "Using annotations") you would get back "Fixnum or String".
+Recall that multiple annotations are intersected automatically.  Note that the type of field is automatically _unioned_ at runtime, so that if one were to query the type of foo field at runtime (see below "Using Annotations") you would get back "Fixnum or String".
 
 = Using Annotations
 
-If you annotate a method two things happen: the type of the method is recorded and the method is wrapped to perform type checking on the arguments and the return type. For example, if you annotate the method foo as follows:
+If you annotate a method two things happen: the type of the method is recorded and the method is wrapped to perform type checking on the arguments and the return type. 
+
+== Basic Type Checking
+The more complex rules and corner cases used in type checking are detailed below (see "Type Checking"), but a brief overview is given here. If, for example, you annotate the method foo as follows:
    class MyClass
          rtc_annotated
          typesig("foo: (Fixnum) -> String")
          # definition of foo follows...
    end
-And then attempt to call foo with a String, the type checker will catch this error and complain. By default, if a type error occurs, then the exception Rtc::TypeMismatchException is thrown, although other behavior on type mismatches is possible (see "Controlling Rtc" below). Note that the method need not be defined before the class is looked up, the type signature may be specified before the definition of a method. However, you may not specify a type signature of a method defined in a subclass in a superclass, although support for "abstract type signatures" may be added in the future.
+And then attempt to call foo with a String, the type checker will catch this error and complain. By default, if a type error occurs, then the exception Rtc::TypeMismatchException is thrown, although other behavior on type mismatches is possible (see "Controlling Rtc" below). Note that the method need not be defined before the annotation is written, the type signature may be specified before the definition of a method. However, you may not specify a type signature of a method defined in a subclass in a superclass, although support for "abstract type signatures" may be added in the future. Note further that Rtc will perform return type checking as well, this checks thatyou return what you say you are, as well as ensuring people are adhering to your API.  Type checking is implemented by wrapping the original method in another method. This method has it's own parameters, so code that relies on the parameters property of a method will no longer work. However, after wrapping, instance methods may be bound, passed around, called indirectly as would a regular function. The wrapping may introduce some overhead in calling, if this is a problem for you, see the "Disabling Rtc Globally" section in "Controlling Rtc" below.
 
-The type of a method may be queried at runtime by calling rtc_typeof on an instance of an object.
+== rtc_typeof
+
+The type of a method may be queried at runtime by calling rtc_typeof on an instance of an object (this method is accessible for all objects which derive from Object). This method accepts a symbol or a string. For example, you could do:
+  some_object.rtc_typeof("some_method_name")
+or
+  some_object.rtc_typeof(:some_method_name)
+By default, this method will return the type signature that is defined farthest down the inheritance chain. For instance, suppose you have the following class hierarchy:
+  Baz < Bar < Foo < Object
+If Bar defines a type for the method "m" and Baz also defines a type for the method "m", then if you call rtc_typeof("m") on an instance of Baz, then the type signature in Baz will be returned. If you wish to get the type signature as it appears in a specific class, you can use rtc_instance_typeof (see below) or by passing a second arugment to rtc_typeof. The second argument must be an instance of Class, and if specified only that class will be checked for the type signature. Continuing with our example, if you wanted to get the type signature for "m" as it appears in Bar and you have an instance of Baz, you would make the following call:
+  baz_instance.rtc_typeof("m", Bar)
+
+rtc_typeof also allows the querying of field field type. This is done by prefixing the string or symbol passed to rtc_typeof with a @. Thus, to get the type of the field foo on some object you would do:
+  some_object.rtc_typeof(:@foo)
+or
+  some_object.rtc_typeof("@foo")
+As with methods, the class in which to look for the type may be specified with a second argument.
+
+== rtc_instance_typeof
+
+If you wish to know the type of a method or field and you do not have an instance of that class, you can use the rtc_instance_typeof, which is defined on all Class objects. The usage is fairly predictable, i.e.
+   SomeClass.rtc_instance_typeof("instance_method_name")
+Note that
+   SomeClass.rtc_typeof("instance_method_name")
+will NOT work, as it will try to find the type signature of the class method with the name instance_method_name. As with rtc_typeof, this method accepts both symbols and strings, and field types may be retrieved by prefixing a field name with @.
+
+By default, rtc_instance_typeof will look up the inheritance chain for a type signature of a method (provided, of course, there is no a rtc_no_subtype that breaks the inheritance chain). If you wish for rtc_instance_typeof to only look in the current class, then you may specify false as a second argument to rtc_instance_typeof.
+
+If no type signature is found, either using rtc_typeof and rtc_instance_typeof, then nil is returned.
+
+= Runtime Types
+
+Types of objects are accessible at runtime via the rtc_type method that is defined on all objects that derive from Object. The object returned by this method contains many internal functions, however two very important methods are provided for public use (in this section, the term "type object" refers to the object returned by the rtc_type method). The <= operator is defined on all type objects, and it can be used to test whether one type is a subtype of another.  the rtc_typeof and rtc_instance_typeof methods detailed above also return type objects, allowing you to write code like the following:
+    my_object.rtc_typeof("foo") <= other_object.rtc_typeof("bar")
+You may test if two objects are subtypes by doing the following:
+    my_object.rtc_type <= other_object.rtc_type
+The rtc_type method also defines a to_s method that allows you to see a human readable description of the type of an object. For instance:
+    puts [1,2,3].rtc_typeof # prints "Array<Fixnum>"
+This can be very helpful in debugging.
+
+= Polymorphic Classes
+
+Ruby does not have in it's type system a notion of polymorphic classes, but Rtc does. For instance, Array is polymorphic with one type parameter, and the Hash is parameteric with two type parameters. This section details how to make your own polymorphic classes, and to use type signatures that use polymorphism.
+
+== Defining Your Own Polymorphic Class
+
+Defining your own polymorphic class requires two steps. First, you must annotate the type parameters your polymorphic class uses. Like in Java, these tend to be single letters, but unlike Java, they are usually lower case. To do apply this annotation, you must write something like the following:
+   rtc_typesig("class MyArray<t>")
+   class MyArray
+     rtc_annotated
+   end
+This would tell Rtc that the class MyArray is parameterized over the t. If your class is parameterized over multiple types, use a comma separated list:
+   rtc_typesig("class MyHash<k,v>")
+   class MyHash
+     rtc_annotated
+   end
+Note the use of the rtc_annotated in the class body. When annotating a class as polymorphic the class need not be defined. However, internally, Rtc remembers that you've said that a class is polymorphic and then waits for you to use rtc_annotated. At the call to rtc_annotated, it checks to see if the class in which the call occured has been annotated, and then applies the deferred annotation. Therefore, if you wish to annotate a class as polymorphic before it's declaration, the declaration *must* include rtc_annotated.
+
+The name resolution rules for class names inside polymorphic annotations are *not* the same as those in "Class Name Resolution". Due to the method used for remembering forward annotations detailed above, the rules are stricter. Absolute class names operate under the same rules as those given in "Class Name Resolution" but the handling of relative class names is different. When resolving the relative name, ONLY the current module or class in which the call to rtc_typesig is searched for the class. Therefore, the following wil *not* work:
+    module Foo
+           module Bar
+                  rtc_typesig("class MyHash<k,v>")
+           end
+           class MyHash
+                 rtc_annotated
+                 # ...
+           end
+    end
+The above would tell Rtc that the class Foo::Bar::MyHash was polymorphic, which is not what is happening. However, generally speaking the polymorphic annotation will appear immediately before the definition of the polymorphic class, which means you will not have to worry about this rule.
+
+As mentioned, defining the type parameter names is only the first step. You must also tell Rtc how to infer at runtime the type of each type parameter. That is, Rtc must be able to figure out that [1,2] is an Array<Fixnum> not and Array<String> or Array<Float or String>. To do this you must use the *define_iterator* or *define_iterators* function. The best explanation of the use of these functions is via example:
+   rtc_typesig("class Hash<k,v>")
+   class Hash
+         rtc_annotated
+         define_iterators :k => :each_key, :v => :each_value
+   end
+When Rtc needs to figure out the type of k, it calls the each_key function with no arguments. When called with no arguments, the each_key returns an Enumerator over all the keys in the hash, which Rtc then iterates over to find the type of keys. More specifically, *define_iterators* accepts a hash that maps type parameters to method names. When Rtc wishes to find out the type of each type parameter, it calls the method name specified with no arguments. This method must return an enumerator that provides access to ALL values which will have the type assignd to k, e.g. all the keys in the hash, all the values in the hash, etc.  The *define_iterator* method is similar, but rather accepts two arguments, the first is the type parameter, the second is the method that will provide the enumerator.
+
+== Using Polymorphic Classes
+
+When annotating the methods of a polymorphic class, you may freely use the type parameters given in the class annotation in method signatures. For instance, you could annotated a push method of an Array<t> class as follows:
+     typesig("push: (t) -> Array<t>")
+This means that push takes a single argument that is a subtype of the type parameter t, and returns an Array of t. An interesting feature of Rtc is that it performs replacement on these type parameters for you when you get the type of a method. For instance, if you wrote the following:
+     puts [1,2,3].rtc_typeof("push")
+"push: (Fixnum) -> Array<Fixnum>" would be printed. Given this type signature, you might expect a call like the following:
+     [1,2,3].push("foo")
+to fail, but this is not the case see the "Type Checking" section below for why.
+
+You may also use the type parameter of one class as the type for another parameterized class. For example, suppose the Set class is Parameterized over k, and Arrays are parameterized over t. You can write the to_a method of a set as:
+    typesig("to_a: () -> Array<k>")
