@@ -326,6 +326,11 @@ class TestTypeChecking < Test::Unit::TestCase
      def foo(x)
        x + 1
      end
+     typesig("bar: () -> Fixnum")
+     def bar
+       4
+     end
+     typesig("@baz_field: Fixnum")
    end
   
   class OverrideSig < ParentSig
@@ -352,7 +357,13 @@ class TestTypeChecking < Test::Unit::TestCase
      assert_nothing_raised do
        ParentSig.new.foo(4)
      end
-     
    end
    
+   def test_typeof_include_super
+     expected_type = Rtc::Types::ProceduralType.new(Rtc::Types::NominalType.of(Fixnum), [])
+     assert_equal(expected_type,OverrideSig.rtc_instance_typeof("bar"))
+     assert_equal(nil, OverrideSig.rtc_instance_typeof("bar", false))
+     assert_equal(Rtc::Types::NominalType.of(Fixnum), OverrideSig.rtc_instance_typeof(:@baz_field))
+     assert_equal(nil, OverrideSig.rtc_instance_typeof(:baz_field, false))
+   end
 end
