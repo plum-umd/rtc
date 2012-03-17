@@ -52,7 +52,7 @@ module Rtc
     def invoke(invokee, arg_vector)
       regular_args = arg_vector[:args]
       
-      method_type = invokee.rtc_typeof(@method_name)
+      method_type = invokee.rtc_typeof(@method_name, @class_obj)
       candidate_types = []
       
       if method_type.instance_of?(Rtc::Types::IntersectionType)
@@ -72,7 +72,7 @@ module Rtc
         #arg_values = []
         #puts "Function " + @method_name.to_s + " argument type mismatch:"
         #puts "   Expected function type: " + method_type.to_s
-        message = "Function #{@class_obj.name.to_s}###{@method_name.to_s}  argument type mismatch:" +
+        message = "Function #{@class_obj.name.to_s}##{@method_name.to_s}  argument type mismatch:" +
           "   Expected function type: " + method_type.to_s
         #for a in arg_list
         #  arg_types.push(a.rtc_type)
@@ -100,7 +100,7 @@ module Rtc
       }
       
       if not return_valid
-        message = "Function #{@class_obj.name.to_s}###{@method_name.to_s} return type mismatch: " + "   Expected function type: " + method_type.to_s + 
+        message = "Function #{@class_obj.name.to_s}##{@method_name.to_s} return type mismatch: " + "   Expected function type: " + method_type.to_s + 
           ", actual return type #{ret_value.rtc_type.to_s}"
         on_error(message)
       end

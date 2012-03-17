@@ -61,7 +61,7 @@ module Rtc::Annotated
             next
           end
           this_type.add_method(signature.id.to_s, signature.type)
-          if self.method_defined?(signature.id.to_s)
+          if self.instance_methods(false).include?(signature.id)
             @@method_wrappers[signature.id.to_s] = Rtc::MethodWrapper.make_wrapper(self, signature.id.to_s)
           else
             @@deferred_methods << signature.id.to_s

@@ -81,12 +81,12 @@ class Object
      end
   end
   
-  def rtc_typeof(name)
+  def rtc_typeof(name, which_class = nil)
     name = name.to_s
     if name[0] == "@"
       self.rtc_type.get_field(name[1..-1])
     else
-      self.rtc_type.get_method(name)
+      self.rtc_type.get_method(name, which_class)
     end
   end
 end
@@ -436,11 +436,11 @@ module Rtc::Types
           end
           @method_types[name] = type
         end
-        def get_method(name)
-          if @method_types[name]
+        def get_method(name, which = nil)
+          if @method_types[name] && (which.nil? or which == @klass)
             @method_types[name]
           else
-            (sc = superclass) ? sc.get_method(name) : nil
+            (sc = superclass) ? sc.get_method(name, which) : nil
           end
         end
         
@@ -633,9 +633,11 @@ module Rtc::Types
           return replace_type(@nominal.get_field(name), @parameters)
         end
         
-        def get_method(name)
-          return @_method_cache[name] if @_method_cache.has_key?(name)
-          @_method_cache[name] = replace_type(@nominal.get_method(name),@parameters)
+        def get_method(name, which = nil)
+          #TODO(jtoman): get caching to work with which parameter
+          #return @_method_cache[name] if @_method_cache.has_key?(name)
+          #@_method_cache[name] = 
+          replace_type(@nominal.get_method(name, which),@parameters)
         end
         
         def to_s

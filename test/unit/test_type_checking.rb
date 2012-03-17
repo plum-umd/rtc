@@ -319,4 +319,40 @@ class TestTypeChecking < Test::Unit::TestCase
      end
    end
    
+   
+   class ParentSig
+     rtc_annotated
+     typesig("foo: (Fixnum) -> Fixnum")
+     def foo(x)
+       x + 1
+     end
+   end
+  
+  class OverrideSig < ParentSig
+    rtc_annotated
+    typesig("foo: (String) -> String")
+    def foo(x)
+      super(Integer x).to_s
+    end
+  end
+   
+   def test_override_typesig
+     assert_nothing_raised do
+      OverrideSig.new.foo("2")
+     end
+     assert_raise Rtc::TypeMismatchException do
+     
+       OverrideSig.new.foo(4)
+     end
+     
+     assert_raise Rtc::TypeMismatchException do
+       ParentSig.new.foo("2")
+     end
+     
+     assert_nothing_raised do
+       ParentSig.new.foo(4)
+     end
+     
+   end
+   
 end
