@@ -1,0 +1,128 @@
+= Basic Usage
+
+Rtc (Ruby Type Checker) can be loaded via a simple
+  require 'rtc'
+at the beginning of a file. Doing this give you access to the following functions (specific usage is given below):
+
+rtc_typesig::
+  annotate a class as polymorphic (see "Polymorphic Classes")
+rtc_annotated::
+  gain access to annotation functions within a class (see "Annotating a class")
+rtc_no_subtype::
+  tell Rtc that a class should not be considered a subtype of it's parent class (introduces a break in the inheritance chain). Example usage:
+    class MyClass
+       rtc_no_subtype
+    end
+  this is equivalent to writing:
+    class MyClass
+       rtc_annotated
+       no_subtype
+    end
+  This let's you break the inheritance chain without opting into function annotation.
+
+= Annotating a Class
+
+If you place rtc_annotated in a class definition, this opens up access to the following functions:
+
+typesig::
+  annotate a function type
+no_subtype::
+  see the above explanation of rtc_no_subtype
+define_iterator::
+  used in the definition of polymorphic classes (see "Polymorphic Classes" below)
+define_iterators::
+  used in the definition of polymorphic classes (see "Polymorphic Classes" below)
+
+== typesig
+
+This function let's you annotate the type of instance fields and instance methods (class methods and fields are not yet supported, but an implemention will be shortly forthcoming). It's basic form is:
+  typesig("name: type")
+This can be used to annotate a method, or a field
+
+=== Method Annotations
+
+Method annotations take the form:
+  typesig("foo: (argument type list) -> return type")
+In this example, foo is the name of the function being annotated. If the function contains special characters (e.g., *, [], ?, !, etc.) then the name must be enclosed in single quotes, e.g.
+  typesig("'*': (Fixnum) -> Fixnum")
+would be the annotation on the * method of a Fixnum object.
+The argument type list is a (possibly empty) comma separated list of type expressions. The most basic form of a type expression is a simple class name, for example, Fixnum, String, etc. The resolution of these names to actual classes is subject to the rules in "Class Name Resolution" below. If a polymorphic class is used, then you can specify the type of the type parameters using the '<>' syntax familiar to C++ and Java programmers. For example, if you wished to say a function takes an Array of Fixnums, you would write <code>Array<Fixnum></code>. You may also use more complex type expressions as type parameters, specifically Union Types and Symbol Types (the parser will accept Optional types and Vararg types as type paremeters, but doing so will not work the way you want).
+There are several other type expressions available:
+
+Union types::
+  Indicates a union of different type expressions. For example, the type signature:
+    typesig("foo: (Fixnum or String) -> Fixnum")
+  is a method that can take either a Fixnum or a String, and returns a Fixnum. Any type expression may be a part of a union. To construct a union, separate several type expressions with "or", i.e., <em>type expr 1</em> or <em>type expr 2</em> or ...
+Symbol types::
+  Rtc lifts Symbols into the type system. For example, the symbol +:foo+ has type :foo. Currently Rtc only supports symbols that do not contain spaces, so that symbols like
+    :'complex symbol'
+  are not supported.
+Optional types::
+  You may say an argument is optional by prefixing the type expression with a single ?
+Vararg types::
+  You may say that a function takes a rest argument with type t by writing *t. For example, *Fixnum or even *Fixnum or String
+Structural types::
+  An 'anonymous' class specification. For example, if you wish to specify that a function takes an object that supports at least the addition operator, you would write
+     typesig("foo: [ '+': (Fixnum) -> Fixnum ]")
+  An structural multiple types are separated by a comma. Both field annotations (see below) and method annotations are supported.
+Top Type::
+  The top type is a special type for which everything in the type system of Rtc is a subtype. It is the equivalent of "Object" in Java. The top type is expressed with .?, so
+      typesig("takes_any_type: (.?) -> .?")
+
+=== Advanced Method Annotations
+
+You may specify multiple annotations on a single function. For instance, if you want to say a function takes a Fixnum and returns a Fixnum, AND it takes a String and returns a String you could write:
+  typesig("my_method: (Fixnum) -> Fixnum")
+  typesig("my_method: (String) -> String")
+Note that this is different from type signature:
+  typesig("my_method: (Fixnum or String) -> (Fixnum or String)")
+as this would denote a method that could take a Fixnum and then return a String. If multiple type signatures are applied to a method, they are automatically intersected (see below on the handling of intersection types).
+
+You may also specify nameless type signatures. This is especially useful when several type signatures are to be applied to a method. A nameless type signature is the same as a regular type signature, except that it lacks a name, e.g.
+  typesig("(Fixnum) -> Fixnum")
+Nameless type signatures are applied to the next defined method in a class. So in the following example, all the nameless type signatures would be applied to the bar method:
+  class MyClass
+     # ...
+     typesig("(Fixnum) -> Fixnum")
+     typesig("(?Fixnum,?String) -> Float")
+     def bar(...)
+       # ...
+     end
+  end
+
+
+In some cases you may not care particularly about the return type of a function.  The initialize method of a class is one such example. In this case, you may simply write
+   typesig("my_method: (arguments)")
+This is actually just shorthand for
+   typesig("my_method: (arguments) -> .?")
+
+=== Field annotations
+
+A field may be annotated using the following:
+  typesig("@number_field: Fixnum")
+From a type checking stand point this is shorthand for the following:
+  typesig("number_field: () -> Fixnum")
+  typesig("'number_field=': (Fixnum) -> Fixnum")
+However, annotating a field using the above syntax allows the type of a field to be queried at runtime (see the "Using annotations" below).
+
+Like method annotations, multiple annotation may be applied to a field. For example, the following:
+  typesig("@foo: String")
+  typesig("@foo: Fixnum")
+From a type checking stand point, this is shorthand for:
+  typesig("foo: () -> String")
+  typesig("foo: () -> Fixnum")
+  typesig("'foo=': (Fixnum) -> Fixnum")
+  typesig("'foo=': (String) -> String")
+Recall that multiple annotations are intersected automatically.  Note that the type of field is automatically _unioned_ at runtime, so that if one were to query the type of foo field at runtime (see below "Using annotations") you would get back "Fixnum or String".
+
+= Using Annotations
+
+If you annotate a method two things happen: the type of the method is recorded and the method is wrapped to perform type checking on the arguments and the return type. For example, if you annotate the method foo as follows:
+   class MyClass
+         rtc_annotated
+         typesig("foo: (Fixnum) -> String")
+         # definition of foo follows...
+   end
+And then attempt to call foo with a String, the type checker will catch this error and complain. By default, if a type error occurs, then the exception Rtc::TypeMismatchException is thrown, although other behavior on type mismatches is possible (see "Controlling Rtc" below). Note that the method need not be defined before the class is looked up, the type signature may be specified before the definition of a method. However, you may not specify a type signature of a method defined in a subclass in a superclass, although support for "abstract type signatures" may be added in the future.
+
+The type of a method may be queried at runtime by calling rtc_typeof on an instance of an object.
