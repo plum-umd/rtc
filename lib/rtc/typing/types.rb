@@ -93,13 +93,13 @@ end
 
 
 class Class
-  def rtc_instance_typeof(name)
+  def rtc_instance_typeof(name, include_super = true)
     my_type = Rtc::Types::NominalType.of(self)
     name = name.to_s
     if name[0] == "@"
       my_type.get_field(name[1..-1])
     else
-      my_type.get_method(name)
+      my_type.get_method(name, include_super ? nil : self)
     end
   end
 end
