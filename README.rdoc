@@ -97,7 +97,8 @@ Structural types::
   specify that a function takes an object that supports at least the
   addition operator, you would write
      typesig("foo: [ '+': (Fixnum) -> Fixnum ]")
-  An structural multiple types are separated by a comma. Both field annotations (see below) and method annotations are supported.
+  Multiple types are separated by a comma. Both field
+  annotations (see below) and method annotations are supported.
 Top Type::
   The top type is a special type for which everything in the type
   system of Rtc is a subtype. It is the equivalent of "Object" in
@@ -468,3 +469,144 @@ rtc_type, etc.) but type checking will be completely disabled. You can
 use this to select type checking in development mode, and when you are
 confident you've caught all type errors, you can deploy your app with
 Rtc disabled.
+
+= Type Checking
+
+This section is somewhat heavy on theoretical material. Familiarity
+with the concept of subtyping and polymorphism is assumed. As
+mentioned previously, when a function is the types of passed arguments
+are checked against the argument types in the type signature, and the
+type returned from the function is checked against the return type in
+the type signature. This section details how the subtype checks are
+performed.
+
+== Basic Subtyping
+
+The most trivial case involves subtyping two different classes. The
+rule adopted is simple, if some class derives from another class, it
+is considered a subtype of that class. The derivation need not be
+immediate, grandparent classes, great-grandparent classes, etc. are
+checked. If this behavior is not desirable, this chain can be broken
+with the rtc_no_subtype function. It says that the current class
+should not be considered a subtype of any of it's ancestor
+classes. Note however, if a class B derives from a class A that has
+rtc_no_subtype specified, class B is still considered a
+subtype of class A, unless of course, class B also has rtc_no_subtype
+specified.
+
+== Union Subtyping
+
+A type t considered a subtype of a union if there exists some type in
+the union for which t is a subtype. Therefore, Fixnum is a subtype of
+(Fixnum or String). A Union is a subtype of another type if every type
+in the union is a subtype of that type. Combining these two rules, we
+get the subtype rule for two unions. A union A is a subtype of another
+union B if for every type t in A, there is another type in B for which
+t is a subtype.
+
+== Method Subtyping
+
+The subtyping of methods is contravariant for arguments, and covariant
+for the return type. In simple english, this means that a method m is a
+subtype of another method n, if all of n's arguments are subtypes of
+m's arguments, and m's return type is a subtype of n's return type.
+
+== Polymorphic Subtyping
+
+Before getting into the subtype rules for polymorphic objects, we have
+to first discuss the approach Rtc takes to type parameters. Unlike
+statically typed languages like C++, Java, or ML, you can have
+homogenous data structures. For example, in Java, and List<Integer>
+can ONLY contain integers. However, Ruby has no such
+restriction. Therefore, the type of an object can change from one
+line to the next, as the following snippet shows:
+     my_array = [1]
+     puts my_array.rtc_type # prints "Array<Fixnum>"
+     my_array.push("foo")
+     puts my_array.rtc_type # prints "Array<Fixnum or String>"
+     my_array.delete_at(0)
+     puts my_array.rtc_type # prints "Array<String>"
+across these three lines (not counting the puts statement) the type
+changed twice. To accomodate this dynamic behavior, we say that a type
+parameter is either dynamic or fixed.  This is something of a abuse of
+terminology, at runtime, type parameters are substituted with type
+stand-ins, but that is an implementation detail and only confuses the
+issue.  Type parameter here can refer either to the formal type
+parameter of a polymorphic class, e.g. the t in Array<t>, or a
+specific instance of that formal type parameter, e.g. the Fixnum in
+Array<Fixnum> (context will differentiate which meaning is to be used).
+
+A dynamic type parameter displays the above behavior, it's type
+changes based on the operations performed on the polymorphic
+object. By default, all type parameters are dynamic as this more
+closely models the Ruby type system. However, in some cases you may
+wish to restrict the type of a type parameter. For example, you may
+wish to enforce that an array may only contain Fixnum (the actual
+method for performing this enforcing is detailed below in the section
+"Constraining Type Parameters"). In this case, the type parameter's
+type may no longer change over time, and we say that the type
+parameter is "fixed". Whether or not a type parameter is fixed or
+dynamic affects the subtype rules used.
+
+=== Dynamic Type Parameter Subtype Cases
+
+If the type parameters of a polymorphic class p are dynamic, then the
+following conditions must be met if it is to be a subtype of another
+polymorphic class q:
+* p's actual class must match the actual class of q
+* All the type parameters of p must be a subtype of q's type parameters
+
+When subtyping some other type against the type parameter itself (for
+instance, checking that the passed argument is a subtype of t in the
+type signature "push: (t) -> Array<t>") then the subtype check always
+succeeds. If this was not the case, then the following perfectly safe
+code:
+        [1,2,3].push("foo")
+would be rejected by the type checker.
+
+=== Fixed Type Parameter Subtype Cases
+
+If the type parameters of a polymorphic class p are fixed, then the
+following conditions must be met if it is to be a subtype of another
+polymorphic class q:
+* p's actual class must match the actual class of q
+* All the type of parameters of q must be exactly q's type parameters
+
+A type is only a subtype of a type parameter only if it is a subtype
+of the type the to which the type parameter has been fixed. For
+example, if you fixed the type parameter of an array to be a Fixnum,
+then only Fixnums (and subtype of Fixnum) would be considered a
+subtype of that array's type parameter.
+
+= Constraining Type Parameters
+
+You can fix the type of a type parameter by using the rtc_annotate
+method, which is available on all classes that derive from
+Object. The usage is best explained by an example:
+   [1,2,3].rtc_annotate("Array<Fixnum>")
+This would fix the type parameter of the array to be a Fixnum. If you
+attempt to fix a type parameter that is narrower than the current type
+of the type parameter, a Rtc::TypeNarrowingError is thrown. For
+example, the following would throw the Rtc::TypeNarrowingError:
+   [1,"2"].rtc_annotate("Array<Fixnum>")
+The rtc_annotate function returns the object being annotated, which
+means you can write code like
+   foo([1,2].rtc_annotate("Array<Fixnum>"))
+
+== A Note on Aliasing
+
+Beware aliasing! Rtc will try to infer the most general type for a
+polymorphic type. This comes into play for nested polymorphic
+types. For example, in the following:
+  arr = [[1], [1,"foo"], [1,"foo",1.0]]
+arr has the type Array<Array<String or Fixnum or Float>> NOT
+Array<Array<Fixnum> or Array<Fixnum or String> or ...>
+This can lead to a problem if you write code like this:
+  arr = [[1].rtc_annotate("Array<Fixnum>"), [1,"foo"], [1, "foo", 1.0]]
+and then pass arr to a method that takes a
+Array<Array<Fixnum or String or Float>> which tries to push a Float
+onto the first sub-array. Doing so will throw a
+Rtc::TypeMismatchException within the body of the method, not at the
+call to the method. Annotating the arr as being of type
+Array<Array<String or Fixnum or Float>> will not fix the problem
+either. Smarter handling of aliasing may be added, but for now be careful.
