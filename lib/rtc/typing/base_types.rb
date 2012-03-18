@@ -3,7 +3,9 @@ require 'rtc'
 rtc_typesig("class Array<t>")
 class Array
   rtc_annotated
-  typesig("'[]': (Fixnum) -> t")
+  typesig("'[]': (Fixnum) -> t or nil")
+  typesig("'[]': (Fixnum, Fixnum) -> Array<t> or nil")
+  typesig("'[]': (Range) -> Array<t> or nil")
 end
 rtc_typesig("class Set<t>")
 class Set

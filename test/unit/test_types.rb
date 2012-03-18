@@ -74,7 +74,7 @@ class TestTypeSystem < Test::Unit::TestCase
     set_type = NominalType.of(Set)
     a_set = ParameterizedType.new(set_type, [a_class])
     assert_equal("[ () -> Array<A> ]", a_set.get_method("to_a").to_s)
-    assert_equal("[ (Fixnum) -> A ]", a_set.get_method("to_a").return_type.get_method("[]").to_s)
+    assert_equal("([ (Range) -> (Array<A> or NilClass) ] and [ (Fixnum, Fixnum) -> (Array<A> or NilClass) ] and [ (Fixnum) -> (A or NilClass) ])", a_set.get_method("to_a").return_type.get_method("[]").to_s)
     assert_equal("[ (A) -> (TrueClass or FalseClass) ]", a_set.get_method("includes?").to_s)
   end
   def test_union
