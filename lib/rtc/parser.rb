@@ -78,7 +78,8 @@ module Rtc
             else
                 mtype = Types::ProceduralType.new(range, domain, block)
             end
-            return MethodTypeSignature.new(pos, meth_id, mtype)
+            type_klass = meth_id.instance_of?(Rtc::ClassMethodIdentifier) ? ClassMethodTypeSignature : MethodTypeSignature 
+            return type_klass.new(pos, meth_id, mtype)
         end
 
         def handle_var(kind, name, type)
@@ -147,6 +148,12 @@ module Rtc
     class MethodIdentifier < Identifier
         def initialize(name) 
             super(name)
+        end
+    end
+    
+    class ClassMethodIdentifier < Identifier
+        def initialize(name)
+          super(name)
         end
     end
 

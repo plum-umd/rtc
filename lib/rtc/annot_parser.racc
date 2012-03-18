@@ -40,7 +40,7 @@ token T_CONST_ID
 token T_TYPE_ID
 token T_SYMBOL
 # token T_METHOD_NAME
-token T_LOCAL_ID T_TICKED_ID T_SUFFIXED_ID T_SCOPED_ID
+token T_LOCAL_ID T_TICKED_ID T_SUFFIXED_ID
 token T_DOUBLE_HASH
 
 rule
@@ -114,25 +114,26 @@ rule
       { result = handle_mtype(val[0], val[2], val[6]) }
     | T_CONST_ID T_COLON method_sig
       { result = handle_mtype(val[0], nil, val[2]) }
+    | K_SELF T_DOT T_CONST_ID T_COLON method_sig {
+    	result = handle_mtype(ClassMethodIdentifier.new(val[2]), nil, val[4]) 
+      }
+    | K_SELF T_DOT T_CONST_ID T_LESS type_id_list T_GREATER T_COLON method_sig
+      { result = handle_mtype(ClassMethodIdentifier.new(val[2]), val[4], val[7]) }
     | method_sig {
-       result = handle_mtype("__rtc_next_method", nil, val[0])
+       result = handle_mtype(MethodIdentifier.new("__rtc_next_method"), nil, val[0])
       }
 
   relative_method_name:
       T_STRING         
-      { result = MethodIdentifier.new(val[0]) }
+      { result = val[0] }
     | T_LOCAL_ID
-      { result = MethodIdentifier.new(val[0]) }
+      { result = val[0] }
     | T_SUFFIXED_ID    
-      { result = MethodIdentifier.new(val[0]) }
-    | T_SCOPED_ID
-      {
-      	#FIXME(jtoman): this is broken
-        result = handle_scoped_id(val[0]) 
-      }
+      { result = val[0] }
 
   method_name:
-      relative_method_name { result = val[0] }
+      relative_method_name { result = MethodIdentifier.new(val[0]) }
+    | K_SELF T_DOT relative_method_name { result = ClassMethodIdentifier.new(val[2]) }
 
   method_sig:
       T_LPAREN T_RPAREN block T_RARROW type_expr {

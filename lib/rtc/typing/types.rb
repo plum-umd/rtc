@@ -56,28 +56,7 @@ class Object
     if meta_hash[:_type]
       meta_hash[:_type]
     else
-      type_obj = 
-        if self.class.name == "Symbol"
-          Rtc::Types::SymbolType.new(self)
-        else
-          class_obj = Rtc::Types::NominalType.of(self.class)
-          if class_obj.type_parameters.size == 0
-              class_obj
-          elsif class_obj.klass == Array
-              Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each)])
-          elsif class_obj.klass == Hash
-              Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each_key),
-                Rtc::Types::TypeVariable.create(self.each_value)])
-          else
-              #user defined parameterized classes
-            tv = class_obj.type_parameters.map {
-              |param|
-              Rtc::Types::TypeVariable.create(self.send(class_obj.klass.rtc_meta[:iterators][param.symbol]))
-            }
-            Rtc::Types::ParameterizedType.new(class_obj, tv)
-          end
-        end
-       meta_hash[:_type] = type_obj
+      meta_hash[:_type] = rtc_get_type
      end
   end
   
@@ -89,6 +68,32 @@ class Object
       self.rtc_type.get_method(name, which_class)
     end
   end
+  
+  protected
+  
+  def rtc_get_type
+    if self.class.name == "Symbol"
+      Rtc::Types::SymbolType.new(self)
+    else
+      class_obj = Rtc::Types::NominalType.of(self.class)
+      if class_obj.type_parameters.size == 0
+          class_obj
+      elsif class_obj.klass == Array
+          Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each)])
+      elsif class_obj.klass == Hash
+          Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each_key),
+            Rtc::Types::TypeVariable.create(self.each_value)])
+      else
+          #user defined parameterized classes
+        tv = class_obj.type_parameters.map {
+          |param|
+          Rtc::Types::TypeVariable.create(self.send(class_obj.klass.rtc_meta[:iterators][param.symbol]))
+        }
+        Rtc::Types::ParameterizedType.new(class_obj, tv)
+      end
+    end
+  end
+  
 end
 
 
@@ -101,6 +106,10 @@ class Class
     else
       my_type.get_method(name, include_super ? nil : self)
     end
+  end
+  
+  def rtc_get_type
+    return Rtc::Types::NominalType.of(class << self; self; end)
   end
 end
 

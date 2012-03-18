@@ -47,7 +47,7 @@ module Rtc
 
     end
 
-    class MethodTypeSignature < TypeSignature
+    class AbstractMethodTypeSignature < TypeSignature
 
         # intersection type and polymorphic type are special cases
         def to_s()
@@ -108,6 +108,8 @@ module Rtc
         end 
 
     end
+    class MethodTypeSignature < AbstractMethodTypeSignature; end
+    class ClassMethodTypeSignature < AbstractMethodTypeSignature; end
 
     # no need to do anything different; the name should be starting with @
     # TODO: maybe add this name checking code?

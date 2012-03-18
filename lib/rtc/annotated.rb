@@ -26,10 +26,11 @@ end
 # Note that this should be +extend+ed, not +include+ded.
 module Rtc::Annotated
     @@method_wrappers = {}
-    
     @@deferred_methods = Set.new
-    
     @@next_methods = []
+    
+    @@class_method_wrappers = {}
+    @@deferred_class_methods = Set.new
     
     # Adds a type signature for a method to the class's method type table.
     def typesig(string_signature)
@@ -37,11 +38,11 @@ module Rtc::Annotated
         return unless signatures
         
         if signatures.instance_of?(Rtc::ClassAnnotation)
-           Rtc::ClassModifier.handle_class_annot(sig)
+           Rtc::ClassModifier.handle_class_annot(signatures)
            return
         end
         this_type = Rtc::Types::NominalType.of(self)
-        
+        meta_type = self.rtc_type
         (signatures.map {
           |sig|
           if sig.instance_of?(Rtc::InstanceVariableTypeSignature)
@@ -52,21 +53,48 @@ module Rtc::Annotated
             setter_type = Rtc::Types::ProceduralType.new(field_type, [field_type])
             [Rtc::MethodTypeSignature.new(sig.pos,field_name,getter_type),
               Rtc::MethodTypeSignature.new(sig.pos,field_name+"=",setter_type)]
+          elsif sig.instance_of?(Rtc::ClassVariableTypeSignature)
+            field_name = sig.id.to_s[2..-1]
+            field_type = sig.type
+            meta_type.add_field(field_name, field_type)
+            getter_type = Rtc::Types::ProceduralType.new(field_type, [])
+            setter_type = Rtc::Types::ProceduralType.new(field_type, [field_type])
+            [Rtc::ClassMethodTypeSignature.new(sig.pos, field_name, getter_type),
+              Rtc::ClassMethodTypeSignature.new(sig.pos, field_name+"=", setter_type)]
           else
             sig
           end
         }).flatten.each do |signature|
-          if signature.id.to_s == "__rtc_next_method"
-            @@next_methods << signature.type
-            next
-          end
-          this_type.add_method(signature.id.to_s, signature.type)
-          if self.instance_methods(false).include?(signature.id)
-            @@method_wrappers[signature.id.to_s] = Rtc::MethodWrapper.make_wrapper(self, signature.id.to_s)
+          if signature.instance_of?(Rtc::ClassMethodTypeSignature)
+            handle_class_typesig(signature)
           else
-            @@deferred_methods << signature.id.to_s
+            handle_instance_typesig(signature)
           end
         end
+    end
+    
+    def handle_instance_typesig(signature)
+      if signature.id.to_s == "__rtc_next_method"
+        @@next_methods << signature.type
+        return
+      end
+      this_type = Rtc::Types::NominalType.of(self)
+      this_type.add_method(signature.id.to_s, signature.type)
+      if self.instance_methods(false).include?(signature.id)
+        @@method_wrappers[signature.id.to_s] = Rtc::MethodWrapper.make_wrapper(self, signature.id.to_s)
+      else
+        @@deferred_methods << signature.id.to_s
+      end
+    end
+    
+    def handle_class_typesig(signature)
+      meta_type = self.rtc_type
+      meta_type.add_method(signature.id.to_s, signature.type)
+      if self.methods(false).include?(signature.id.to_s)
+        @@class_method_wrappers[signature.id.to_s] = Rtc::MethodWrapper.make_wrapper(class << self; self; end, signature.id.to_s)
+      else
+        @@deferred_class_methods << signature.id.to_s
+      end
     end
     
     #FIXME(jtoman): needs a better and catchier name
@@ -80,6 +108,16 @@ module Rtc::Annotated
     
     def define_iterators(iter_hash)
       rtc_meta.fetch(:iterators).merge!(iter_hash)
+    end
+    
+    def singleton_method_added(method_name)
+      if method_name == :singleton_method_added
+        return
+      end
+      if @@deferred_class_methods.include?(method_name.to_s)
+        @@deferred_class_methods.delete(method_name.to_s)
+        @@class_method_wrappers[method_name.to_s] = Rtc::MethodWrapper.make_wrapper(class << self; self; end, method_name.to_s) 
+      end
     end
     
     def method_added(method_name)
