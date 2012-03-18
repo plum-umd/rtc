@@ -992,8 +992,13 @@ module Rtc::Types
       end
       
       def <=(other)
-        return eql?(other) if other.instance_of?(SymbolType)
-        super
+        if other.instance_of?(SymbolType)
+          return eql?(other)
+        elsif other.instance_of?(NominalType) and other.klass == Symbol
+          return true
+        else
+          super
+        end
       end
     end
 

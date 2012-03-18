@@ -208,4 +208,9 @@ class TestTypeSystem < Test::Unit::TestCase
     })
     assert(NominalType.of(StructuralPartB) <= struct_type)
   end
+  
+  def test_symbol_subtype
+    assert(:foo.rtc_type <= NominalType.of(Symbol))
+    assert(UnionType.of([:foo.rtc_type, :bar.rtc_type, :baz.rtc_type]) <= NominalType.of(Symbol))
+  end
 end
