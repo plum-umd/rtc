@@ -314,8 +314,8 @@ something like the following:
      rtc_annotated
    end
 This would tell Rtc that the class MyArray is parameterized over the
-t. If your class is parameterized over multiple types, use a comma
-separated list:
+type parameter t. If your class is parameterized over multiple types,
+use a comma separated list:
    rtc_typesig("class MyHash<k,v>")
    class MyHash
      rtc_annotated
