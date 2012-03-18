@@ -425,4 +425,46 @@ of ambiguity, it is always best to use absolute names.
 
 Currently by default, Rtc will throw a TypeMismatchException if you
 pass incorrect arguments to a method. However, there are several other
-possibilities for the error behavior:
+possibilities for the error behavior. These are controlled by
+assigning to Rtc.on_type_error. The following are the current error
+behaviors
+
+exception::
+   The default. The exception Rtc::TypeMismatchException is thrown if
+   a type mismatch occurs. Selected by assiging :exception
+ignore::
+   Silently ignores all type errors. Selected by assigning nil or
+   :ignore
+exit::
+   Exits immediately with a non-zero error code on type
+   error. Selected by assignin :exit
+callback::
+   Calls the provided callback with the error message. Selected by
+   assigning any object with a 'call' method.
+log::
+   Writes the error message to a log file. Specifically, it calls the
+   write method of an object (which may or may not be a
+   file). Selected by assigning any object wih a 'write' method.
+console::
+   Writes the error message to standard out. Selected by assigning
+   :console
+
+Rtc currently provides the setup hook Rtc.setup, which calls the
+selected block with the Rtc module as a start up. You can then write
+code like this in your app's configuration:
+     Rtc.setup do
+       |rtc|
+       rtc.on_error = :ignore
+     end
+
+== Globally Disabling Rtc
+
+The method wrapping approach used by Rtc imposes some overhead to a
+program. If this is unacceptable, you can globally disable Rtc by
+setting the environmental variable RTC_DISABLE. This environmental
+variable must be set before Rtc is loaded for the first time. If set,
+all other functionality of Rtc will be available (rtc_typeof,
+rtc_type, etc.) but type checking will be completely disabled. You can
+use this to select type checking in development mode, and when you are
+confident you've caught all type errors, you can deploy your app with
+Rtc disabled.
