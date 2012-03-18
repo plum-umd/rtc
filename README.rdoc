@@ -44,8 +44,8 @@ define_iterators::
 == typesig
 
 This function let's you annotate the type of instance fields and
-instance methods (class methods and fields are not yet supported, but
-an implemention will be shortly forthcoming). It's basic form is:
+instance methods, as well as class methods and fields. It's basic form
+is:
   typesig("name: type")
 This can be used to annotate a method, or a field
 
@@ -166,6 +166,24 @@ Recall that multiple annotations are intersected automatically.  Note
 that the type of field is automatically _unioned_ at runtime, so that
 if one were to query the type of foo field at runtime (see below
 "Using Annotations") you would get back "Fixnum or String".
+
+=== Class Fields and Class Methods
+
+Rtc also allows annotation of class methods. To annotate a class
+method, prefix the method name with "self.". Note that if you need to
+define a class method that contains special characters, the quotes
+must only be applied to the method name, not the "self." portion. For
+example, typesig("self.'*': (Fixnum) -> Fixnum") is correct, NOT
+typesig("'self.*': (Fixnum) -> Fixnum"). Like instance methods, class
+method annotations may be given before the defintion of the actual
+class method.
+
+All the advanced functionality of method annotations, with the
+exception of nameless method annotations, are available also for class
+method annotations.
+
+Class fields operate almost exactly the same as instance fields, but
+intead the name is prefixed @@ instead of @.
 
 = Using Annotations
 
