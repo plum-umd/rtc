@@ -106,6 +106,9 @@ class TypeAnnotationParser < Racc::Parser
       when (text = @ss.scan(/self/))
          action { [:K_SELF, text] }
 
+      when (text = @ss.scan(/nil/))
+         action { [:K_NIL, text] }
+
       when (text = @ss.scan(/[a-z_]+\w*\'?/))
          action { [:T_LOCAL_ID, text] }
 

@@ -42,6 +42,7 @@ token T_SYMBOL
 # token T_METHOD_NAME
 token T_LOCAL_ID T_TICKED_ID T_SUFFIXED_ID
 token T_DOUBLE_HASH
+token K_NIL
 
 rule
 
@@ -231,6 +232,9 @@ rule
         nominal = handle_type_ident(val[0])
         result = Rtc::Types::ParameterizedType.new(nominal, val[2])
       }
+    | K_NIL {
+    	result = Rtc::Types::NominalType.of(NilClass)
+    }
 
   tuple:
       T_LPAREN type_expr_comma_list T_RPAREN { result = val[1] }

@@ -71,7 +71,7 @@ rule
 # keywords
   or                                   { [:K_OR, text] }
   self                                 { [:K_SELF, text] }
-
+  nil								   { [:K_NIL, text] }
 # {TYPE_ID_RE}                        { [:T_TYPE_ID, text] }
 # {TYPE_ID_RE}						   { [:T_TICKED_ID, text] }
   {TYPE_ID_RE}						   { [:T_LOCAL_ID, text] }
@@ -93,7 +93,6 @@ rule
   \@FIXME                              {fail "ERROR at line #{lineno}: " +
                                         "deprecated @@FIXME in '#{text}', " +
                                         "use !FIXME"}
-
                                        # text can't contain "'", so gsub is okay
   '[^']*'                         { [:T_STRING, text.gsub("'", "")] }
 
