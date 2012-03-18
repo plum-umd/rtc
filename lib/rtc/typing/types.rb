@@ -437,7 +437,7 @@ module Rtc::Types
           if @method_types[name]
             extant_type = @method_types[name]
             if extant_type.instance_of?(IntersectionType)
-              type = [type] + extant_type.types
+              type = [type] + extant_type.types.to_a
             else
               type = [type, extant_type]
             end
