@@ -17,6 +17,7 @@ class Object
       |type_param,index|
       my_type.parameters[index].constrain_to(type_param.wrapped_type)
     }
+    self
   end
 end
 
