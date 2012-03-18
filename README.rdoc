@@ -217,3 +217,25 @@ to fail, but this is not the case see the "Type Checking" section below for why.
 
 You may also use the type parameter of one class as the type for another parameterized class. For example, suppose the Set class is Parameterized over k, and Arrays are parameterized over t. You can write the to_a method of a set as:
     typesig("to_a: () -> Array<k>")
+
+= Class Name Resolution
+
+In this section we refer to the context as the Class or Module in which typesig is called. There are two ways to specify class names in Rtc: absolute and relative names.
+
+== Absolute names
+
+Absolute names begin with a double colon "::". When resolving the an absolute class name, searching begins from the Object context. Absolute names are the most explicit, but tend to be unwieldly and unnecessary.
+
+== Relative names
+
+Relative names are the more commonly used names. They are differentiated from absolute names in that they do not begin with a ::. When resolving a relative name, first the current context is searched. If the name is not found in that context, then the current context's parent (that is, the class or module that contains the current context) is searched. This proceeds until the object context is reached. If the name is not found there, then the search fails. For instance, suppose we have the following Module layout:
+  module Foo
+    module Bar
+      class B; end
+      class C; end
+    end
+    class B; end
+  end
+
+In the context of Foo::Bar::B, the relative name "B" would resolve to Foo::Bar::B (after the lookup in class B failed, the lookup in module Bar would succeed). If you wished to refer to the class Foo::B, then you would have to write "Foo::B".
+In the context of Foo::B, if you wish to reference the class Foo::Bar::B, the relative name "Bar::B" would be necessary, and similarly if the class Foo::Bar::C was to be referenced. In the case of ambiguity, it is always best to use absolute names.
