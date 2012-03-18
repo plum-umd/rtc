@@ -1,0 +1,612 @@
+= Basic Usage
+
+Rtc (Ruby Type Checker) can be loaded via a simple
+  require 'rtc'
+at the beginning of a file. Doing this give you access to the
+following functions (specific usage is given below):
+
+rtc_typesig::
+  annotate a class as polymorphic (see "Polymorphic Classes")
+rtc_annotated::
+  gain access to annotation functions within a class (see "Annotating
+  a class")
+rtc_no_subtype::
+  tell Rtc that a class should not be considered a subtype of it's
+  parent class (introduces a break in the inheritance chain). Example
+  usage:
+    class MyClass
+       rtc_no_subtype
+    end
+  this is equivalent to writing:
+    class MyClass
+       rtc_annotated
+       no_subtype
+    end
+  This let's you break the inheritance chain without opting into
+  function annotation.
+
+= Annotating a Class
+
+If you place rtc_annotated in a class definition, this opens up access
+to the following functions:
+
+typesig::
+  annotate a function type
+no_subtype::
+  see the above explanation of rtc_no_subtype
+define_iterator::
+  used in the definition of polymorphic classes (see "Polymorphic
+  Classes" below)
+define_iterators::
+  used in the definition of polymorphic classes (see "Polymorphic
+  Classes" below)
+
+== typesig
+
+This function let's you annotate the type of instance fields and
+instance methods (class methods and fields are not yet supported, but
+an implemention will be shortly forthcoming). It's basic form is:
+  typesig("name: type")
+This can be used to annotate a method, or a field
+
+=== Method Annotations
+
+Method annotations take the form:
+  typesig("foo: (argument type list) -> return type")
+In this example, foo is the name of the function being annotated. If
+the function contains special characters (e.g., *, [], ?, !, etc.)
+then the name must be enclosed in single quotes, e.g.
+  typesig("'*': (Fixnum) -> Fixnum")
+would be the annotation on the * method of a Fixnum object.
+The argument type list is a (possibly empty) comma separated list of
+type expressions. The most basic form of a type expression is a simple
+class name, for example, Fixnum, String, etc. The resolution of these
+names to actual classes is subject to the rules in "Class Name
+Resolution" below. If a polymorphic class is used, then you can
+specify the type of the type parameters using the '<>' syntax familiar
+to C++ and Java programmers. For example, if you wished to say a
+function takes an Array of Fixnums, you would write
+<code>Array<Fixnum></code>. You may also use more complex type
+expressions as type parameters, specifically Union Types and Symbol
+Types (the parser will accept Optional types and Vararg types as type
+paremeters, but doing so will not work the way you want).
+There are several other type expressions available:
+
+Union types::
+  Indicates a union of different type expressions. For example, the
+  type signature:
+    typesig("foo: (Fixnum or String) -> Fixnum")
+  is a method that can take either a Fixnum or a String, and returns a
+  Fixnum. Any type expression may be a part of a union. To construct a
+  union, separate several type expressions with "or", i.e., <em>type
+  expr 1</em> or <em>type expr 2</em> or ...
+Symbol types::
+  Rtc lifts Symbols into the type system. For example, the symbol
+  +:foo+ has type :foo. Currently Rtc only supports symbols that do
+  not contain spaces, so that symbols like
+    :'complex symbol'
+  are not supported.
+Optional types::
+  You may say an argument is optional by prefixing the type expression
+  with a single ?
+Vararg types::
+  You may say that a function takes a rest argument with type t by
+  writing *t. For example, *Fixnum or even *Fixnum or String
+Structural types::
+  An 'anonymous' class specification. For example, if you wish to
+  specify that a function takes an object that supports at least the
+  addition operator, you would write
+     typesig("foo: [ '+': (Fixnum) -> Fixnum ]")
+  Multiple types are separated by a comma. Both field
+  annotations (see below) and method annotations are supported.
+Top Type::
+  The top type is a special type for which everything in the type
+  system of Rtc is a subtype. It is the equivalent of "Object" in
+  Java. The top type is expressed with .?, so
+      typesig("takes_any_type: (.?) -> .?")
+
+=== Advanced Method Annotations
+
+You may specify multiple annotations on a single function. For
+instance, if you want to say a function takes a Fixnum and returns a
+Fixnum, AND it takes a String and returns a String you could write:
+  typesig("my_method: (Fixnum) -> Fixnum")
+  typesig("my_method: (String) -> String")
+Note that this is different from type signature:
+  typesig("my_method: (Fixnum or String) -> (Fixnum or String)")
+as this would denote a method that could take a Fixnum and then return
+a String. If multiple type signatures are applied to a method, they
+are automatically intersected (see below on the handling of
+intersection types).
+
+You may also specify nameless type signatures. This is especially
+useful when several type signatures are to be applied to a method. A
+nameless type signature is the same as a regular type signature,
+except that it lacks a name, e.g.
+  typesig("(Fixnum) -> Fixnum")
+Nameless type signatures are applied to the next defined method in a
+class. So in the following example, all the nameless type signatures
+would be applied to the bar method:
+  class MyClass
+     # ...
+     typesig("(Fixnum) -> Fixnum")
+     typesig("(?Fixnum,?String) -> Float")
+     def bar(...)
+       # ...
+     end
+  end
+
+
+In some cases you may not care particularly about the return type of a
+function.  The initialize method of a class is one such example. In
+this case, you may simply write
+   typesig("my_method: (arguments)")
+This is actually just shorthand for
+   typesig("my_method: (arguments) -> .?")
+
+=== Field annotations
+
+A field may be annotated using the following:
+  typesig("@number_field: Fixnum")
+From a type checking stand point this is shorthand for the following:
+  typesig("number_field: () -> Fixnum")
+  typesig("'number_field=': (Fixnum) -> Fixnum")
+However, annotating a field using the above syntax allows the type of
+a field to be queried at runtime (see the "Using Annotations" below).
+
+Like method annotations, multiple annotation may be applied to a field. For example, the following:
+  typesig("@foo: String")
+  typesig("@foo: Fixnum")
+From a type checking stand point, this is shorthand for:
+  typesig("foo: () -> String")
+  typesig("foo: () -> Fixnum")
+  typesig("'foo=': (Fixnum) -> Fixnum")
+  typesig("'foo=': (String) -> String")
+Recall that multiple annotations are intersected automatically.  Note
+that the type of field is automatically _unioned_ at runtime, so that
+if one were to query the type of foo field at runtime (see below
+"Using Annotations") you would get back "Fixnum or String".
+
+= Using Annotations
+
+If you annotate a method two things happen: the type of the method is
+recorded and the method is wrapped to perform type checking on the
+arguments and the return type.
+
+== Basic Type Checking
+The more complex rules and corner cases used in type checking are
+detailed below (see "Type Checking"), but a brief overview is given
+here. If, for example, you annotate the method foo as follows:
+   class MyClass
+         rtc_annotated
+         typesig("foo: (Fixnum) -> String")
+         # definition of foo follows...
+   end
+And then attempt to call foo with a String, the type checker will
+catch this error and complain. By default, if a type error occurs,
+then the exception Rtc::TypeMismatchException is thrown, although
+other behavior on type mismatches is possible (see "Controlling Rtc"
+below). Note that the method need not be defined before the annotation
+is written, the type signature may be specified before the definition
+of a method. However, you may not specify a type signature of a method
+defined in a subclass in a superclass, although support for "abstract
+type signatures" may be added in the future. Note further that Rtc
+will perform return type checking as well, this checks thatyou return
+what you say you are, as well as ensuring people are adhering to your
+API.  Type checking is implemented by wrapping the original method in
+another method. This method has it's own parameters, so code that
+relies on the parameters property of a method will no longer
+work. However, after wrapping, instance methods may be bound, passed
+around, called indirectly as would a regular function. The wrapping
+may introduce some overhead in calling, if this is a problem for you,
+see the "Disabling Rtc Globally" section in "Controlling Rtc" below.
+
+== rtc_typeof
+
+The type of a method may be queried at runtime by calling rtc_typeof
+on an instance of an object (this method is accessible for all objects
+which derive from Object). This method accepts a symbol or a
+string. For example, you could do:
+  some_object.rtc_typeof("some_method_name")
+or
+  some_object.rtc_typeof(:some_method_name)
+By default, this method will return the type signature that is defined
+farthest down the inheritance chain. For instance, suppose you have
+the following class hierarchy:
+  Baz < Bar < Foo < Object
+If Bar defines a type for the method "m" and Baz also defines a type
+for the method "m", then if you call rtc_typeof("m") on an instance of
+Baz, then the type signature in Baz will be returned. If you wish to
+get the type signature as it appears in a specific class, you can use
+rtc_instance_typeof (see below) or by passing a second arugment to
+rtc_typeof. The second argument must be an instance of Class, and if
+specified only that class will be checked for the type
+signature. Continuing with our example, if you wanted to get the type
+signature for "m" as it appears in Bar and you have an instance of
+Baz, you would make the following call:
+  baz_instance.rtc_typeof("m", Bar)
+
+rtc_typeof also allows the querying of field field type. This is done
+by prefixing the string or symbol passed to rtc_typeof with a @. Thus,
+to get the type of the field foo on some object you would do:
+  some_object.rtc_typeof(:@foo)
+or
+  some_object.rtc_typeof("@foo")
+As with methods, the class in which to look for the type may be
+specified with a second argument.
+
+== rtc_instance_typeof
+
+If you wish to know the type of a method or field and you do not have
+an instance of that class, you can use the rtc_instance_typeof, which
+is defined on all Class objects. The usage is fairly predictable, i.e.
+   SomeClass.rtc_instance_typeof("instance_method_name")
+Note that
+   SomeClass.rtc_typeof("instance_method_name")
+will NOT work, as it will try to find the type signature of the class
+method with the name instance_method_name. As with rtc_typeof, this
+method accepts both symbols and strings, and field types may be
+retrieved by prefixing a field name with @.
+
+By default, rtc_instance_typeof will look up the inheritance chain for
+a type signature of a method (provided, of course, there is no a
+rtc_no_subtype that breaks the inheritance chain). If you wish for
+rtc_instance_typeof to only look in the current class, then you may
+specify false as a second argument to rtc_instance_typeof.
+
+If no type signature is found, either using rtc_typeof and
+rtc_instance_typeof, then nil is returned.
+
+= Runtime Types
+
+Types of objects are accessible at runtime via the rtc_type method
+that is defined on all objects that derive from Object. The object
+returned by this method contains many internal functions, however two
+very important methods are provided for public use (in this section,
+the term "type object" refers to the object returned by the rtc_type
+method). The <= operator is defined on all type objects, and it can be
+used to test whether one type is a subtype of another.  the rtc_typeof
+and rtc_instance_typeof methods detailed above also return type
+objects, allowing you to write code like the following:
+    my_object.rtc_typeof("foo") <= other_object.rtc_typeof("bar")
+You may test if two objects are subtypes by doing the following:
+    my_object.rtc_type <= other_object.rtc_type
+The rtc_type method also defines a to_s method that allows you to see
+a human readable description of the type of an object. For instance:
+    puts [1,2,3].rtc_typeof # prints "Array<Fixnum>"
+This can be very helpful in debugging.
+
+= Polymorphic Classes
+
+Ruby does not have in it's type system a notion of polymorphic
+classes, but Rtc does. For instance, Array is polymorphic with one
+type parameter, and the Hash is parameteric with two type
+parameters. This section details how to make your own polymorphic
+classes, and to use type signatures that use polymorphism.
+
+== Defining Your Own Polymorphic Class
+
+Defining your own polymorphic class requires two steps. First, you
+must annotate the type parameters your polymorphic class uses. Like in
+Java, these tend to be single letters, but unlike Java, they are
+usually lower case. To do apply this annotation, you must write
+something like the following:
+   rtc_typesig("class MyArray<t>")
+   class MyArray
+     rtc_annotated
+   end
+This would tell Rtc that the class MyArray is parameterized over the
+t. If your class is parameterized over multiple types, use a comma
+separated list:
+   rtc_typesig("class MyHash<k,v>")
+   class MyHash
+     rtc_annotated
+   end
+Note the use of the rtc_annotated in the class body. When annotating a
+class as polymorphic the class need not be defined. However,
+internally, Rtc remembers that you've said that a class is polymorphic
+and then waits for you to use rtc_annotated. At the call to
+rtc_annotated, it checks to see if the class in which the call occured
+has been annotated, and then applies the deferred
+annotation. Therefore, if you wish to annotate a class as polymorphic
+before it's declaration, the declaration *must* include rtc_annotated.
+
+The name resolution rules for class names inside polymorphic
+annotations are *not* the same as those in "Class Name
+Resolution". Due to the method used for remembering forward
+annotations detailed above, the rules are stricter. Absolute class
+names operate under the same rules as those given in "Class Name
+Resolution" but the handling of relative class names is
+different. When resolving the relative name, ONLY the current module
+or class in which the call to rtc_typesig is searched for the
+class. Therefore, the following wil *not* work:
+    module Foo
+           module Bar
+                  rtc_typesig("class MyHash<k,v>")
+           end
+           class MyHash
+                 rtc_annotated
+                 # ...
+           end
+    end
+The above would tell Rtc that the class Foo::Bar::MyHash was
+polymorphic, which is not what is happening. However, generally
+speaking the polymorphic annotation will appear immediately before the
+definition of the polymorphic class, which means you will not have to
+worry about this rule.
+
+As mentioned, defining the type parameter names is only the first
+step. You must also tell Rtc how to infer at runtime the type of each
+type parameter. That is, Rtc must be able to figure out that [1,2] is
+an Array<Fixnum> not and Array<String> or Array<Float or String>. To
+do this you must use the *define_iterator* or *define_iterators*
+function. The best explanation of the use of these functions is via
+example:
+   rtc_typesig("class Hash<k,v>")
+   class Hash
+         rtc_annotated
+         define_iterators :k => :each_key, :v => :each_value
+   end
+When Rtc needs to figure out the type of k, it calls the each_key
+function with no arguments. When called with no arguments, the
+each_key returns an Enumerator over all the keys in the hash, which
+Rtc then iterates over to find the type of keys. More specifically,
+*define_iterators* accepts a hash that maps type parameters to method
+names. When Rtc wishes to find out the type of each type parameter, it
+calls the method name specified with no arguments. This method must
+return an enumerator that provides access to ALL values which will
+have the type assignd to k, e.g. all the keys in the hash, all the
+values in the hash, etc.  The *define_iterator* method is similar, but
+rather accepts two arguments, the first is the type parameter, the
+second is the method that will provide the enumerator.
+
+== Using Polymorphic Classes
+
+When annotating the methods of a polymorphic class, you may freely use
+the type parameters given in the class annotation in method
+signatures. For instance, you could annotated a push method of an
+Array<t> class as follows:
+     typesig("push: (t) -> Array<t>")
+This means that push takes a single argument that is a subtype of the
+type parameter t, and returns an Array of t. An interesting feature of
+Rtc is that it performs replacement on these type parameters for you
+when you get the type of a method. For instance, if you wrote the
+following:
+     puts [1,2,3].rtc_typeof("push")
+"push: (Fixnum) -> Array<Fixnum>" would be printed. Given this type
+signature, you might expect a call like the following:
+     [1,2,3].push("foo")
+to fail, but this is not the case see the "Type Checking" section below for why.
+
+You may also use the type parameter of one class as the type for another parameterized class. For example, suppose the Set class is Parameterized over k, and Arrays are parameterized over t. You can write the to_a method of a set as:
+    typesig("to_a: () -> Array<k>")
+
+= Class Name Resolution
+
+In this section we refer to the context as the Class or Module in
+which typesig is called. There are two ways to specify class names in
+Rtc: absolute and relative names.
+
+== Absolute names
+
+Absolute names begin with a double colon "::". When resolving the an
+absolute class name, searching begins from the Object
+context. Absolute names are the most explicit, but tend to be
+unwieldly and unnecessary.
+
+== Relative names
+
+Relative names are the more commonly used names. They are
+differentiated from absolute names in that they do not begin with a
+::. When resolving a relative name, first the current context is
+searched. If the name is not found in that context, then the current
+context's parent (that is, the class or module that contains the
+current context) is searched. This proceeds until the object context
+is reached. If the name is not found there, then the search fails. For
+instance, suppose we have the following Module layout:
+  module Foo
+    module Bar
+      class B; end
+      class C; end
+    end
+    class B; end
+  end
+
+In the context of Foo::Bar::B, the relative name "B" would resolve to
+Foo::Bar::B (after the lookup in class B failed, the lookup in module
+Bar would succeed). If you wished to refer to the class Foo::B, then
+you would have to write "Foo::B".
+
+In the context of Foo::B, if you wish to reference the class
+Foo::Bar::B, the relative name "Bar::B" would be necessary, and
+similarly if the class Foo::Bar::C was to be referenced. In the case
+of ambiguity, it is always best to use absolute names.
+
+= Controlling Rtc
+
+Currently by default, Rtc will throw a TypeMismatchException if you
+pass incorrect arguments to a method. However, there are several other
+possibilities for the error behavior. These are controlled by
+assigning to Rtc.on_type_error. The following are the current error
+behaviors
+
+exception::
+   The default. The exception Rtc::TypeMismatchException is thrown if
+   a type mismatch occurs. Selected by assiging :exception
+ignore::
+   Silently ignores all type errors. Selected by assigning nil or
+   :ignore
+exit::
+   Exits immediately with a non-zero error code on type
+   error. Selected by assignin :exit
+callback::
+   Calls the provided callback with the error message. Selected by
+   assigning any object with a 'call' method.
+log::
+   Writes the error message to a log file. Specifically, it calls the
+   write method of an object (which may or may not be a
+   file). Selected by assigning any object wih a 'write' method.
+console::
+   Writes the error message to standard out. Selected by assigning
+   :console
+
+Rtc currently provides the setup hook Rtc.setup, which calls the
+selected block with the Rtc module as a start up. You can then write
+code like this in your app's configuration:
+     Rtc.setup do
+       |rtc|
+       rtc.on_error = :ignore
+     end
+
+== Globally Disabling Rtc
+
+The method wrapping approach used by Rtc imposes some overhead to a
+program. If this is unacceptable, you can globally disable Rtc by
+setting the environmental variable RTC_DISABLE. This environmental
+variable must be set before Rtc is loaded for the first time. If set,
+all other functionality of Rtc will be available (rtc_typeof,
+rtc_type, etc.) but type checking will be completely disabled. You can
+use this to select type checking in development mode, and when you are
+confident you've caught all type errors, you can deploy your app with
+Rtc disabled.
+
+= Type Checking
+
+This section is somewhat heavy on theoretical material. Familiarity
+with the concept of subtyping and polymorphism is assumed. As
+mentioned previously, when a function is the types of passed arguments
+are checked against the argument types in the type signature, and the
+type returned from the function is checked against the return type in
+the type signature. This section details how the subtype checks are
+performed.
+
+== Basic Subtyping
+
+The most trivial case involves subtyping two different classes. The
+rule adopted is simple, if some class derives from another class, it
+is considered a subtype of that class. The derivation need not be
+immediate, grandparent classes, great-grandparent classes, etc. are
+checked. If this behavior is not desirable, this chain can be broken
+with the rtc_no_subtype function. It says that the current class
+should not be considered a subtype of any of it's ancestor
+classes. Note however, if a class B derives from a class A that has
+rtc_no_subtype specified, class B is still considered a
+subtype of class A, unless of course, class B also has rtc_no_subtype
+specified.
+
+== Union Subtyping
+
+A type t considered a subtype of a union if there exists some type in
+the union for which t is a subtype. Therefore, Fixnum is a subtype of
+(Fixnum or String). A Union is a subtype of another type if every type
+in the union is a subtype of that type. Combining these two rules, we
+get the subtype rule for two unions. A union A is a subtype of another
+union B if for every type t in A, there is another type in B for which
+t is a subtype.
+
+== Method Subtyping
+
+The subtyping of methods is contravariant for arguments, and covariant
+for the return type. In simple english, this means that a method m is a
+subtype of another method n, if all of n's arguments are subtypes of
+m's arguments, and m's return type is a subtype of n's return type.
+
+== Polymorphic Subtyping
+
+Before getting into the subtype rules for polymorphic objects, we have
+to first discuss the approach Rtc takes to type parameters. Unlike
+statically typed languages like C++, Java, or ML, you can have
+homogenous data structures. For example, in Java, and List<Integer>
+can ONLY contain integers. However, Ruby has no such
+restriction. Therefore, the type of an object can change from one
+line to the next, as the following snippet shows:
+     my_array = [1]
+     puts my_array.rtc_type # prints "Array<Fixnum>"
+     my_array.push("foo")
+     puts my_array.rtc_type # prints "Array<Fixnum or String>"
+     my_array.delete_at(0)
+     puts my_array.rtc_type # prints "Array<String>"
+across these three lines (not counting the puts statement) the type
+changed twice. To accomodate this dynamic behavior, we say that a type
+parameter is either dynamic or fixed.  This is something of a abuse of
+terminology, at runtime, type parameters are substituted with type
+stand-ins, but that is an implementation detail and only confuses the
+issue.  Type parameter here can refer either to the formal type
+parameter of a polymorphic class, e.g. the t in Array<t>, or a
+specific instance of that formal type parameter, e.g. the Fixnum in
+Array<Fixnum> (context will differentiate which meaning is to be used).
+
+A dynamic type parameter displays the above behavior, it's type
+changes based on the operations performed on the polymorphic
+object. By default, all type parameters are dynamic as this more
+closely models the Ruby type system. However, in some cases you may
+wish to restrict the type of a type parameter. For example, you may
+wish to enforce that an array may only contain Fixnum (the actual
+method for performing this enforcing is detailed below in the section
+"Constraining Type Parameters"). In this case, the type parameter's
+type may no longer change over time, and we say that the type
+parameter is "fixed". Whether or not a type parameter is fixed or
+dynamic affects the subtype rules used.
+
+=== Dynamic Type Parameter Subtype Cases
+
+If the type parameters of a polymorphic class p are dynamic, then the
+following conditions must be met if it is to be a subtype of another
+polymorphic class q:
+* p's actual class must match the actual class of q
+* All the type parameters of p must be a subtype of q's type parameters
+
+When subtyping some other type against the type parameter itself (for
+instance, checking that the passed argument is a subtype of t in the
+type signature "push: (t) -> Array<t>") then the subtype check always
+succeeds. If this was not the case, then the following perfectly safe
+code:
+        [1,2,3].push("foo")
+would be rejected by the type checker.
+
+=== Fixed Type Parameter Subtype Cases
+
+If the type parameters of a polymorphic class p are fixed, then the
+following conditions must be met if it is to be a subtype of another
+polymorphic class q:
+* p's actual class must match the actual class of q
+* All the type of parameters of q must be exactly q's type parameters
+
+A type is only a subtype of a type parameter only if it is a subtype
+of the type the to which the type parameter has been fixed. For
+example, if you fixed the type parameter of an array to be a Fixnum,
+then only Fixnums (and subtype of Fixnum) would be considered a
+subtype of that array's type parameter.
+
+= Constraining Type Parameters
+
+You can fix the type of a type parameter by using the rtc_annotate
+method, which is available on all classes that derive from
+Object. The usage is best explained by an example:
+   [1,2,3].rtc_annotate("Array<Fixnum>")
+This would fix the type parameter of the array to be a Fixnum. If you
+attempt to fix a type parameter that is narrower than the current type
+of the type parameter, a Rtc::TypeNarrowingError is thrown. For
+example, the following would throw the Rtc::TypeNarrowingError:
+   [1,"2"].rtc_annotate("Array<Fixnum>")
+The rtc_annotate function returns the object being annotated, which
+means you can write code like
+   foo([1,2].rtc_annotate("Array<Fixnum>"))
+
+== A Note on Aliasing
+
+Beware aliasing! Rtc will try to infer the most general type for a
+polymorphic type. This comes into play for nested polymorphic
+types. For example, in the following:
+  arr = [[1], [1,"foo"], [1,"foo",1.0]]
+arr has the type Array<Array<String or Fixnum or Float>> NOT
+Array<Array<Fixnum> or Array<Fixnum or String> or ...>
+This can lead to a problem if you write code like this:
+  arr = [[1].rtc_annotate("Array<Fixnum>"), [1,"foo"], [1, "foo", 1.0]]
+and then pass arr to a method that takes a
+Array<Array<Fixnum or String or Float>> which tries to push a Float
+onto the first sub-array. Doing so will throw a
+Rtc::TypeMismatchException within the body of the method, not at the
+call to the method. Annotating the arr as being of type
+Array<Array<String or Fixnum or Float>> will not fix the problem
+either. Smarter handling of aliasing may be added, but for now be careful.
