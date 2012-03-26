@@ -14,16 +14,50 @@ module Rtc
     end
 
     def check_args(passed_arguments, method_type)
+      pl = {}
+      poly_check_args = []
+
       return false unless method_type.min_args <= passed_arguments.size
       return false unless passed_arguments.size <= method_type.max_args or method_type.max_args == -1
       #check the first set of required arguments
       i = 0
       parameter_layout = method_type.parameter_layout
+
       while i < parameter_layout[:required][0]
-        return false unless passed_arguments[i].rtc_type <= method_type.arg_types[i]
+        mpl = {}
+
+        b, _ = passed_arguments[i].rtc_type.match_param(method_type.arg_types[i], mpl)
+        return false unless b
+
+        mpl.each{|k, v|
+          if pl[k]
+            pl[k] = v + pl[k]
+          else
+            pl[k] = v
+          end
+        }
+
+        poly_check_args.push(passed_arguments[i]) unless mpl.empty?
         i+=1
       end
-      
+
+      pl.each{ |k, v|
+        if v.size > 1
+          message = "Function #{@class_obj.name.to_s}##{@method_name.to_s}  argument POLYMORPHIC type mismatch:" +
+          "   Expected function type: " + method_type.to_s
+          on_error(message)
+        end
+        pl[k] = v.to_a[0]
+      }
+
+      @method_poly[method_type] = pl
+
+      i = 0
+      while i < parameter_layout[:required][0]
+        return false unless passed_arguments[i].rtc_type.le_poly(method_type.arg_types[i], pl)
+        i+=1
+      end
+
       #check the second set of required arguments
       i = 1
       while i <= parameter_layout[:required][1]
@@ -52,7 +86,7 @@ module Rtc
 
     def invoke(invokee, arg_vector)
       regular_args = arg_vector[:args]
-      
+
       method_type = invokee.rtc_typeof(@method_name, @class_obj)
       candidate_types = []
       
@@ -67,7 +101,7 @@ module Rtc
           candidate_types.push(mt)
         end
       end
-      
+
       if candidate_types.empty?
         #arg_types = []
         #arg_values = []
@@ -95,9 +129,49 @@ module Rtc
       end
       Rtc::MasterSwitch.turn_off
 
-      return_valid = candidate_types.any? {
-        |ct|
-        ret_value.rtc_type <= ct.return_type 
+      return_valid = candidate_types.any? { |ct|
+        h = {}
+        ret_value.rtc_type.match_param(ct.return_type, h)
+
+        if h.empty?
+          ret_value.rtc_type <= ct.return_type
+        else
+          h.each{ |k, v|
+            if v.size > 1
+              message = "Function #{@class_obj.name.to_s}##{@method_name.to_s} return POLYMORPHIC type mismatch:" +
+                "   Expected function type: " + method_type.to_s
+              on_error(message)
+            end
+            h[k] = v.to_a[0]
+          }
+
+          np = Set.new()
+          rm = h.all? {|k, v|
+            if @method_poly[ct][k]
+              if @method_poly[ct][k].eql?(v)
+                true
+              else
+                false
+              end
+            else
+              if np.empty?
+                np.add(v)
+                true
+              elsif np.includes?(v) or @method_poly[ct][k].values.index(v)
+                false
+              else
+                np.add(v)
+                true
+              end
+            end
+          }
+
+          if rm == false
+            false
+          else
+            ret_value.rtc_type.le_poly(ct.return_type, h.merge(@method_poly[ct]))
+          end
+        end
       }
       
       if not return_valid
@@ -127,6 +201,7 @@ module Rtc
     end
     
     def initialize(class_obj,method_name)
+      @method_poly = {}
       @method_name = method_name
       @class_obj = class_obj
       this_obj = self
@@ -136,6 +211,7 @@ module Rtc
         if Rtc::MasterSwitch.is_on?
           Rtc::MasterSwitch.turn_off 
           args = {:args => __rtc_args, :block => __rtc_block }
+
           begin
             this_obj.invoke(self, args)
           ensure

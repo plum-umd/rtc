@@ -211,6 +211,7 @@ module Rtc::Types
         def initialize(field_types, method_types)
             @field_types = field_types
             @method_types = method_types
+
             super()
         end
 
@@ -330,7 +331,7 @@ module Rtc::Types
             to_return = @it_class
             if @it_class.rtc_meta[:no_subtype]
               @it_class = nil
-            else
+           else
               @it_class = @it_class.superclass
             end
             to_return
@@ -356,7 +357,7 @@ module Rtc::Types
             end
             return t
         end
-        
+
         def type_parameters
           @type_parameters
         end
@@ -382,6 +383,16 @@ module Rtc::Types
           }
         end
 
+        def le_poly(other, pl)
+          case other
+          when TypeParameter
+            return true if pl.empty?
+            self <= pl[other.symbol]
+          else
+            self <= other
+          end
+        end
+
         # Return +true+ if +self+ represents a subtype of +other+.
         def <=(other)
             case other
@@ -401,6 +412,38 @@ module Rtc::Types
             end
         end
 
+        def match_param(other, pl)
+          if self <= other
+            return true, pl
+          end
+
+          case other
+          when ParameterizedType
+            return false, pl
+          when TypeParameter
+            if pl[other.symbol]
+              pl[other.symbol] = pl[other.symbol].add(self)
+            else
+              pl[other.symbol] = Set.new([self])
+            end
+
+            return true, pl
+          when UnionType
+            return true, pl
+          when NominalType
+            return true, pl if other.klass.name == @klass.name
+            other_class = other.klass
+            it = InheritanceChainIterator.new(@klass)
+            
+            while (it_class = it.next)
+              return true, pl if other_class == it_class 
+            end
+            return false, pl
+          else
+            super(other)
+          end
+        end
+
         def to_s # :nodoc:
             return @klass.to_s
         end
@@ -412,8 +455,8 @@ module Rtc::Types
         # Return +true+ if +other+ is a NominalType with the same +klass+ as
         # +self.
         def eql?(other)
-            return false unless other.instance_of?(NominalType)
-            return false unless other.klass == @klass
+          return false unless other.instance_of?(NominalType)
+          return false unless other.klass == @klass
             true
         end
 
@@ -598,6 +641,68 @@ module Rtc::Types
         
         def parameterized?
           true
+        end
+
+        def match_param(other, pl)
+          if self <= other
+            return true, pl
+          end
+
+          case other
+          when ParameterizedType
+            return false, pl unless (@nominal <= other.nominal and
+                                     other.nominal <= @nominal)
+            
+            zipped = @parameters.zip(other.parameters)
+
+            zipped.each { |t, u|
+              tw = t.wrapped_type
+              uw= u.wrapped_type
+
+              b, pl = tw.match_param(uw, pl)
+
+              return false, pl unless b 
+            }
+
+            return true, pl
+          when TypeParameter
+            if pl[other.symbol]
+              pl[other.symbol] = pl[other.symbol].add(self)
+            else
+              pl[other.symbol] = Set.new([self])
+            end
+
+            return true, pl
+          when NominalType
+            return false, pl
+          else
+            super(other)
+          end
+        end
+
+        def le_poly(other, pl)
+          case other
+          when ParameterizedType
+            return false unless (@nominal <= other.nominal and
+                                 other.nominal <= @nominal)
+            zipped = @parameters.zip(other.parameters)
+            return false unless zipped.all? do |t, u|
+              tw = t.wrapped_type
+              uw= u.wrapped_type
+              tw.le_poly(uw, pl)
+            end
+            true
+          when TypeParameter
+            if pl.empty?
+              return true
+            end
+
+            self <= pl[other.symbol]
+          when NominalType
+            false
+          else
+            super(other)
+          end
         end
 
         def <=(other)
@@ -990,6 +1095,14 @@ module Rtc::Types
       def to_s
         ":#{@symbol}"
       end
+
+      def match_param(other, pl)
+        return self <= other, pl
+      end
+
+      def le_poly(other, pl)
+        return self <= other
+      end
       
       def <=(other)
         if other.instance_of?(SymbolType)
@@ -1139,9 +1252,15 @@ module Rtc::Types
         # This has the effect of deferring dealing with unions on the rhs of a
         # relation into the Type class. There may be better ways of doing this.
         def <=(other)
-            @types.all? do |t|
-                t <= other
-            end
+          @types.all? do |t|
+            t <= other
+          end
+        end
+
+        def le_poly(other, pl)
+          @types.all? do |t|
+            t.le_poly(other, pl)
+          end
         end
 
         private
