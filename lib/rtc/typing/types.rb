@@ -388,6 +388,10 @@ module Rtc::Types
           when TypeParameter
             return true if pl.empty?
             self <= pl[other.symbol]
+          when UnionType
+            other.types.any? do |a|
+              self.le_poly(a, pl)
+            end
           else
             self <= other
           end
@@ -1255,6 +1259,10 @@ module Rtc::Types
           @types.all? do |t|
             t <= other
           end
+        end
+
+        def match_param(other, pl)
+          pl
         end
 
         def le_poly(other, pl)
