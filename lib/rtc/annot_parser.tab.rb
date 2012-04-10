@@ -233,43 +233,43 @@ racc_action_default = [
    -78,   -78,   -20,   -27 ]
 
 racc_goto_table = [
-    24,    52,    96,    87,     3,   104,   105,   106,     1,    42,
-    83,    98,    99,    16,    76,    98,   101,    98,   103,    78,
-    33,    34,    32,    81,    33,    39,    30,     4,    38,    14,
-    79,    77,    12,   113,    10,    91,     8,    95,    66,   110,
-     5,   nil,    74,   nil,   nil,   132,   nil,   nil,   nil,   135,
-   nil,   nil,   nil,   nil,   108,    96,   nil,   nil,   nil,   100,
-   nil,   134,   nil,   102,   136,   145,    98,   137,   121,    98,
-   139,    98,   141,   nil,   nil,   nil,   nil,   nil,   112,   nil,
+    24,    78,    52,    87,    96,     3,     1,    98,   104,   105,
+   106,    98,    83,    98,    16,    76,    99,    42,    32,    95,
+   101,    33,   103,    34,    81,    33,    30,    39,     4,    38,
+    14,    79,    12,   113,    10,    91,    66,     8,     5,    77,
+   nil,   110,   nil,    74,   nil,   nil,   nil,   nil,   132,   nil,
+   nil,   nil,   135,   nil,   nil,   108,   nil,    96,   nil,   100,
+   nil,   134,    98,   102,   136,    98,   nil,    98,   145,   121,
+   nil,   137,   nil,   nil,   139,   nil,   141,   nil,   112,   nil,
+   nil,   nil,   nil,   nil,   nil,   nil,   nil,   144,   nil,   nil,
    nil,   nil,   nil,   nil,   nil,   nil,   nil,   nil,   nil,   nil,
    nil,   nil,   nil,   nil,   nil,   nil,   nil,   nil,   nil,   nil,
-   nil,   nil,   nil,   nil,   144,   nil,   nil,   nil,   nil,   nil,
    nil,   nil,   nil,   nil,   138,   nil,   nil,   140,   nil,   nil,
    nil,   nil,   nil,   nil,   nil,   nil,   nil,   nil,   nil,   nil,
    nil,   nil,   nil,   nil,   nil,   nil,   148,   149,   nil,   nil,
    nil,   nil,   nil,   nil,   152,   153 ]
 
 racc_goto_check = [
-    19,    12,    20,    31,     9,     7,     7,     7,     8,    24,
-    21,    22,    18,    11,    12,    22,    18,    22,    18,    26,
-    11,    29,    17,    12,    11,    29,    14,    10,     6,     5,
-    23,    24,     4,    25,     3,    28,     2,    26,     8,    21,
-     1,   nil,     9,   nil,   nil,     7,   nil,   nil,   nil,     7,
-   nil,   nil,   nil,   nil,    12,    20,   nil,   nil,   nil,    19,
-   nil,    31,   nil,    19,    31,     7,    22,    18,    12,    22,
-    18,    22,    18,   nil,   nil,   nil,   nil,   nil,    19,   nil,
+    19,    26,    12,    31,    20,     9,     8,    22,     7,     7,
+     7,    22,    21,    22,    11,    12,    18,    24,    17,    26,
+    18,    11,    18,    29,    12,    11,    14,    29,    10,     6,
+     5,    23,     4,    25,     3,    28,     8,     2,     1,    24,
+   nil,    21,   nil,     9,   nil,   nil,   nil,   nil,     7,   nil,
+   nil,   nil,     7,   nil,   nil,    12,   nil,    20,   nil,    19,
+   nil,    31,    22,    19,    31,    22,   nil,    22,     7,    12,
+   nil,    18,   nil,   nil,    18,   nil,    18,   nil,    19,   nil,
+   nil,   nil,   nil,   nil,   nil,   nil,   nil,    26,   nil,   nil,
    nil,   nil,   nil,   nil,   nil,   nil,   nil,   nil,   nil,   nil,
    nil,   nil,   nil,   nil,   nil,   nil,   nil,   nil,   nil,   nil,
-   nil,   nil,   nil,   nil,    12,   nil,   nil,   nil,   nil,   nil,
    nil,   nil,   nil,   nil,    19,   nil,   nil,    19,   nil,   nil,
    nil,   nil,   nil,   nil,   nil,   nil,   nil,   nil,   nil,   nil,
    nil,   nil,   nil,   nil,   nil,   nil,    19,    19,   nil,   nil,
    nil,   nil,   nil,   nil,    19,    19 ]
 
 racc_goto_pointer = [
-   nil,    40,    36,    34,    32,    29,    17,   -66,     8,     4,
-    27,    11,   -26,   nil,    20,   nil,   nil,    16,   -52,    -6,
-   -61,   -43,   -53,   -15,   -10,   -52,   -25,   nil,   -21,    12,
+   nil,    38,    37,    34,    32,    30,    18,   -63,     6,     5,
+    28,    12,   -25,   nil,    20,   nil,   nil,    12,   -48,    -6,
+   -59,   -41,   -57,   -14,    -2,   -52,   -43,   nil,   -21,    14,
    nil,   -53 ]
 
 racc_goto_default = [
@@ -819,56 +819,56 @@ module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 210
   end
 .,.,
 
-module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 214
+module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 215
   def _reduce_54( val, _values, result )
     	result = Rtc::Types::SymbolType.new(eval(val[0]))
    result
   end
 .,.,
 
-module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 217
+module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 218
   def _reduce_55( val, _values, result )
         result = handle_type_ident(val[0])
    result
   end
 .,.,
 
-module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 217
+module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 218
   def _reduce_56( val, _values, result )
  result = val[0]
    result
   end
 .,.,
 
-module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 221
+module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 222
   def _reduce_57( val, _values, result )
         result = Rtc::Types::TopType.instance
    result
   end
 .,.,
 
-module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 224
+module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 225
   def _reduce_58( val, _values, result )
         result = Rtc::Types::OptionalArg.new(val[1])
    result
   end
 .,.,
 
-module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 227
+module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 228
   def _reduce_59( val, _values, result )
         result = Rtc::Types::Vararg.new(val[1])
    result
   end
 .,.,
 
-module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 230
+module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 231
   def _reduce_60( val, _values, result )
         result = handle_structural_type(val[1])
    result
   end
 .,.,
 
-module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 234
+module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 235
   def _reduce_61( val, _values, result )
         nominal = handle_type_ident(val[0])
         result = Rtc::Types::ParameterizedType.new(nominal, val[2])
@@ -876,42 +876,42 @@ module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 234
   end
 .,.,
 
-module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 237
+module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 238
   def _reduce_62( val, _values, result )
     	result = Rtc::Types::NominalType.of(NilClass)
    result
   end
 .,.,
 
-module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 240
+module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 242
   def _reduce_63( val, _values, result )
-       result = Rtc::Types::ProceduralType.new(val[4][0], val[1], nil)
+       result = Rtc::Types::ProceduralType.new(val[4], val[1], nil)
    result
   end
 .,.,
 
-module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 242
+module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 244
   def _reduce_64( val, _values, result )
  result = val[1]
    result
   end
 .,.,
 
-module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 245
+module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 247
   def _reduce_65( val, _values, result )
  result = [val[0]]
    result
   end
 .,.,
 
-module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 248
+module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 250
   def _reduce_66( val, _values, result )
         result = [val[0]] + val[2]
    result
   end
 .,.,
 
-module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 256
+module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 258
   def _reduce_67( val, _values, result )
         id = val[0]
         type_vars = val[2]
@@ -920,7 +920,7 @@ module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 256
   end
 .,.,
 
-module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 260
+module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 262
   def _reduce_68( val, _values, result )
         id = val[0]
         result = handle_class_decl(id)
@@ -928,42 +928,42 @@ module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 260
   end
 .,.,
 
-module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 265
+module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 267
   def _reduce_69( val, _values, result )
         result = val[1]
    result
   end
 .,.,
 
-module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 268
+module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 270
   def _reduce_70( val, _values, result )
         result = val[1]
    result
   end
 .,.,
 
-module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 274
+module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 276
   def _reduce_71( val, _values, result )
         result = handle_var(:ivar, val[0], val[2])
    result
   end
 .,.,
 
-module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 278
+module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 280
   def _reduce_72( val, _values, result )
         result = {:fields => [val[0]], :methods => []}
    result
   end
 .,.,
 
-module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 280
+module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 282
   def _reduce_73( val, _values, result )
         result = {:fields => [],       :methods => [val[0]]}
    result
   end
 .,.,
 
-module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 285
+module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 287
   def _reduce_74( val, _values, result )
         field_method_hash = val[2]
         field_method_hash[:fields] += [val[0]]
@@ -972,7 +972,7 @@ module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 285
   end
 .,.,
 
-module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 290
+module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 292
   def _reduce_75( val, _values, result )
         field_method_hash = val[2]
         field_method_hash[:methods] += [val[0]]
@@ -981,14 +981,14 @@ module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 290
   end
 .,.,
 
-module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 292
+module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 294
   def _reduce_76( val, _values, result )
  result = {:fields => [], :methods => []}
    result
   end
 .,.,
 
-module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 293
+module_eval <<'.,.,', 'lib/rtc/annot_parser.racc', 295
   def _reduce_77( val, _values, result )
  result = val[0]
    result
