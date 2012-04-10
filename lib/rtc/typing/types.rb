@@ -74,6 +74,10 @@ class Object
   def rtc_get_type
     if self.class.name == "Symbol"
       Rtc::Types::SymbolType.new(self)
+    elsif self.class.name == "Proc" 
+      self
+    elsif self.class == Rtc::Proxy
+      self.class
     else
       class_obj = Rtc::Types::NominalType.of(self.class)
       if class_obj.type_parameters.size == 0
