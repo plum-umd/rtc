@@ -6,12 +6,17 @@ require 'rtc/options'
 module Rtc
 
   class Proxy
-    def initialize(p, t, c, m, mt)
+    attr_reader :proc
+    attr_reader :type
+    attr_reader :blk
+
+    def initialize(p, t, c, m, mt, b)
       @proc = p
       @type = t
       @class_obj = c
       @method_name = m
       @method_type = mt
+      @blk = b
     end
 
     def check_args(args)
@@ -93,68 +98,58 @@ module Rtc
     end
 
     def call(*args)
-      candidate_types = []
-
-      if @type.instance_of?(Rtc::Types::IntersectionType)
-        possible_method_types = @type.types
-      else
-        possible_method_types = [@type]
-      end
-
-      for mt in possible_method_types
-        if check_args(args)
-          candidate_types.push(mt)
-        end
-      end
-
-      if candidate_types.empty?
+      if check_args(args) == false
         message = "Function #{@class_obj.name.to_s}##{@method_name.to_s} first-order argument type mismatch:" +
           "   Expected function type: " + @method_type.to_s
         on_error(message)
       end
 
-      ret_value = @proc.call(args)
+      if @blk == true
+        ret_value = @proc.call(args[0])
+      else
+        ret_value = @proc.call(args)
+      end
 
-      return_valid = candidate_types.any? { |ct|
-        h = {}
-        ret_value.rtc_type.match_param(ct.return_type, h)
+      h = {}
+      ret_value.rtc_type.match_param(@type.return_type, h)
 
-        if h.empty?
-          ret_value.rtc_type <= ct.return_type
-        else
-          h.each{ |k, v|
-            if v.size > 1
-              message = "Function #{@class_obj.name.to_s}##{@method_name.to_s} return POLYMORPHIC type mismatch:" +
-                "   Expected function type: " + method_type.to_s
-              on_error(message)
-            end
-            h[k] = v.to_a[0]
-          }
-
-          rm = h.all? {|k, v|
-            if @@method_poly[ct][k]
-              if @@method_poly[ct][k].eql?(v)
-                true
-              else
-                false
-              end
-            else
-              true
-            end
-          }
-
-          if rm == false
-            false
-          else
-            ret_value.rtc_type.le_poly(ct.return_type, h)
+      if h.empty?
+        return_valid = ret_value.rtc_type <= @type.return_type
+      else
+        h.each {|k, v|
+          if v.size > 1
+            message = "Function #{@class_obj.name.to_s}##{@method_name.to_s} return POLYMORPHIC type mismatch:" +
+              "   Expected function type: " + method_type.to_s
+            on_error(message)
           end
+          h[k] = v.to_a[0]
+        }
+
+        rm = h.all? {|k, v|
+          if @@method_poly[@method_type][k]
+            if @@method_poly[@method_type][k].eql?(v)
+              true
+            else
+              false
+            end
+          else
+            true
+          end
+        }
+
+        if rm == false
+          return_valid = false
+        else
+          return_valid = ret_value.rtc_type.le_poly(@type.return_type, h)
         end
-      }
+      end
       
       if not return_valid
         message = "Function #{@class_obj.name.to_s}##{@method_name.to_s} first-order argument return type mismatch: " + "   Expected function type: " + @method_type.to_s 
         on_error(message)
       end
+
+      ret_value
     end
 
     private
@@ -270,6 +265,12 @@ module Rtc
       return true
     end
 
+    def wrap_block(x)
+      Proc.new{|v| 
+        x.call(v)
+      }
+    end
+
     def invoke(invokee, arg_vector)
       regular_args = arg_vector[:args]
       method_type = invokee.rtc_typeof(@method_name, @class_obj)
@@ -307,8 +308,10 @@ module Rtc
       blk = arg_vector[:block]
 
       Rtc::MasterSwitch.turn_on
+
       if blk
-        ret_value = @original_method.bind(invokee).call(*regular_args, &blk)
+        pw = wrap_block(blk)
+        ret_value = @original_method.bind(invokee).call(*regular_args, &pw)
       else
         ret_value = @original_method.bind(invokee).call(*regular_args)
       end
@@ -390,11 +393,24 @@ module Rtc
           args = {:args => __rtc_args, :block => __rtc_block }
 
           method_type = self.rtc_typeof(method_name, @class_obj)
+
+#          args[:args].push(args[:block])
+#          method_type.arg_types.push(method_type.block_type)
+
+#          r = method_type.return_type
+#          a = method_type.arg_types
+#          method_type = Rtc::Types::ProceduralType.new(r, a)
+#          args[:block] = nil
+
+          if args[:block]
+            args[:block] = Proxy.new(args[:block], method_type.block_type, class_obj, method_name, method_type, true)
+          end
+
           i = 0
 
           for a in args[:args]
             if a.class == Proc
-              args[:args][i] = Proxy.new(args[:args][i], method_type.arg_types[i], class_obj, @method_name, method_type)
+              args[:args][i] = Proxy.new(args[:args][i], method_type.arg_types[i], class_obj, method_name, method_type, false)
             end
             i += 1
           end
