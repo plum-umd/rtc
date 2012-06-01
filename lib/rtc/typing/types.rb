@@ -146,13 +146,11 @@ module Rtc::Types
               others.types.any? do |a|
                 self <= a
               end
-            when TypeVariable
-              if other.dynamic
-                true
-              else
-                typ = other.wrapped_type
-                self <= typ
-              end
+            when OpenType
+              true
+            when ClosedType
+              typ = other.wrapped_type
+              self <= typ
             when TopType
               true
             else
@@ -607,7 +605,7 @@ module Rtc::Types
                                      other.nominal <= @nominal)
                 zipped = @parameters.zip(other.parameters)
                 return false unless zipped.all? do |t, u|
-                    t <= u
+                    t.pointed_type <= u.pointed_type
                 end
                 true
             when NominalType
@@ -621,7 +619,7 @@ module Rtc::Types
             builder = Rtc::HashBuilder.new(23, 41)
             builder.include(@nominal)
             @parameters.each do |p|
-                builder.include(p)
+                builder.include(p.pointed_type)
             end
             builder.get_hash
         end
@@ -635,7 +633,7 @@ module Rtc::Types
         
         def type_of_param(param)
           param = @nominal.type_parameters.index(TypeParameter.new(param)) if param.class.name == "Symbol"
-          @parameters[param].wrapped_type
+          @parameters[param].pointed_type
         end
 
         def get_field(name, which = nil)
@@ -660,11 +658,7 @@ module Rtc::Types
           when TypeParameter
             t_ind = @nominal.type_parameters.index(type)
             raise Exception.new("Unknown type id #{type}") if t_ind == nil
-            if formal_type_parameters[t_ind].dynamic
-              formal_type_parameters[t_ind]
-            else
-              formal_type_parameters[t_ind].wrapped_type
-            end
+            formal_type_parameters[t_ind].pointed_type
           when OptionalArg
             OptionalArg.new(replace_type(type.type,formal_type_parameters))
           when Vararg
@@ -673,7 +667,7 @@ module Rtc::Types
             ParameterizedType.new(
               type.nominal,
               type.parameters.map { |t_param|
-                replace_type(t_param, formal_type_parameters)
+                replace_type(t_param.pointed_type, formal_type_parameters)
               }
             )
           when StructuralType
@@ -706,18 +700,10 @@ module Rtc::Types
                 replace_type(t,formal_type_parameters)
               end
             )
-          when TypeVariable
-            # it's unclear how exactly a type could be dynamic
-            # in a method signature, but put this here just in case...?
-            # fixed type variables however may appear in the type signature of a function
-            # if the type signature is (for instance) foo: () -> Array<Bar>
-            # where the type variable that is a paremter to the Array return value is
-            # wrapping "Bar"
-            if type.dynamic
-              type
-            else
-              replace_type(type.wrapped_type, formal_type_parameters)
-            end
+          when OpenType
+            replace_type(type.wrapped_type, formal_type_parameters)
+          when ClosedType
+            replace_type(type.wrapped_type, formal_type_parameters)
           end
         end
     end
@@ -1239,11 +1225,10 @@ module Rtc::Types
     end
     
     class TypeVariable < Type
-      attr_reader :dynamic
-      alias :dynamic? :dynamic
       def self.create(type_param)
-        raise(Exception, "Type Parameter must be an enumerator (for dynamic types) or a type class (for annotated types)") if
-          !type_param.instance_of?(Enumerator) && !type_param.kind_of?(Type)
+        if !type_param.instance_of?(Enumerator) && !type_param.kind_of?(Type)
+          raise(Exception, "Type Parameter must be an enumerator (for dynamic types) or a type class (for annotated types)")
+        end 
         TypeVariable.new(type_param)
       end
       
@@ -1256,65 +1241,38 @@ module Rtc::Types
       end
       
       def constrain_to(type)
-        raise Rtc::TypeNarrowingError, "Constrained #{type} is too narrow for type #{wrapped_type}" unless
-          wrapped_type <= type
-        @dynamic = false
-        @wrapped_type = type
+        type = ClosedType.new(type) if !type.instance_of?(ClosedType)
+        raise Rtc::TypeNarrowingError, "Constrained #{type} is too narrow for type #{pointed_type}" unless
+          pointed_type <= type
+        @pointed_type = type
       end
       
-      def wrapped_type
-        if !dynamic
-          @wrapped_type
-        elsif @dirty and !@wrapped_type
-          gen_type
-        elsif @wrapped_type
-          @wrapped_type
+      def pointed_type
+        if @pointed_type
+          @pointed_type
         else
-          @type_cache
+          gen_type
         end
       end
       
       def to_s
-        wrapped_type.to_s
+        pointed_type.to_s
       end
       
       def inspect
-        "TVar(#{id},#{dynamic}): #{wrapped_type.inspect}"
+        "TVar(#{dynamic}): #{pointed_type.inspect}"
       end
       
       #this should not be called externally
       def initialize(type, is_hint = false)
         if type.instance_of?(Enumerator)
-          @wrapped_type = nil # maybe the bottom type?
-          @dynamic = true        
+          @pointed_type = nil # maybe the bottom type?
           @it = type
           @dirty = true
           @type_cache = nil
         elsif type.kind_of?(Type)
-          @wrapped_type = type
-          @dynamic = is_hint
-        end
-        super()
-      end
-      
-      def <=(other)
-        if other.instance_of?(TypeVariable)
-          if dynamic
-            my_type = wrapped_type
-            their_type = other.wrapped_type
-            my_type <= their_type
-          else
-            typ = wrapped_type
-            other.wrapped_type <= typ && typ <= other.wrapped_type
-          end
-        else
-          if dynamic
-            return wrapped_type <= other
-          end
-          # otherwise our type has been constrained! this means that the other type must
-          # match this type exactly
-          typ = wrapped_type
-          other <= typ && typ <= other
+          constructor = is_hint ? OpenType : ClosedType
+          @pointed_type = constructor.new(type)
         end
       end
       
@@ -1356,7 +1314,7 @@ module Rtc::Types
           curr_type = UnionType.of(unify_param_types(curr_type))
         end
         @dirty = true
-        @type_cache = curr_type
+        @type_cache = OpenType.new(curr_type)
       end
       
       #FIXME(jtoman): see if we can lift this step into the gen_type step
@@ -1373,7 +1331,7 @@ module Rtc::Types
             }
             ((0..(nominal_type.type_parameters.size - 1)).map {
               |tparam_index|
-              extract_types(member_type.parameters[tparam_index])
+              extract_types(member_type.type_of_param(tparam_index))
             }).each_with_index {
               |type_parameter,index|
               tparam_set[index]+=type_parameter
@@ -1399,13 +1357,43 @@ module Rtc::Types
         wrapped_type.instance_of?(UnionType) ? wrapped_type.types.to_a : [wrapped_type]
       end
       
-      # this could be used to implement caching of wrapped types
-      # we could add an annotation that would say which functions would mark a type
-      # as dirty, and then at each call to those functions mark the wrapped type as
-      # dirty. It is a questionable optimization, so at the moment this method
-      # remains unused
-      def _mark_dirty
-        @dirty = true
+    end
+    
+    class ProxyType < Type
+      attr_reader :wrapped_type
+      def initialize(wrapped_type)
+        @wrapped_type = wrapped_type
+        super()
+      end
+      
+      def to_s
+        wrapped_type.to_s
       end
     end
+    
+    class OpenType < ProxyType
+      def initialize(wrapped_type)
+        super
+      end
+      
+      def <=(other)
+        return false unless other.is_a?(ProxyType)
+        other_type = other.wrapped_type
+        return @wrapped_type <= other_type
+      end
+      
+    end
+    
+    class ClosedType < ProxyType
+      def initialize(wrapped_type)
+        super
+      end
+      
+      def <=(other)
+         return false unless other.is_a?(ProxyType)
+         other_type = other.wrapped_type
+         return @wrapped_type <= other_type && other_type <= @wrapped_type
+      end
+    end
+    
 end  # module Rtc::Types

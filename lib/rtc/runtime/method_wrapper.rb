@@ -45,7 +45,7 @@ module Rtc
       if i + opt_offset < iter_end
         rest_args = passed_arguments.slice(i+opt_offset, iter_end - (i+opt_offset))
         return false unless
-          rest_args.rtc_type.type_of_param(0) <= method_type.arg_types[parameter_layout[:required][0] + parameter_layout[:opt]].type
+          rest_args.rtc_type.type_of_param(0).wrapped_type <= method_type.arg_types[parameter_layout[:required][0] + parameter_layout[:opt]].type
       end
       return true
     end

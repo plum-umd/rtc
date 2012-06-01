@@ -15,7 +15,7 @@ class Object
     my_type = self.rtc_type
     annotated_type.parameters.each_with_index {
       |type_param,index|
-      my_type.parameters[index].constrain_to(type_param.wrapped_type)
+      my_type.parameters[index].constrain_to(type_param.pointed_type)
     }
     self
   end

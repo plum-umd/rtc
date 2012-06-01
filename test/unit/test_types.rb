@@ -127,7 +127,7 @@ class TestTypeSystem < Test::Unit::TestCase
     test_obj = [1,2]
     type_parameter = test_obj.rtc_type.parameters[0]
     # type_parameter is still open
-    assert("foo".rtc_type <= type_parameter)
+    assert("foo".rtc_type <= type_parameter.pointed_type)
     # type_paremter is now Fixnum or String
     test_obj.push("foo")
 
@@ -136,7 +136,7 @@ class TestTypeSystem < Test::Unit::TestCase
     # tests that when subtyping two type variables, the "everything goes" is not
     # in place, we do proper subtyping checks
     assert_equal(false, other_type_parameter <= type_parameter)
-    assert(type_parameter <= other_type_parameter)
+    assert(type_parameter <= other_type_parameter.pointed_type)
     type_parameter.constrain_to(make_union(Fixnum, String))
 
     # ensure that after constraining t <= t' iff t == t' holds
