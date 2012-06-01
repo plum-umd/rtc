@@ -27,7 +27,6 @@ module Rtc
         mpl = {}
 
         b, _ = passed_arguments[i].rtc_type.match_param(method_type.arg_types[i], mpl)
-
         return false unless b
 
         mpl.each{|k, v|
@@ -146,6 +145,7 @@ module Rtc
             h[k] = v.to_a[0]
           }
 
+          np = Set.new()
           rm = h.all? {|k, v|
             if @method_poly[ct][k]
               if @method_poly[ct][k].eql?(v)
@@ -154,14 +154,22 @@ module Rtc
                 false
               end
             else
-              true
+              if np.empty?
+                np.add(v)
+                true
+              elsif np.includes?(v) or @method_poly[ct][k].values.index(v)
+                false
+              else
+                np.add(v)
+                true
+              end
             end
           }
 
           if rm == false
             false
           else
-            ret_value.rtc_type.le_poly(ct.return_type, h)
+            ret_value.rtc_type.le_poly(ct.return_type, h.merge(@method_poly[ct]))
           end
         end
       }
