@@ -145,67 +145,6 @@ class MyClass
     end
   end
 
-  typesig("fb: (Fixnum) {(Fixnum) -> String} -> TrueClass or FalseClass")
-  def fb(blk)
-    x = yield(blk)
-
-    if x == "3"
-      true
-    else
-      false
-    end
-  end
-
-  typesig("fbw: (Fixnum) {(Fixnum) -> Fixnum} -> TrueClass or FalseClass")
-  def fbw(blk)
-    x = yield(blk)
-
-    if x == "3"
-      true
-    else
-      false
-    end
-  end
-
-  typesig ("fb2: (Array<Fixnum>) { (Array<Fixnum>) -> Array<Fixnum> } -> String")
-  def fb2(bar)
-    x = yield(bar)
-    x.to_s
-  end
-
-  typesig ("fb3: (Array<t>) { (Array<t>) -> Array<t> } -> u")
-  def fb3(bar)
-    x = yield(bar)
-    x.to_s
-  end
-
-  typesig ("fb4: (Array<u>) { (Array<t>) -> Array<t> } -> u")
-  def fb4(bar)
-    x = yield(bar)
-    x.to_s
-  end
-
-  typesig ("fb5: (Array<u>) { (Array<t>) -> Array<t> } -> u")
-  def fb5(bar)
-    x = yield(bar)
-    
-    if x.size > 2
-      ["hello"]
-    else
-      ["bye"]
-    end
-  end
-
-  typesig ("fb6: (Array<u>) { (Array<t>) -> Array<t> } -> Array<u>")
-  def fb6(bar)
-    x = yield(bar)
-    
-    if x.size > 2
-      ["hello"]
-    else
-      ["bye"]
-    end
-  end
 end
 
 class TestTuple < Test::Unit::TestCase
@@ -239,24 +178,6 @@ class TestTuple < Test::Unit::TestCase
 
     x = MyClass.new.fhi4(2, Proc.new {|v| v.to_s + "hello"})
     assert_equal(1, x)
-
-    x = MyClass.new.fb(3) {|x| x.to_s}
-    assert_equal(true, x)
-
-    x = MyClass.new.fb2([4,5]) {|x| x + [1,2,3]}
-    assert_equal("[4, 5, 1, 2, 3]", x)
-
-    x = MyClass.new.fb3([4,5]) {|x| x + [1,2,3]}
-    assert_equal("[4, 5, 1, 2, 3]", x)
-
-    x = MyClass.new.fb4([4,5]) {|x| x + [1,2,3]}
-    assert_equal("[4, 5, 1, 2, 3]", x)
-
-    x = MyClass.new.fb5([4,5]) {|x| x + [1,2,3]}
-    assert_equal(["hello"], x)
-
-    x = MyClass.new.fb6([4,5]) {|x| x + [1,2,3]}
-    assert_equal(["hello"], x)
   end
 
   def test_failure
@@ -326,14 +247,6 @@ class TestTuple < Test::Unit::TestCase
 
     assert_raise Rtc::TypeMismatchException do
       MyClass.new.fhi4(2, Proc.new {|v| true})
-    end
-
-    assert_raise Rtc::TypeMismatchException do
-      x = MyClass.new.fbw(3) {|x| x.to_s}
-    end
-
-    assert_raise Rtc::TypeMismatchException do
-      x = MyClass.new.fb3([4,5]) {|x| ["1", "2", "3"]}
     end
   end
 end
