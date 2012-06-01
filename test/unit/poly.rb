@@ -108,50 +108,13 @@ class MyClass
   def hf3(h)
     h.keys[0]
   end
-
-  typesig("fhi: (Fixnum, (Fixnum) -> String) -> TrueClass")
-  def fhi(x, p)
-    if p.call(303) == "0"
-      true
-    else
-      true
-    end
-  end
-
-  typesig("fhi2: (Fixnum, (Fixnum) -> String) -> TrueClass")
-  def fhi2(x, p)
-    if p.call(303) == "0"
-      false
-    else
-      "str"
-    end
-  end
-
-  typesig("fhi3: (Fixnum, (Fixnum) -> String) -> TrueClass")
-  def fhi3(x, p)
-    if p.call("3") == "0"
-      false
-    else
-      "str"
-    end
-  end
-
-  typesig("fhi4: (Fixnum, (t) -> String) -> t")
-  def fhi4(x, p)
-   if p.call(x) == "0"
-      1
-    else
-     1
-    end
-  end
-
 end
 
 class TestTuple < Test::Unit::TestCase
   def test_simple
-#    assert_equal(MyClass.new.hf3({"a" => ["a"]}), "a")
-#    assert_equal(MyClass.new.hf({"a" => 0}), 0)
-#    assert_equal(MyClass.new.hf2({"a" => "b"}), 0)
+    assert_equal(MyClass.new.hf3({"a" => ["a"]}), "a")
+    assert_equal(MyClass.new.hf({"a" => 0}), 0)
+    assert_equal(MyClass.new.hf2({"a" => "b"}), 0)
     assert_equal(MyClass.new.uf(1), true)
     assert_equal("hi", MyClass.new.f5([[[["1"]]]], [[["3"]]]))
     assert_equal(1, MyClass.new.f52([[[["1"]]]], [[["3"]]]))
@@ -172,12 +135,6 @@ class TestTuple < Test::Unit::TestCase
     assert_equal([[[3]]], MyClass.new.t1(1, 2, [3]))
     assert_equal([[[3]]], MyClass.new.t1("1", 2, [3]))
     assert_equal([[[3]]], MyClass.new.t2("1", 2, [3]))
-
-    x = MyClass.new.fhi(2, Proc.new {|v| v.to_s + "hello"})
-    assert_equal(true, x)
-
-    x = MyClass.new.fhi4(2, Proc.new {|v| v.to_s + "hello"})
-    assert_equal(1, x)
   end
 
   def test_failure
@@ -231,22 +188,6 @@ class TestTuple < Test::Unit::TestCase
 
     assert_raise Rtc::TypeMismatchException do
       MyClass.new.f7(3)
-    end
-
-    assert_raise Rtc::TypeMismatchException do
-      MyClass.new.fhi2(2, Proc.new {|v| v.to_s + "hello"})
-    end
-
-    assert_raise Rtc::TypeMismatchException do
-      MyClass.new.fhi3(2, Proc.new {|v| v.to_s + "hello"})
-    end
-
-    assert_raise Rtc::TypeMismatchException do
-      MyClass.new.fhi3(2, Proc.new {|v| v.to_s + "hello"})
-    end
-
-    assert_raise Rtc::TypeMismatchException do
-      MyClass.new.fhi4(2, Proc.new {|v| true})
     end
   end
 end
