@@ -135,7 +135,7 @@ rule
   method_name:
       relative_method_name { result = MethodIdentifier.new(val[0]) }
     | K_SELF T_DOT relative_method_name { result = ClassMethodIdentifier.new(val[2]) }
- 
+
   method_sig:
       T_LPAREN T_RPAREN block T_RARROW type_expr {
         result = construct_msig([], val[2], val[4])
@@ -234,9 +234,6 @@ rule
       }
     | K_NIL {
     	result = Rtc::Types::NominalType.of(NilClass)
-      }
-    | T_LPAREN type_expr_comma_list T_RPAREN T_RARROW type_expr_comma_list { 
-       result = Rtc::Types::ProceduralType.new(val[4][0], val[1], nil)
     }
 
   tuple:
