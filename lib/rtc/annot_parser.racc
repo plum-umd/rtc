@@ -209,7 +209,6 @@ rule
 
   single_type_expr:
       type_var { result = val[0] }
-
     | T_SYMBOL {
     	result = Rtc::Types::SymbolType.new(eval(val[0]))
       }
@@ -236,9 +235,8 @@ rule
     | K_NIL {
     	result = Rtc::Types::NominalType.of(NilClass)
       }
-
-    | T_LPAREN type_expr_comma_list T_RPAREN T_RARROW single_type_expr { 
-       result = Rtc::Types::ProceduralType.new(val[4], val[1], nil)
+    | T_LPAREN type_expr_comma_list T_RPAREN T_RARROW type_expr_comma_list { 
+       result = Rtc::Types::ProceduralType.new(val[4][0], val[1], nil)
     }
 
   tuple:
