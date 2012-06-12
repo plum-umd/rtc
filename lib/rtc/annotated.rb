@@ -74,7 +74,7 @@ module Rtc::Annotated
       end
       this_type = Rtc::Types::NominalType.of(self)
       this_type.add_method(signature.id.to_s, signature.type)
-      if self.instance_methods(false).include?(signature.id)
+      if self.instance_methods(false).include?(signature.id.to_sym)
         @method_wrappers[signature.id.to_s] = Rtc::MethodWrapper.make_wrapper(self, signature.id.to_s)
       else
         @deferred_methods << signature.id.to_s
@@ -84,7 +84,7 @@ module Rtc::Annotated
     def handle_class_typesig(signature)
       meta_type = self.rtc_type
       meta_type.add_method(signature.id.to_s, signature.type)
-      if self.methods(false).include?(signature.id.to_s)
+      if self.methods(false).include?(signature.id.to_sym)
         @class_method_wrappers[signature.id.to_s] = Rtc::MethodWrapper.make_wrapper(class << self; self; end, signature.id.to_s)
       else
         @deferred_class_methods << signature.id.to_s
