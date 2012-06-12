@@ -306,7 +306,7 @@ class TestTypeChecking < Test::Unit::TestCase
    def test_constrained()
      my_arr = [1]
      assert_nothing_raised do
-       my_arr.push("foo")
+       my_arr.my_push("foo")
      end
      assert_raise Rtc::TypeNarrowingError do
        my_arr.rtc_annotate("Array<Fixnum>")
