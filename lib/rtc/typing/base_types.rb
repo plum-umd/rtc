@@ -6,6 +6,7 @@ class Array
   typesig("'[]': (Fixnum) -> t or nil")
   typesig("'[]': (Fixnum, Fixnum) -> Array<t> or nil")
   typesig("'[]': (Range) -> Array<t> or nil")
+  typesig("'+': (t) -> Array<t>")
 end
 rtc_typesig("class Set<t>")
 class Set

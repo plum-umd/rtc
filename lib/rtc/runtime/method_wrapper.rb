@@ -3,6 +3,12 @@ require 'rtc/options'
 module Rtc
   
   class TypeMismatchException < StandardError; end
+
+  class AnnotateException < StandardError; end
+
+  class CastException < StandardError; end
+
+  class NoMethodException < StandardError; end
   
   class MethodWrapper
     class NoArgument; end
@@ -52,7 +58,7 @@ module Rtc
 
     def invoke(invokee, arg_vector)
       regular_args = arg_vector[:args]
-      
+
       method_type = invokee.rtc_typeof(@method_name, @class_obj)
       candidate_types = []
       

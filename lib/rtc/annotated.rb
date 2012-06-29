@@ -5,19 +5,65 @@
 require 'rtc/annot_parser.tab'
 require 'rtc/runtime/method_wrapper.rb'
 require 'rtc/runtime/class_modifier.rb'
+require 'rtc/proxy_object'
 require 'set'
+
 class Object
+  def rtc_cast(annotation_string)
+    parser = Rtc::TypeAnnotationParser.new(self.class)
+    annotated_type = parser.scan_str("##"+annotation_string)
+
+    #    raise Rtc::TypeMismatchException, "Invalid type annotation: annotation was for #{annotated_type.nominal.klass}" +
+    #      " but self is #{self.class.name}" unless self.class == annotated_type.nominal.klass
+
+    if self.class == Rtc::ProxyObject
+      my_type = self.object.rtc_type
+    else
+      my_type = self.rtc_type
+    end
+
+    if not(my_type <= annotated_type)
+      raise Rtc::CastException, "object type " + my_type.to_s + " NOT <= rtc_cast argument type " + annotated_type.to_s
+    end
+
+    if self.class == Rtc::ProxyObject
+      add_type(annotated_type)
+    else
+      Rtc::ProxyObject.new(self, annotated_type)
+    end
+  end
+  
   def rtc_annotate(annotation_string)
     parser = Rtc::TypeAnnotationParser.new(self.class)
     annotated_type = parser.scan_str("##"+annotation_string)
-    raise Rtc::TypeMismatchException, "Invalid type annotation: annotation was for #{annotated_type.nominal.klass}" +
-      " but self is #{self.class.name}" unless self.class == annotated_type.nominal.klass
-    my_type = self.rtc_type
-    annotated_type.parameters.each_with_index {
-      |type_param,index|
-      my_type.parameters[index].constrain_to(type_param.wrapped_type)
-    }
-    self
+
+    #    raise Rtc::TypeMismatchException, "Invalid type annotation: annotation was for #{annotated_type.nominal.klass}" +
+    #      " but self is #{self.class.name}" unless self.class == annotated_type.nominal.klass
+
+    if self.class == Rtc::ProxyObject
+      for t in self.types
+        if not (t <= annotated_type)
+          raise Rtc::AnnotateException, "object type " + t.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s
+        end
+      end
+    else
+      my_type = self.rtc_type
+
+      if not(my_type <= annotated_type)
+        raise Rtc::AnnotateException, "object type " + my_type.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s
+      end
+    end
+
+#    annotated_type.parameters.each_with_index {
+#      |type_param,index|
+#      my_type.parameters[index].constrain_to(type_param.pointed_type)
+#    }
+
+    if self.class == Rtc::ProxyObject
+      add_type(annotated_type)
+    else
+      Rtc::ProxyObject.new(self, annotated_type)
+    end
   end
 end
 
@@ -26,16 +72,9 @@ end
 #
 # Note that this should be +extend+ed, not +include+ded.
 module Rtc::Annotated
-    @@method_wrappers = {}
-    @@deferred_methods = Set.new
-    @@next_methods = []
-    
-    @@class_method_wrappers = {}
-    @@deferred_class_methods = Set.new
-    
     # Adds a type signature for a method to the class's method type table.
     def typesig(string_signature)
-        signatures = @@annot_parser.scan_str(string_signature)
+        signatures = @annot_parser.scan_str(string_signature)
         return unless signatures
         
         if signatures.instance_of?(Rtc::ClassAnnotation)
@@ -76,25 +115,25 @@ module Rtc::Annotated
     
     def handle_instance_typesig(signature)
       if signature.id.to_s == "__rtc_next_method"
-        @@next_methods << signature.type
+        @next_methods << signature.type
         return
       end
       this_type = Rtc::Types::NominalType.of(self)
       this_type.add_method(signature.id.to_s, signature.type)
-      if self.instance_methods(false).include?(signature.id)
-        @@method_wrappers[signature.id.to_s] = Rtc::MethodWrapper.make_wrapper(self, signature.id.to_s)
+      if self.instance_methods(false).include?(signature.id.to_sym)
+        @method_wrappers[signature.id.to_s] = Rtc::MethodWrapper.make_wrapper(self, signature.id.to_s)
       else
-        @@deferred_methods << signature.id.to_s
+        @deferred_methods << signature.id.to_s
       end
     end
     
     def handle_class_typesig(signature)
       meta_type = self.rtc_type
       meta_type.add_method(signature.id.to_s, signature.type)
-      if self.methods(false).include?(signature.id.to_s)
-        @@class_method_wrappers[signature.id.to_s] = Rtc::MethodWrapper.make_wrapper(class << self; self; end, signature.id.to_s)
+      if self.methods(false).include?(signature.id.to_sym)
+        @class_method_wrappers[signature.id.to_s] = Rtc::MethodWrapper.make_wrapper(class << self; self; end, signature.id.to_s)
       else
-        @@deferred_class_methods << signature.id.to_s
+        @deferred_class_methods << signature.id.to_s
       end
     end
     
@@ -112,29 +151,31 @@ module Rtc::Annotated
     end
     
     def singleton_method_added(method_name)
+      return if not defined? @annot_parser
       if method_name == :singleton_method_added
         return
       end
-      if @@deferred_class_methods.include?(method_name.to_s)
-        @@deferred_class_methods.delete(method_name.to_s)
-        @@class_method_wrappers[method_name.to_s] = Rtc::MethodWrapper.make_wrapper(class << self; self; end, method_name.to_s) 
+      if @deferred_class_methods.include?(method_name.to_s)
+        @deferred_class_methods.delete(method_name.to_s)
+        @class_method_wrappers[method_name.to_s] = Rtc::MethodWrapper.make_wrapper(class << self; self; end, method_name.to_s) 
       end
     end
     
     def method_added(method_name)
-      if @@deferred_methods.include?(method_name.to_s)
-        @@deferred_methods.delete(method_name.to_s)
-        @@method_wrappers[method_name.to_s] = Rtc::MethodWrapper.make_wrapper(self, method_name.to_s)
+      return if not defined? @annot_parser
+      if @deferred_methods.include?(method_name.to_s)
+        @deferred_methods.delete(method_name.to_s)
+        @method_wrappers[method_name.to_s] = Rtc::MethodWrapper.make_wrapper(self, method_name.to_s)
       end
-      if @@next_methods.size != 0
+      if @next_methods.size != 0
         this_type = Rtc::Types::NominalType.of(self)
-        @@next_methods.each {
+        @next_methods.each {
           |m_sig|
           this_type.add_method(method_name.to_s, m_sig)
         }
-        @@next_methods = []
-        if not @@method_wrappers[method_name.to_s]
-          @@method_wrappers[method_name.to_s] = Rtc::MethodWrapper.make_wrapper(self, method_name.to_s)
+        @next_methods = []
+        if not @method_wrappers[method_name.to_s]
+          @method_wrappers[method_name.to_s] = Rtc::MethodWrapper.make_wrapper(self, method_name.to_s)
         end
       end
     end
@@ -143,6 +184,16 @@ module Rtc::Annotated
       if Rtc::ClassModifier.deferred?(extendee)
         Rtc::ClassModifier.modify_class(extendee)
       end
-      @@annot_parser = Rtc::TypeAnnotationParser.new(extendee)
+      #FIXME: there must be a better way to do this
+      [[:@annot_parser, Rtc::TypeAnnotationParser.new(extendee)],
+       [:@method_wrappers,{}],
+       [:@deferred_methods, Set.new],
+       [:@next_methods, []],
+       [:@class_method_wrappers, {}],
+       [:@deferred_class_methods, Set.new]
+      ].each {
+        |i_var, value|
+        extendee.instance_variable_set(i_var, value)
+      }
     end
 end
