@@ -611,7 +611,7 @@ module Rtc::Types
                 end
                 true
             when NominalType
-              false
+                false
             else
                 super(other)
             end
@@ -1304,8 +1304,12 @@ module Rtc::Types
             their_type = other.wrapped_type
             my_type <= their_type
           else
-            typ = wrapped_type
-            other.wrapped_type <= typ && typ <= other.wrapped_type
+            if other.instance_of?(TypeVariable)
+              wrapped_type <= other.wrapped_type
+            else
+              typ = wrapped_type
+              other.wrapped_type <= typ && typ <= other.wrapped_type
+            end
           end
         else
           if dynamic
