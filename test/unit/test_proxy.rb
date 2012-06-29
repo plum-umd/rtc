@@ -80,7 +80,7 @@ class TestProxy < Test::Unit::TestCase
     assert_equal(z.types.map{|x| x.to_s}, ["Array<B>", "Array<A>"])
   end
 
-  def test_methods
+  def test_plus
     x = [1, 2].rtc_annotate("Array<Fixnum>")
     assert_equal(x + [3, 4], [1, 2, 3, 4])
     assert_equal(x + x, [1, 2, 1, 2])
@@ -89,5 +89,17 @@ class TestProxy < Test::Unit::TestCase
     assert_raise Rtc::NoMethodException do
       x.boo()
     end
+  end
+
+  def test_annotation_violation
+    assert_raise Rtc::AnnotateException do
+      x = [1, 2].rtc_annotate("Array<String>")      
+    end
+
+    y = [1, 2].rtc_annotate("Array<Fixnum>")      
+
+    assert_raise Rtc::AnnotateException do
+      y.push("doh")
+    end    
   end
 end

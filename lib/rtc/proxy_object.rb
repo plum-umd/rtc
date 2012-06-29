@@ -36,10 +36,16 @@ module Rtc
       end
 
       if args[1] == nil
-        @object.send method
+        ret = @object.send method
       else
-        @object.send method, args[1]
+        ret = @object.send method, args[1]
       end
+
+      if not @object.rtc_type <= @types.to_a[-1]
+        raise Rtc::AnnotateException, "new value " + @object.to_s + " NOT <= annotated type " + @types.to_a[-1].to_s
+      end  
+
+      ret
     end
   end
 end
