@@ -9,61 +9,60 @@ require 'rtc/proxy_object'
 require 'set'
 
 class Object
+  attr_reader :proxy_types
+
+  def add_type(t)
+    if @proxy_types
+      found = @proxy_types.any? {|pt| t <= pt and pt <= t}
+      @proxy_types.add(t) if found == false
+    else
+      @proxy_types = Set.new([t])
+    end
+
+    self
+  end
+
+  def proxy_types_to_s
+    if @proxy_types
+      return @proxy_types.to_a.map {|i| i.to_s} 
+    end
+  end
+
   def rtc_cast(annotation_string)
     parser = Rtc::TypeAnnotationParser.new(self.class)
     annotated_type = parser.scan_str("##"+annotation_string)
 
-    #    raise Rtc::TypeMismatchException, "Invalid type annotation: annotation was for #{annotated_type.nominal.klass}" +
-    #      " but self is #{self.class.name}" unless self.class == annotated_type.nominal.klass
+    my_type = self.rtc_type
 
-    if self.class == Rtc::ProxyObject
-      my_type = self.object.rtc_type
-    else
-      my_type = self.rtc_type
+    if not my_type <= annotated_type
+      raise Rtc::CastException, "object type " + my_type.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s
     end
 
-    if not(my_type <= annotated_type)
-      raise Rtc::CastException, "object type " + my_type.to_s + " NOT <= rtc_cast argument type " + annotated_type.to_s
-    end
+    self.add_type(annotated_type)
 
-    if self.class == Rtc::ProxyObject
-      add_type(annotated_type)
-    else
-      Rtc::ProxyObject.new(self, annotated_type)
-    end
+    return self
   end
   
   def rtc_annotate(annotation_string)
     parser = Rtc::TypeAnnotationParser.new(self.class)
     annotated_type = parser.scan_str("##"+annotation_string)
+    my_type = self.rtc_type
 
-    #    raise Rtc::TypeMismatchException, "Invalid type annotation: annotation was for #{annotated_type.nominal.klass}" +
-    #      " but self is #{self.class.name}" unless self.class == annotated_type.nominal.klass
+    if not my_type <= annotated_type
+      raise Rtc::AnnotateException, "object type " + my_type.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s
+    end
 
-    if self.class == Rtc::ProxyObject
-      for t in self.types
-        if not (t <= annotated_type)
-          raise Rtc::AnnotateException, "object type " + t.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s
-        end
-      end
-    else
-      my_type = self.rtc_type
+    if self.proxy_types
+      valid_type = self.proxy_types.all?{|t| t <= annotated_type}
 
-      if not(my_type <= annotated_type)
-        raise Rtc::AnnotateException, "object type " + my_type.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s
+      if not valid_type
+        raise Rtc::AnnotateException, "not all proxy_types " + self.proxy_types_to_s.to_s + " for object <= annotated_type " + annotated_type.to_s
       end
     end
 
-#    annotated_type.parameters.each_with_index {
-#      |type_param,index|
-#      my_type.parameters[index].constrain_to(type_param.pointed_type)
-#    }
+    self.add_type(annotated_type)
 
-    if self.class == Rtc::ProxyObject
-      add_type(annotated_type)
-    else
-      Rtc::ProxyObject.new(self, annotated_type)
-    end
+    return self
   end
 end
 

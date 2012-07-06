@@ -22,45 +22,87 @@ end
 class F
 end
 
-class TestProxy < Test::Unit::TestCase
-  def same_type(p, v, t)
-    pts = p.types.map {|x| x.to_s}
-    p.object == v and t == pts   
+class Array
+  rtc_annotated
+
+  typesig("my_f3: () -> Array<t>")
+  def my_f3
+    self.push("s")
   end
 
+  typesig("my_f2: () -> Array<t>")
+  def my_f2
+    self + my_f3
+  end
+
+  typesig("my_f: () -> Array<t>")
+  def my_f
+    self + my_f2
+  end
+
+  typesig("my_foo2: () -> Array<Fixnum or String>")
+  def my_foo2
+    self.push("doh")
+  end
+
+  typesig("my_foo3: (Array<Fixnum or String>) -> Array<Fixnum or String>")
+  def my_foo3(a)
+    a.push("doh")
+  end
+
+  typesig("my_foo: (Array<t>) -> Array<t>")
+  def my_foo(a)
+    a.my_foo2
+  end
+
+  typesig("my_foo_arg: (Array<t>) -> Array<t>")
+  def my_foo_arg(a)
+    my_foo3(a)
+  end
+end
+
+class TestProxy < Test::Unit::TestCase
+  def my_to_s(s)
+    s.map {|x| x.to_s}
+  end
+  
   def test_rtc_cast_1
     x = [1,2]
     y = x.rtc_cast("Array<Fixnum>")
-    assert_equal(same_type(y, [1,2], ["Array<Fixnum>"]), true)
+    assert_equal(y.proxy_types_to_s, ["Array<Fixnum>"])
 
     z = y.rtc_cast("Array<Fixnum or String>")
-    assert_equal(same_type(z, [1,2], ["Array<Fixnum>", "Array<(Fixnum or String)>"]), true)
+    assert_equal(x.proxy_types_to_s, ["Array<Fixnum>", "Array<(Fixnum or String)>"])
+    assert_equal(y.proxy_types_to_s, ["Array<Fixnum>", "Array<(Fixnum or String)>"])
+    assert_equal(z.proxy_types_to_s, ["Array<Fixnum>", "Array<(Fixnum or String)>"])
 
     w = z.rtc_cast("Array<Fixnum>")
-    assert_equal(same_type(w, [1,2], ["Array<Fixnum>", "Array<(Fixnum or String)>"]), true)
+    assert_equal(w.proxy_types_to_s, ["Array<Fixnum>", "Array<(Fixnum or String)>"])
+
+    a = [1, 2]
+
+    assert_raise Rtc::CastException do
+      a.rtc_cast("Array<TrueClass>")
+    end
   end
   
   def test_rtc_annotate_1
     x = [1,2]
     y = x.rtc_annotate("Array<Fixnum>")
-    assert_equal(same_type(y, [1,2], ["Array<Fixnum>"]), true)
+    assert_equal(y.proxy_types_to_s, ["Array<Fixnum>"])
 
-    a = y.rtc_annotate("Array<Fixnum>")
-    assert_equal(same_type(a, [1,2], ["Array<Fixnum>"]), true)
+    w = x
 
-    z = y.rtc_annotate("Array<Fixnum or String>")
-    assert_equal(same_type(z, [1,2], ["Array<Fixnum>", "Array<(Fixnum or String)>"]), true)
+    w.rtc_annotate("Array<Fixnum or String>")
+    assert_equal(w.proxy_types, y.proxy_types)
+    assert_equal(w.proxy_types_to_s, ["Array<Fixnum>", "Array<(Fixnum or String)>"])
+
+    assert_raise Rtc::AnnotateException do
+      z = w.rtc_annotate("Array<String>")
+    end
 
     z = y.rtc_annotate("Array<Object>")
-    assert_equal(same_type(z, [1,2], ["Array<Fixnum>", "Array<(Fixnum or String)>", "Array<Object>"]), true)
-
-    assert_raise Rtc::AnnotateException do
-      w = z.rtc_annotate("Array<String>")
-    end
-
-    assert_raise Rtc::AnnotateException do
-      w = z.rtc_annotate("Array<String>")
-    end
+    assert_equal(z.proxy_types_to_s, ["Array<Fixnum>", "Array<(Fixnum or String)>", "Array<Object>"])
   end
 
   def test_rtc_annotate_2
@@ -76,8 +118,10 @@ class TestProxy < Test::Unit::TestCase
     x = [C.new]
     y = x.rtc_annotate("Array<B>")
     z = y.rtc_annotate("Array<A>")
-    
-    assert_equal(z.types.map{|x| x.to_s}, ["Array<B>", "Array<A>"])
+
+    assert_equal(x.proxy_types_to_s, ["Array<B>", "Array<A>"])
+    assert_equal(y.proxy_types_to_s, ["Array<B>", "Array<A>"])
+    assert_equal(z.proxy_types_to_s, ["Array<B>", "Array<A>"])
   end
 
   def test_plus
@@ -86,8 +130,8 @@ class TestProxy < Test::Unit::TestCase
     assert_equal(x + x, [1, 2, 1, 2])
     assert_equal([100] + [1, 2], [100, 1, 2])
 
-    assert_raise Rtc::NoMethodException do
-      x.boo()
+    assert_raise NoMethodError do
+      x.boo
     end
   end
 
@@ -101,5 +145,56 @@ class TestProxy < Test::Unit::TestCase
     assert_raise Rtc::AnnotateException do
       y.push("doh")
     end    
+  end
+
+  def test_proxy_arg
+    x = [1, 2]
+    y = [3, 4].rtc_annotate("Array<Fixnum>")
+    
+    assert_raise Rtc::AnnotateException do
+      x.my_foo(y)
+    end
+
+    assert_raise Rtc::AnnotateException do
+      x.my_foo_arg(y)
+    end
+
+    begin 
+      x.my_foo_arg(y)
+    rescue Exception => e
+      ss = e.backtrace.to_s
+      index_my_foo3 = ss.index("`my_foo3'")
+      index_my_foo_arg = ss.index("`my_foo_arg'")
+      
+      assert_equal(true, index_my_foo3 > -1)
+      assert_equal(true, index_my_foo3 < index_my_foo_arg)
+
+      assert_equal(true, e.message.index("Array.push") > -1)
+    end
+
+    return
+  end
+
+  def test_nested_calls
+    x = [1, 2].rtc_annotate("Array<Fixnum>")
+
+    assert_raise Rtc::AnnotateException do
+      x.my_f
+    end
+
+    begin
+      x.my_f
+    rescue Exception => e
+      ss = e.backtrace.to_s
+      index_f3 = ss.index("`my_f3'")
+      index_f2 = ss.index("`my_f2'")
+      index_f = ss.index("`my_f'")
+
+      assert_equal(true, index_f3 > -1)
+      assert_equal(true, index_f3 < index_f2)
+      assert_equal(true, index_f2 < index_f)
+
+      assert_equal(true, e.message.index("Array.push") > -1)
+    end
   end
 end

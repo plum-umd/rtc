@@ -74,7 +74,8 @@ module Rtc
         end
       end
       
-      if candidate_types.empty?
+      if false   # FIXME: polymorphic checking not working yet
+      # if candidate_types.empty?
         #arg_types = []
         #arg_values = []
         #puts "Function " + @method_name.to_s + " argument type mismatch:"
@@ -112,6 +113,16 @@ module Rtc
         on_error(message)
       end
 
+      if invokee.proxy_types
+        proxy_type_valid = invokee.proxy_types.all? { |t|
+          invokee.rtc_type <= t
+        }
+
+        if not proxy_type_valid
+          raise Rtc::AnnotateException, "object type " + invokee.rtc_type.to_s + " NOT <= annotated types " + invokee.proxy_types_to_s.to_s + " from method " + invokee.class.to_s + '.' + @method_name
+        end
+      end
+      
       ret_value
     end
 
