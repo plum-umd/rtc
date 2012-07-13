@@ -6,13 +6,19 @@ class Array
   typesig("'[]': (Fixnum) -> t or nil")
   typesig("'[]': (Fixnum, Fixnum) -> Array<t> or nil")
   typesig("'[]': (Range) -> Array<t> or nil")
-  typesig("'+': (t) -> Array<t>")
+#  typesig("'+': (t) -> Array<t>")
   typesig("push: (t) -> Array<t>")
 end
+
 rtc_typesig("class Set<t>")
 class Set
   rtc_annotated
   define_iterators :t => :each
   typesig("to_a: () -> Array<t>")
   typesig("'includes?': (t) -> TrueClass or FalseClass")
+end
+
+rtc_typesig("class Hash<k, v>")
+class Hash
+  rtc_annotated
 end
