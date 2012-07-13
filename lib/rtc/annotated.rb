@@ -10,6 +10,17 @@ require 'set'
 
 class Object
   attr_reader :proxy_types
+  attr_reader :annotated_methods
+
+  def add_annotated_method(id, type)
+    if @annotated_methods
+      # FIXME: should this be intersection type
+      @annotated_methods[m] = Rtc::Types::ProceduralType.new(ret_type, arg_types, blk_type)
+    else
+      @annotated_methods = {}
+      @annotated_methods[m] = Rtc::Types::ProceduralType.new(ret_type, arg_types, blk_type)
+    end
+  end
 
   def add_type(t)
     if @proxy_types
@@ -27,6 +38,23 @@ class Object
       return @proxy_types.to_a.map {|i| i.to_s} 
     end
   end
+
+  def rtc_inst(annotation_string)
+    sigs = Rtc::TypeAnnotationParser.new(self.class).scan_str(annotation_string)
+    sig = sigs[0]     # what to do when more than one type?
+
+    method_name = sig.id
+    method_type = sig.type
+
+    if @annotated_methods
+      @annotated_methods[method_name] = method_type
+    else
+      @annotated_methods = {}
+      @annotated_methods[method_name] = method_type
+    end
+
+    self
+  end  
 
   def rtc_cast(annotation_string)
     parser = Rtc::TypeAnnotationParser.new(self.class)
