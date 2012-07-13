@@ -134,6 +134,9 @@ module Rtc::Types
             @@next_id += 1
         end
 
+#        def has_parameterized
+#        end
+
         # Return true if +self+ is a subtype of +other+. Implemented in
         # subclasses.
         def <=(other)
@@ -159,7 +162,69 @@ module Rtc::Types
               false
             end
         end
-        
+
+        def le_poly(other, h, ret=false)
+          case other
+          when UnionType
+            sol_found = false
+            nh = {}
+
+            for o in other.types
+              if o.has_parameterized and self.le_poly(o, nh, ret)
+                if sol_found == true 
+                  raise Rtc::AmbiguousUnionException
+                else
+                  return true if ret == true
+                  sol_found = true
+                end
+              else
+                if self <= o
+                  if sol_found == true 
+                    raise Rtc::AmbiguousUnionException
+                  else
+                    return true if ret == true
+                    sol_found = true
+                  end
+                end
+              end
+            end
+
+            return false if ret == true
+
+            if nh.size == 1
+              h.merge!(nh)
+              return true
+            else
+              return false
+            end
+          when IntersectionType
+            others.types.any? do |a|
+              self <= a
+            end
+          when TypeVariable
+            if other.dynamic
+              true
+            else
+              typ = other.wrapped_type
+              self <= typ
+            end
+          when TopType
+            true
+          else
+            if h.keys.include?(other.symbol)
+              if h[other.symbol].instance_of?(UnionType)
+                h[other.symbol] = UnionType.of(h[other.symbol].types.to_a + [self])
+              else
+                h[other.symbol] = UnionType.of([h[other.symbol], self])
+              end
+            else
+              h[other.symbol] = self
+            end
+            
+            true
+          end
+        end
+
         def parameterized?
           false
         end
@@ -245,6 +310,22 @@ module Rtc::Types
             end
         end
 
+        def le_poly(other, h, ret=false)
+            case other
+            when StructuralType
+                other.method_names.each do |m_name|
+                  return false unless method_names.include?(m_name)
+                  mine = get_method(m_name)
+                  theirs = other.get_method(m_name)
+                  #return false unless mine <= theirs
+                  return false unless mine.le_poly(theirs, h, ret)
+                end
+                return true
+            else
+                super(other, h, ret)
+            end
+        end
+
         def to_s  # :nodoc:
             fields = map_to_string(@field_types)
             methods = map_to_string(@method_types)
@@ -325,6 +406,7 @@ module Rtc::Types
           def initialize(class_obj)
             @it_class = class_obj
           end
+
           def next
             return nil if @it_class.nil?
             to_return = @it_class
@@ -355,6 +437,10 @@ module Rtc::Types
                 @@cache[klass] = t
             end
             return t
+        end
+
+        def has_parameterized
+          false
         end
         
         def type_parameters
@@ -398,6 +484,25 @@ module Rtc::Types
                 return false
             else
               super(other)
+            end
+        end
+
+        def le_poly(other, h, ret=false)
+            case other
+            when ParameterizedType
+              false
+            when NominalType
+                return true if other.klass.name == @klass.name
+                other_class = other.klass
+                it = InheritanceChainIterator.new(@klass)
+                #TODO(jtoman): memoize this lookup for fast access?
+
+                while (it_class = it.next)
+                  return true if other_class == it_class 
+                end
+                return false
+            else
+              super(other, h, ret)
             end
         end
 
@@ -595,11 +700,11 @@ module Rtc::Types
             @_method_cache = {}
             super({},{})
         end
-        
-        def parameterized?
-          true
-        end
 
+        def has_parameterized
+          @parameters.any? {|p| p.wrapped_type.has_parameterized}
+        end
+        
         def <=(other)
             case other
             when ParameterizedType
@@ -614,6 +719,25 @@ module Rtc::Types
                 false
             else
                 super(other)
+            end
+        end
+
+        def le_poly(other, h, ret=false)
+            case other
+            when ParameterizedType
+                return false unless (@nominal.le_poly(other.nominal, h, ret) and
+                                     other.nominal.le_poly(@nominal, h, ret))
+                zipped = @parameters.zip(other.parameters)
+                
+                return false unless zipped.all? do |t, u|
+                    t.le_poly(u, h, ret)
+                end
+
+                true
+            when NominalType
+                false
+            else
+                super(other, h, ret)
             end
         end
 
@@ -656,6 +780,7 @@ module Rtc::Types
         private
         # perform type replacement recursively
         def replace_type(type, formal_type_parameters)
+          return type
           case type
           when TypeParameter
             t_ind = @nominal.type_parameters.index(type)
@@ -740,8 +865,36 @@ module Rtc::Types
             @return_type = return_type
             @arg_types = arg_types
             @block_type = block_type
+
             super()
         end
+
+        def has_parameterized_args
+          @arg_types.any? {|a| a.has_parameterized}
+        end
+
+        def has_parameterized_ret
+          @return_type.has_parameterized
+        end
+
+        def get_parameterized_arg_pos
+          positions = []
+          i = 0
+
+          @arg_types.each {|a|
+            positions.push(i) if a.has_parameterized
+            i += 1
+          }
+
+          positions
+        end
+
+        def has_parameterized
+          has_parameterized_args or has_parameterized_ret
+        end
+
+#        def has_parameterized
+#        end
 
         # Return true if +self+ is a subtype of +other+. This follows the usual
         # semantics of TopType and BottomType. If +other+ is also an instance of
@@ -974,6 +1127,10 @@ module Rtc::Types
         @symbol = sym
         super()
       end
+
+      def has_parameterized
+        false
+      end
       
       def eql?(other)
         other.instance_of?(SymbolType) and other.symbol == symbol
@@ -1117,6 +1274,36 @@ module Rtc::Types
             return UnionType.new(types)
         end
 
+        def le_poly(other, h, ret=false)
+          if other.has_parameterized
+            if other.instance_of?(TypeParameter)
+              if h.keys.include?(other.symbol)
+                if h[other.symbol].instance_of?(UnionType)
+                  h[other.symbol] = UnionType.of(h[other.symbol].types.to_a + [self])
+                else
+                  h[other.symbol] = UnionType.of([h[other.symbol], self])
+                end
+              else
+                h[other.symbol] = self
+              end
+
+              return true
+            elsif other.instance_of?(UnionType)
+              @types.all? do |t|
+                t.le_poly(other, h, ret)
+              end
+            else
+              raise Exception, "NOT IMPLEMENTED"
+            end
+          else
+            self <= other
+          end
+        end
+
+        def has_parameterized
+          @types.any? {|t| t.has_parameterized}
+        end
+
         # The set of all types in the union.
         attr_accessor :types
 
@@ -1167,12 +1354,20 @@ module Rtc::Types
             @symbol = symbol
             super()
         end
+        
+        def has_parameterized
+          true
+        end
 
         # Return true if self is a subtype of other.
         #--
         # TODO(rwsims): Refine this as use cases become clearer.
         def <=(other)
-            return other.instance_of?(TopType)
+          return other.instance_of?(TopType)
+        end
+
+        def le_poly(other, h, ret=false)
+          raise Exception, "NOT IMPLEMENTED"
         end
         
         def to_s
@@ -1184,6 +1379,7 @@ module Rtc::Types
         end
         
     end
+
     class TopType < Type
       def initialize()
         super()
@@ -1219,18 +1415,27 @@ module Rtc::Types
       def hash
         13
       end
+
       def initialize()
         super()
       end
+
+      def has_parameterized
+        false
+      end
+
       def to_s
         "b"
       end
+
       def eql?(other)
         other.instance_of?(BottomType)
       end
+
       def <=(other)
         eql?(other)
       end
+
       def self.instance
         return @@instance || (@@instance = BottomType.new)
       end
@@ -1245,6 +1450,14 @@ module Rtc::Types
         raise(Exception, "Type Parameter must be an enumerator (for dynamic types) or a type class (for annotated types)") if
           !type_param.instance_of?(Enumerator) && !type_param.kind_of?(Type)
         TypeVariable.new(type_param)
+      end
+
+      def has_parameterized
+        if @wrapped_type == nil
+          false
+        else
+          @wrapped_type.has_parameterized
+        end
       end
       
       def ==(other)
@@ -1321,7 +1534,47 @@ module Rtc::Types
           other <= typ && typ <= other
         end
       end
-      
+
+      def le_poly(other, h, ret=false)
+        if other.instance_of?(TypeVariable)
+          if dynamic
+            my_type = wrapped_type
+            their_type = other.wrapped_type
+
+            if not their_type.respond_to?(:symbol)
+              my_type.le_poly(their_type, h, ret)
+            else
+              if h.keys.include?(their_type.symbol)
+                if h[their_type.symbol].instance_of?(UnionType)
+                  h[their_type.symbol] = UnionType.of(h[their_type.symbol].types.to_a + [my_type])
+                else
+                  h[their_type.symbol] = UnionType.of([h[their_type.symbol], my_type])
+                end
+              else
+                h[their_type.symbol] = my_type
+              end
+
+              true
+            end
+          else
+            if other.instance_of?(TypeVariable)
+              wrapped_type <= other.wrapped_type
+            else
+              typ = wrapped_type
+              other.wrapped_type <= typ && typ <= other.wrapped_type
+            end
+          end
+        else
+          if dynamic
+            return wrapped_type <= other
+          end
+          # otherwise our type has been constrained! this means that the other type must
+          # match this type exactly
+          typ = wrapped_type
+          other <= typ && typ <= other
+        end
+      end
+
       private 
       
       def gen_type
