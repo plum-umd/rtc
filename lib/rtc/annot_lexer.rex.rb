@@ -106,6 +106,9 @@ class TypeAnnotationParser < Racc::Parser
       when (text = @ss.scan(/self/))
          action { [:K_SELF, text] }
 
+      when (text = @ss.scan(/Tuple/))
+         action { [:K_TUPLE, text] }
+
       when (text = @ss.scan(/nil/))
          action { [:K_NIL, text] }
 

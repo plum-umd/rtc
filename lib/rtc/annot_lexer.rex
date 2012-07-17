@@ -71,6 +71,7 @@ rule
 # keywords
   or                                   { [:K_OR, text] }
   self                                 { [:K_SELF, text] }
+  Tuple                                { [:K_TUPLE, text] }
   nil								   { [:K_NIL, text] }
 # {TYPE_ID_RE}                        { [:T_TYPE_ID, text] }
 # {TYPE_ID_RE}						   { [:T_TICKED_ID, text] }

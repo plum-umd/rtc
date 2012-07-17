@@ -18,7 +18,7 @@ class TypeAnnotationParser
 token T_EOF
 token K_CLASS K_METACLASS K_MODULE K_INTERFACE K_TYPE K_TYPEVAR
 token K_ALIAS K_REQUIRE K_END
-token K_OR K_SELF
+token K_OR K_SELF K_TUPLE
 
 token T_BEGIN_LINE T_SEMICOLON
 token T_COLON T_DOUBLE_COLON T_DOT
@@ -76,11 +76,8 @@ rule
       class_annotation T_EOF { result = val[0] }
 
   e_annotation:
-/*  	  T_DOUBLE_HASH type_ident T_LESS type_expr_comma_list T_GREATER T_EOF {
-  	  	result = Rtc::Types::ParameterizedType.new(handle_type_ident(val[1]), val[3])
-  	  } */
-          T_DOUBLE_HASH type_expr T_EOF { result = val[1] }
-  	  
+      T_DOUBLE_HASH type_expr T_EOF { result = val[1] }
+
   method_start:
       T_BEGIN_LINE { result = nil }
     | { result = nil }
@@ -189,6 +186,7 @@ rule
         	:name_list => val[0]
         }
    	  }
+
   type_expr:
       or_type_list {
         list = val[0][:or_list]
@@ -216,7 +214,9 @@ rule
     | type_ident {
         result = handle_type_ident(val[0])
       }
-    | tuple { result = val[0] } /* tuples are just arrays */
+    | tuple {
+        result = val[0] 
+      } /* tuples are just arrays */
     | T_DOT T_QUESTION { 
         result = Rtc::Types::TopType.instance
       }
@@ -238,7 +238,9 @@ rule
     }
 
   tuple:
-      T_LPAREN type_expr_comma_list T_RPAREN { result = val[1] }
+      K_TUPLE T_LESS T_LBRACKET type_expr_comma_list T_RBRACKET T_GREATER {
+        result = val[3] 
+      }
 
   type_expr_comma_list:
       type_expr { result = [val[0]] }
