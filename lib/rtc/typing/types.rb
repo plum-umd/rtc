@@ -52,12 +52,15 @@ class Object
   end
   
   def rtc_type
+#    return self.proxy_types if not self.proxy_types == nil
+
     meta_hash = rtc_meta
     if meta_hash[:_type]
       meta_hash[:_type]
     else
+
       meta_hash[:_type] = rtc_get_type
-     end
+    end
   end
   
   def rtc_typeof(name, which_class = nil)
@@ -95,7 +98,6 @@ class Object
   end
   
 end
-
 
 class Class
   def rtc_instance_typeof(name, include_super = true)
@@ -158,6 +160,8 @@ module Rtc::Types
               end
             when TopType
               true
+            when TupleType
+              raise Exception, '<= TupleType NOT implemented'
             else
               false
             end
@@ -297,6 +301,8 @@ module Rtc::Types
         #    +self+ are subtypes of the types with the same key in +other+).
         def <=(other)
             case other
+            when TupleType
+                false
             when StructuralType
                 other.method_names.each do |m_name|
                   return false unless method_names.include?(m_name)
@@ -398,6 +404,126 @@ module Rtc::Types
         end
     end
 
+    class TupleType < Type
+      attr_reader :ordered_params
+      attr_reader :size
+      
+      def initialize(arr)
+        @ordered_params = arr
+        @size = arr.size
+        super()
+      end
+
+      def has_parameterized
+        self.ordered_params.any? do |i|
+          i.has_paramterized
+        end
+      end
+
+      def to_s
+        "Tuple<" + @ordered_params.to_s + ">"
+      end
+      
+      def inspect
+        "#{self.class.name}(#{@id}): #{@ordered_params.to_s}" 
+      end
+
+      def le_poly(other, h)
+        case other
+          when TupleType
+            return false unless self.size == other.size
+
+            i = 0
+
+            for t in self.ordered_params
+              return false if not t.le_poly(other.ordered_params[i], h)
+              i += 1
+            end
+
+            true
+          when ParameterizedType
+            return false if other.nominal.klass != Array
+
+            other_parameters = other.parameters[0].wrapped_type
+
+            self.ordered_params.all? do |s|
+              s.le_poly(other_parameters, h)
+            end
+          when UnionType
+            other.types.any? do |a|
+              self.le_poly(a, h)
+            end
+          when IntersectionType
+            other.types.any? do |a|
+              self.le_poly(a, h)
+            end
+          when TypeVariable
+            if other.dynamic
+              true
+            else
+              typ = other.wrapped_type
+              self.le_poly(typ, h)
+            end
+          when TopType
+            true
+          else
+            false
+        end
+      end
+
+      def <=(other)
+        case other
+          when TupleType
+            return false unless self.size == other.size
+
+            i = 0
+
+            for t in self.ordered_params
+              return false if not t <= other.ordered_params[i]
+              i += 1
+            end
+
+            true
+          when ParameterizedType
+            return false if other.nominal.klass != Array
+
+            other_parameters = other.parameters[0].wrapped_type
+
+            self.ordered_params.all? do |s|
+              s <= other_parameters
+            end
+          when UnionType
+            other.types.any? do |a|
+              self <= a
+            end
+          when IntersectionType
+            other.types.any? do |a|
+              self <= a
+            end
+          when TypeVariable
+            if other.dynamic
+              true
+            else
+              typ = other.wrapped_type
+              self <= typ
+            end
+          when TopType
+            true
+          else
+            false
+        end
+      end
+
+      def hash
+        builder = Rtc::HashBuilder.new(107, 157)
+        builder.include("tuple")
+        @ordered_params.each do |p|
+          builder.include(p)
+        end
+        builder.get_hash
+      end
+    end
+
     # The simplest kind of type, where the name is the same as the type, such as
     # Fixnum, String, Object, etc.
     class NominalType < StructuralType
@@ -472,6 +598,8 @@ module Rtc::Types
         def <=(other)
             case other
             when ParameterizedType
+              false
+            when TupleType
               false
             when NominalType
                 return true if other.klass.name == @klass.name
@@ -717,6 +845,8 @@ module Rtc::Types
                 true
             when NominalType
                 false
+            when TupleType
+                false
             else
                 super(other)
             end
@@ -922,6 +1052,8 @@ module Rtc::Types
                     return false unless b <= a
                 end
                 return true
+            when TupleType
+                false
             else
                 super(other)
             end
