@@ -558,4 +558,89 @@ class TestProxy < Test::Unit::TestCase
       assert_equal(true, e.message.index("Array.push") > -1)
     end
   end
+
+  def test_tuple_tuple_le
+    e1 = Rtc::Types::NominalType.of(Fixnum)
+    e2 = Rtc::Types::NominalType.of(String)
+    e3 = Rtc::Types::NominalType.of(TrueClass)
+    e4 = Rtc::Types::UnionType.of([e1, e2, e3])
+
+    t1 = Rtc::Types::TupleType.new([e1, e2])
+    t2 = Rtc::Types::TupleType.new([e2, e1])
+
+    assert_equal(false, t1 <= t2)
+    assert_equal(false, t2 <= t1)
+
+    t1 = Rtc::Types::TupleType.new([e1, e2, e3])
+    t2 = Rtc::Types::TupleType.new([e1, e2, e3])
+
+    assert_equal(true, t1 <= t2)
+    assert_equal(true, t2 <= t1)
+
+    t1 = Rtc::Types::TupleType.new([e1, e2, e3])
+    t2 = Rtc::Types::TupleType.new([e1, e2, e4])
+
+    assert_equal(true, t1 <= t2)
+    assert_equal(false, t2 <= t1)
+
+    t1 = Rtc::Types::TupleType.new([0.rtc_type])
+    t2 = Rtc::Types::TupleType.new([t1]) 
+    t3 = Rtc::Types::TupleType.new([t2]) 
+    t4 = Rtc::Types::TupleType.new([t3, "s".rtc_type]) 
+
+    t6 = Rtc::Types::TupleType.new([t1, t2, t3, t4])
+    t7 = Rtc::Types::UnionType.of([t1, t2, t3, t4])
+    t8 = Rtc::Types::TupleType.new([t1, t2, t7, t4])
+    assert_equal(true, t6 <= t8)
+  end
+
+  def test_tuple_le_other
+    e1 = Rtc::Types::NominalType.of(Fixnum)
+    e2 = Rtc::Types::NominalType.of(String)
+    e3 = Rtc::Types::NominalType.of(TrueClass)
+    e4 = Rtc::Types::UnionType.of([e1, e2, e3])
+
+    t = Rtc::Types::TupleType.new([e1, e2, e3])
+    a = [1,2,"s",0,true].rtc_type
+    assert_equal(true, t <= a)
+    assert_equal(false, a <= t)
+
+    a = [1,2,"s",0].rtc_type
+    assert_equal(false, t <= a)
+
+    assert_equal(false, t <= "s".rtc_type)
+    assert_equal(false, t <= {a=>'1'}.rtc_type)
+
+    t = Rtc::Types::TupleType.new([e1])
+    a = [1].rtc_type
+    assert_equal(false, a <= t)
+    assert_equal(true, t <= a)
+  end  
+  
+  def test_tuple_nested
+    t1 = Rtc::Types::TupleType.new([0.rtc_type])
+    t2 = Rtc::Types::TupleType.new([t1]) 
+    t3 = Rtc::Types::TupleType.new([t2]) 
+    t4 = Rtc::Types::TupleType.new([t3, "s".rtc_type]) 
+
+    a1 = [[[[1]]], "1"].rtc_type
+    assert_equal(true, t4 <= a1)
+
+    a2 = ["1", [[[1]]]].rtc_type
+    assert_equal(true, t4 <= a2)
+
+    a3 = ["1", [[1]]].rtc_type
+    assert_equal(false, t4 <= a3)
+
+    t5 = Rtc::Types::TupleType.new([t3, "s".rtc_type, t2]) 
+    a4 = ["s", true, [[[3]]], [[2]]].rtc_type
+    assert_equal(false, t5 <= a2)
+    assert_equal(true, t5 <= a4)
+
+    t6 = Rtc::Types::TupleType.new([[[[[0]]]].rtc_type])
+    a5 = [[[[0]]]].rtc_type
+    assert_equal(false, t6 <= a5)
+    a6 = [[[[[0]]]]].rtc_type
+    assert_equal(true, t6 <= a6)
+  end
 end
