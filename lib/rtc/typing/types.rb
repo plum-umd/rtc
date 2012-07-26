@@ -79,20 +79,31 @@ class Object
       Rtc::Types::SymbolType.new(self)
     else
       class_obj = Rtc::Types::NominalType.of(self.class)
+
       if class_obj.type_parameters.size == 0
           class_obj
       elsif class_obj.klass == Array
+          puts "self #{self.inspect}"
           Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each)])
       elsif class_obj.klass == Hash
           Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each_key),
             Rtc::Types::TypeVariable.create(self.each_value)])
       else
+          lst = []
+          
+          self.get_parameters.each {|t|
+            lst.push(Rtc::Types::TypeVariable.create([t].each))
+          }
+
+          Rtc::Types::ParameterizedType.new(class_obj, lst)
+     # else
           #user defined parameterized classes
-        tv = class_obj.type_parameters.map {
-          |param|
-          Rtc::Types::TypeVariable.create(self.send(class_obj.klass.rtc_meta[:iterators][param.symbol]))
-        }
-        Rtc::Types::ParameterizedType.new(class_obj, tv)
+     #   tv = class_obj.type_parameters.map {
+     #     |param|
+     #     Rtc::Types::TypeVariable.create(self.send(class_obj.klass.rtc_meta[:iterators][param.symbol]))
+     #   }
+
+     #   Rtc::Types::ParameterizedType.new(class_obj, tv)
       end
     end
   end
@@ -676,6 +687,7 @@ module Rtc::Types
             end
             type = IntersectionType.of(type)
           end
+
           @method_types[name] = type
         end
         def get_method(name, which = nil)
