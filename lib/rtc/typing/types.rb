@@ -83,7 +83,6 @@ class Object
       if class_obj.type_parameters.size == 0
           class_obj
       elsif class_obj.klass == Array
-          puts "self #{self.inspect}"
           Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each)])
       elsif class_obj.klass == Hash
           Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each_key),
@@ -96,18 +95,17 @@ class Object
           }
 
           Rtc::Types::ParameterizedType.new(class_obj, lst)
-     # else
-          #user defined parameterized classes
-     #   tv = class_obj.type_parameters.map {
-     #     |param|
-     #     Rtc::Types::TypeVariable.create(self.send(class_obj.klass.rtc_meta[:iterators][param.symbol]))
-     #   }
+#      else
+#          #user defined parameterized classes
+#        tv = class_obj.type_parameters.map {
+#          |param|
+#          Rtc::Types::TypeVariable.create(self.send(class_obj.klass.rtc_meta[:iterators][param.symbol]))
+#        }
 
-     #   Rtc::Types::ParameterizedType.new(class_obj, tv)
+#        Rtc::Types::ParameterizedType.new(class_obj, tv)
       end
     end
   end
-  
 end
 
 class Class
@@ -178,18 +176,17 @@ module Rtc::Types
             end
         end
 
-        def le_poly(other, h, ret=false)
+        def le_poly(other, h)
           case other
           when UnionType
             sol_found = false
             nh = {}
 
             for o in other.types
-              if o.has_parameterized and self.le_poly(o, nh, ret)
+              if o.has_parameterized and self.le_poly(o, nh)
                 if sol_found == true 
                   raise Rtc::AmbiguousUnionException
                 else
-                  return true if ret == true
                   sol_found = true
                 end
               else
@@ -197,14 +194,11 @@ module Rtc::Types
                   if sol_found == true 
                     raise Rtc::AmbiguousUnionException
                   else
-                    return true if ret == true
                     sol_found = true
                   end
                 end
               end
             end
-
-            return false if ret == true
 
             if nh.size == 1
               h.merge!(nh)
@@ -327,7 +321,7 @@ module Rtc::Types
             end
         end
 
-        def le_poly(other, h, ret=false)
+        def le_poly(other, h)
             case other
             when StructuralType
                 other.method_names.each do |m_name|
@@ -335,11 +329,11 @@ module Rtc::Types
                   mine = get_method(m_name)
                   theirs = other.get_method(m_name)
                   #return false unless mine <= theirs
-                  return false unless mine.le_poly(theirs, h, ret)
+                  return false unless mine.le_poly(theirs, h)
                 end
                 return true
             else
-                super(other, h, ret)
+                super(other, h)
             end
         end
 
@@ -431,12 +425,22 @@ module Rtc::Types
         end
       end
 
+      def replace_constraints(c)
+        np = []
+
+        for p in @ordered_params
+          np.push(p.replace_constraints(c))
+        end
+
+        TupleType.new(np)
+      end
+
       def to_s
-        "Tuple<" + @ordered_params.to_s + ">"
+        "Tuple<[#{ordered_params.join(", ")}]>"
       end
       
       def inspect
-        "#{self.class.name}(#{@id}): #{@ordered_params.to_s}" 
+        "#{self.class.name}(#{@id}): #{@ordered_params.inspect}" 
       end
 
       def le_poly(other, h)
@@ -576,6 +580,10 @@ module Rtc::Types
             return t
         end
 
+        def replace_constraints(c)
+          self
+        end
+
         def has_parameterized
           false
         end
@@ -626,7 +634,7 @@ module Rtc::Types
             end
         end
 
-        def le_poly(other, h, ret=false)
+        def le_poly(other, h)
             case other
             when ParameterizedType
               false
@@ -641,7 +649,7 @@ module Rtc::Types
                 end
                 return false
             else
-              super(other, h, ret)
+              super(other, h)
             end
         end
 
@@ -844,6 +852,20 @@ module Rtc::Types
         def has_parameterized
           @parameters.any? {|p| p.wrapped_type.has_parameterized}
         end
+
+        def replace_constraints(c)
+          np = []
+
+          for p in @parameters
+            if p.instance_of?(TypeVariable)
+              np.push(p.replace_constraints(c))
+            else
+              raise Exception, "NA"
+            end
+          end
+
+          ParameterizedType.new(@nominal, np)
+        end
         
         def <=(other)
             case other
@@ -864,22 +886,22 @@ module Rtc::Types
             end
         end
 
-        def le_poly(other, h, ret=false)
+        def le_poly(other, h)
             case other
             when ParameterizedType
-                return false unless (@nominal.le_poly(other.nominal, h, ret) and
-                                     other.nominal.le_poly(@nominal, h, ret))
+                return false unless (@nominal.le_poly(other.nominal, h) and
+                                     other.nominal.le_poly(@nominal, h))
                 zipped = @parameters.zip(other.parameters)
                 
                 return false unless zipped.all? do |t, u|
-                    t.le_poly(u, h, ret)
+                    t.le_poly(u, h)
                 end
 
                 true
             when NominalType
                 false
             else
-                super(other, h, ret)
+                super(other, h)
             end
         end
 
@@ -916,7 +938,7 @@ module Rtc::Types
         end
         
         def to_s
-          "#{@nominal.klass.name}<#{parameters.join(", ")}>"
+            "#{@nominal.klass.name}<#{parameters.join(", ")}>"
         end
         
         private
@@ -1009,6 +1031,23 @@ module Rtc::Types
             @block_type = block_type
 
             super()
+        end
+
+        def replace_constraints(c)
+          new_ret = @return_type.replace_constraints(c)
+
+          new_args = []
+
+          for a in @arg_types
+            new_args.push(a.replace_constraints(c))
+          end
+          
+          if @block_type == nil
+            ProceduralType.new(new_ret, new_args)
+          else
+            new_blk = @block_type.replace_constraints(c)
+            ProceduralType.new(new_ret, new_args, new_blk)
+          end
         end
 
         def has_parameterized_args
@@ -1402,7 +1441,11 @@ module Rtc::Types
         # the list, it is returned directly.
         def self.of(types)
             return types[0] if types.size == 1
+
+            types.each{|t| types.delete(t) if t.instance_of?(BottomType)}
+
             pairs = types.product(types)
+
             pairs.each do |t, u|
                 # pairs includes [t, t] and [u, u], and since t <= t, skip
                 # these.
@@ -1418,7 +1461,17 @@ module Rtc::Types
             return UnionType.new(types)
         end
 
-        def le_poly(other, h, ret=false)
+        def replace_constraints(c)
+          nt = []
+
+          for t in @types
+            nt.push(t.replace_constraints(c))
+          end
+
+          UnionType.of(nt)
+        end
+
+        def le_poly(other, h)
           if other.has_parameterized
             if other.instance_of?(TypeParameter)
               if h.keys.include?(other.symbol)
@@ -1434,10 +1487,10 @@ module Rtc::Types
               return true
             elsif other.instance_of?(UnionType)
               @types.all? do |t|
-                t.le_poly(other, h, ret)
+                t.le_poly(other, h)
               end
             else
-              raise Exception, "NOT IMPLEMENTED"
+              raise Exception, "NOT IMPLEMENTED 2"
             end
           else
             self <= other
@@ -1503,6 +1556,14 @@ module Rtc::Types
           true
         end
 
+        def replace_constraints(c)
+          if c.keys.include?(@symbol)
+            c[@symbol]
+          else
+            self
+          end
+        end
+
         # Return true if self is a subtype of other.
         #--
         # TODO(rwsims): Refine this as use cases become clearer.
@@ -1510,8 +1571,8 @@ module Rtc::Types
           return other.instance_of?(TopType)
         end
 
-        def le_poly(other, h, ret=false)
-          raise Exception, "NOT IMPLEMENTED"
+        def le_poly(other, h)
+          raise Exception, "NOT IMPLEMENTED 3"
         end
         
         def to_s
@@ -1520,16 +1581,20 @@ module Rtc::Types
         
         def eql?(other)
           other.symbol.eql?(@symbol)
-        end
-        
+        end        
     end
 
     class TopType < Type
       def initialize()
         super()
       end
+
       def to_s
         "t"
+      end
+
+      def replace_constraints(c)
+        return TopType.new
       end
       
       def self.instance
@@ -1538,6 +1603,10 @@ module Rtc::Types
       
       def eql?(other)
         other.instance_of?(TopType)
+      end
+
+      def has_parameterized
+        false
       end
       
       def ==(other)
@@ -1562,6 +1631,10 @@ module Rtc::Types
 
       def initialize()
         super()
+      end
+
+      def replace_constraints(c)
+        return BottomType.new
       end
 
       def has_parameterized
@@ -1601,6 +1674,20 @@ module Rtc::Types
           false
         else
           @wrapped_type.has_parameterized
+        end
+      end
+
+      def replace_constraints(c)
+        if @wrapped_type.instance_of?(TypeParameter)
+          if c.keys.include?(@wrapped_type.symbol)
+            TypeVariable.create(c[@wrapped_type.symbol])
+          else
+            self
+          end
+        elsif @wrapped_type.instance_of?(ParameterizedType)
+          @wrapped_type.replace_constraints(c)
+        else
+          raise Exception, "NOT IMPLEMENTED 4"
         end
       end
       
@@ -1679,14 +1766,14 @@ module Rtc::Types
         end
       end
 
-      def le_poly(other, h, ret=false)
+      def le_poly(other, h)
         if other.instance_of?(TypeVariable)
           if dynamic
             my_type = wrapped_type
             their_type = other.wrapped_type
 
             if not their_type.respond_to?(:symbol)
-              my_type.le_poly(their_type, h, ret)
+              my_type.le_poly(their_type, h)
             else
               if h.keys.include?(their_type.symbol)
                 if h[their_type.symbol].instance_of?(UnionType)
@@ -1702,10 +1789,10 @@ module Rtc::Types
             end
           else
             if other.instance_of?(TypeVariable)
-              wrapped_type <= other.wrapped_type
+              wrapped_type.le_poly(other.wrapped_type, h)
             else
               typ = wrapped_type
-              other.wrapped_type <= typ && typ <= other.wrapped_type
+              other.wrapped_type.le_poly(typ, h) && typ.le_poly(other.wrapped_type, h)
             end
           end
         else
