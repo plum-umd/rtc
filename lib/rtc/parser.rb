@@ -70,14 +70,17 @@ module Rtc
                                                                block[:domain],
                                                                nil)
             end
-            if parameters
-                mtype = Types::ParameterizedProceduralType.new(range,
-                                                               domain,
-                                                               block,
-                                                               parameters)
-            else
-                mtype = Types::ProceduralType.new(range, domain, block)
-            end
+
+
+            mtype = Types::ProceduralType.new(parameters, range, domain, block)
+#            if parameters 
+#                mtype = Types::ParameterizedProceduralType.new(range,
+#                                                               domain,
+#                                                               block,
+#                                                               parameters)
+#            else
+#                mtype = Types::ProceduralType.new(range, domain, block)
+#            end
             type_klass = meth_id.instance_of?(Rtc::ClassMethodIdentifier) ? ClassMethodTypeSignature : MethodTypeSignature 
             return type_klass.new(pos, meth_id, mtype)
         end

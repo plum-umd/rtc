@@ -106,7 +106,7 @@ rule
 
   const_method_type:
       method_name T_LESS type_id_list T_GREATER T_COLON method_sig
-      { result = handle_mtype(val[0], val[2], val[6]) }
+      { result = handle_mtype(val[0], val[2], val[5]) }
     | method_name T_COLON method_sig 
       { result = handle_mtype(val[0], nil, val[2]) }
     | T_CONST_ID T_LESS type_id_list T_GREATER T_COLON method_sig
@@ -168,7 +168,7 @@ rule
 
    
    type_ident_list:
-   	  T_CONST_ID { result = [val[0]] }
+   	  T_CONST_ID { result = [val[0]] } 
    	| T_CONST_ID T_DOUBLE_COLON type_ident_list { 
       result = [val[0]] + val[2]
       } 
@@ -243,7 +243,7 @@ rule
       }
 
   type_expr_comma_list:
-      type_expr { result = [val[0]] }
+      type_expr { result = [val[0]] } 
     | type_expr T_COMMA type_expr_comma_list {
         result = [val[0]] + val[2] }
 
