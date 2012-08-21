@@ -587,6 +587,11 @@ module Rtc::Types
         def has_parameterized
           false
         end
+
+        def has_method?(method)
+          method = method.to_sym
+          self.klass.instance_methods(false).include?(method)
+        end
         
         def type_parameters
           @type_parameters
@@ -620,15 +625,26 @@ module Rtc::Types
               false
             when TupleType
               false
+            when TopType
+              true
             when NominalType
+              if other.klass.respond_to?(:name) and @klass.respond_to?(:name)
                 return true if other.klass.name == @klass.name
-                other_class = other.klass
-                it = InheritanceChainIterator.new(@klass)
-                #TODO(jtoman): memoize this lookup for fast access?
-                while (it_class = it.next)
-                  return true if other_class == it_class 
+              else
+                if self.klass.class < other.klass.class or self.klass.class == other.klass.class
+                  return true
+                else
+                  return false
                 end
-                return false
+              end
+
+              other_class = other.klass
+              it = InheritanceChainIterator.new(@klass)
+              #TODO(jtoman): memoize this lookup for fast access?
+              while (it_class = it.next)
+                return true if other_class == it_class 
+              end
+              return false
             else
               super(other)
             end
@@ -853,6 +869,10 @@ module Rtc::Types
           @parameters.any? {|p| p.wrapped_type.has_parameterized}
         end
 
+        def has_method?(method)
+          @nominal.has_method?(method)
+        end
+
         def replace_constraints(c)
           np = []
 
@@ -1025,7 +1045,8 @@ module Rtc::Types
         # [+arg_types+] List of types of the arguments of the procedure.
         # [+block_type+] The type of the block passed to this method, if it
         #                takes one.
-        def initialize(return_type, arg_types=[], block_type=nil)
+        def initialize(parameters, return_type, arg_types=[], block_type=nil)
+            @parameters = parameters
             @return_type = return_type
             @arg_types = arg_types
             @block_type = block_type
@@ -1043,10 +1064,10 @@ module Rtc::Types
           end
           
           if @block_type == nil
-            ProceduralType.new(new_ret, new_args)
+            ProceduralType.new(@parameters, new_ret, new_args)
           else
             new_blk = @block_type.replace_constraints(c)
-            ProceduralType.new(new_ret, new_args, new_blk)
+            ProceduralType.new(@parameters, new_ret, new_args, new_blk)
           end
         end
 
@@ -1471,6 +1492,10 @@ module Rtc::Types
           UnionType.of(nt)
         end
 
+        def has_method?(method)
+          @types.all? {|t| t.has_method?(method)}
+        end
+
         def le_poly(other, h)
           if other.has_parameterized
             if other.instance_of?(TypeParameter)
@@ -1618,7 +1643,11 @@ module Rtc::Types
       end
       
       def <=(other)
-        false
+        if other.instance_of?(TopType)
+          true
+        else
+          false
+        end
       end
 
       @@instance = nil
