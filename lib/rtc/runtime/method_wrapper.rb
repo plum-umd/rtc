@@ -1,5 +1,6 @@
 require 'rtc/runtime/master_switch.rb'
 require 'rtc/options'
+
 module Rtc
   
   class TypeMismatchException < StandardError; end
@@ -25,163 +26,69 @@ module Rtc
       Proc.new {|v| x.call(v)}
     end
 
-#    def check_args(passed_arguments, method_type, param_arg_pos)
-    def check_args(passed_arguments, method_type)
-      return false unless method_type.min_args <= passed_arguments.size
-      return false unless passed_arguments.size <= method_type.max_args or method_type.max_args == -1
-
-      pap = []
-
-      if method_type.has_parameterized
-        pap = method_type.get_parameterized_arg_pos
-      end
-
-      param_arg_pos = Set.new(pap)
-
-      #check the first set of required arguments
-      i = 0
-      parameter_layout = method_type.parameter_layout
-      while i < parameter_layout[:required][0]
-        if param_arg_pos.include?(i)
-          return false unless passed_arguments[i].rtc_type.le_poly(method_type.arg_types[i], @constraints)
-        else
-          return false unless passed_arguments[i].rtc_type <= method_type.arg_types[i]
-        end
-
-        i+=1
-      end
-      
-      #check the second set of required arguments
-      i = 1
-      while i <= parameter_layout[:required][1]
-        return false unless passed_arguments[-i].rtc_type <= method_type.arg_types[-i]
-        i += 1
-      end
-      
-      #check the optional arguments
-      opt_offset = parameter_layout[:required][0]
-      iter_end = passed_arguments.size - parameter_layout[:required][1]
-      i = 0
-      while i < parameter_layout[:opt] and opt_offset + i < iter_end
-        return false unless passed_arguments[opt_offset + i].rtc_type <= method_type.arg_types[opt_offset + i].type
-        i += 1
-      end
-      
-      #we still have some left for the rest argument (which must come after the optional arguments)
-      #so check that
-      if i + opt_offset < iter_end
-        rest_args = passed_arguments.slice(i+opt_offset, iter_end - (i+opt_offset))
-        return false unless
-          rest_args.rtc_type.type_of_param(0) <= method_type.arg_types[parameter_layout[:required][0] + parameter_layout[:opt]].type
-      end
-
-      return true
-    end
-
     def invoke(invokee, arg_vector)
       regular_args = arg_vector[:args]
 
-      method_type = invokee.rtc_typeof(@method_name, @class_obj)
-      candidate_types = []
+      if regular_args[-1] == "@@from_proxy@@"
+        method_type = regular_args[-2]
 
-      if method_type.instance_of?(Rtc::Types::IntersectionType)
-        possible_method_types = method_type.types
-      else
-        possible_method_types = [method_type]
-      end
-
-      instantiated = false
-
-      if invokee.annotated_methods
-        for k,v in invokee.annotated_methods
-          if k.to_s == @method_name
-            instantiated = true
-            type = invokee.annotated_methods[k]
-            possible_method_types = [type]
-            break
-          end
-        end
-      end
-
-      for mt in possible_method_types
-        if check_args(regular_args, mt)
-          candidate_types.push(mt)
-        end
-      end
-
-      if candidate_types.empty?
-        #arg_types = []
-        #arg_values = []
-        #puts "Function " + @method_name.to_s + " argument type mismatch:"
-        #puts "   Expected function type: " + method_type.to_s
-        
-        if instantiated
-          message = "Function #{@class_obj.name.to_s}##{@method_name.to_s}  argument type mismatch:" +
-            "   Expected INSTANTIATED function type: " + possible_method_types.to_s
+        if regular_args.length == 3
+          regular_args = []
         else
-          message = "Function #{@class_obj.name.to_s}##{@method_name.to_s}  argument type mismatch:" +
-            "   Expected function type: " + method_type.to_s
+          regular_args = regular_args[0..regular_args.length-4]
         end
-        #for a in arg_list
-        #  arg_types.push(a.rtc_type)
-        #  arg_values.push(a)
-        #end
+      else
+        method_types = invokee.class.get_typesigs(@method_name.to_s)
+        method_type = method_types[0]
+        Rtc::MethodCheck.check_args(method_types, invokee, regular_args, @method_name, @constraints)
 
-        #puts "   Actual argument types: " + arg_types.to_s
-        #puts "   Actual argument values: " + arg_values.to_s
-        on_error(message)
+        if @constraints.empty?
+          new_mt = method_types[0]
+        else
+          new_mt = method_types[0].replace_constraints(@constraints)
+        end
+
+        i = 0
+        new_mt.arg_types.each { |arg_type|
+          regular_args[i] = regular_args[i].rtc_annotate(arg_type)
+          i += 1
+        }
+
+        if not invokee.rtc_type.has_method?(@method_name)
+          raise NoMethodError, invokee.inspect + " has no method " + method_name.to_s
+        end
       end
 
-      blk = arg_vector[:block]
-
-      if instantiated and blk
-        blk.block_type = possible_method_types[0].block_type
+      if invokee.class.get_native_methods.include?(@method_name)
+        regular_args = regular_args.map {|a|
+          if a.respond_to?(:is_proxy_object)
+            a.object
+          else
+            a
+          end
+        }
       end
 
       Rtc::MasterSwitch.turn_on
-
-      if blk
-        wb = wrap_block(blk)
-        ret_value = @original_method.bind(invokee).call(*regular_args, &wb)
-      else
-        ret_value = @original_method.bind(invokee).call(*regular_args)
-      end
-
+      ret_value = @original_method.bind(invokee).call(*regular_args)
       Rtc::MasterSwitch.turn_off
 
-      return_valid = candidate_types.any? {
-        |ct|
+#      if ret_value.eql?(invokee) and invokee.class.get_mutant_methods.include?(@method_name.to_s)
+#          return ret_value.rtc_cast(method_type.return_type)
+#      end
 
-        if ct.return_type.has_parameterized
-          ret_value.rtc_type.le_poly(ct.return_type, @constraints, true)
-        else
-          ret_value.rtc_type <= ct.return_type 
-        end
-      }
-
-      if not return_valid
-        if instantiated
-          message = "Function #{@class_obj.name.to_s}##{@method_name.to_s} return type mismatch: " + "   Expected INSTANTIATED function type: " + possible_method_types.to_s + 
-          ", actual return type #{ret_value.rtc_type.to_s}"
-        else
-          message = "Function #{@class_obj.name.to_s}##{@method_name.to_s} return type mismatch: " + "   Expected function type: " + method_type.to_s + 
-          ", actual return type #{ret_value.rtc_type.to_s}"
-        end
-        
-        on_error(message)
+      if method_type.return_type.has_parameterized
+        ret_valid = ret_value.rtc_type.le_poly(method_type.return_type, @constraints)
+      else
+        ret_valid = ret_value.rtc_type <= method_type.return_type
       end
 
-      if invokee.proxy_types
-        proxy_type_valid = invokee.proxy_types.all? { |t|
-          invokee.rtc_type <= t
-        }
-
-        if not proxy_type_valid
-          raise Rtc::AnnotateException, "Invokee object type " + invokee.rtc_type.to_s + " NOT <= annotated types " + invokee.proxy_types_to_s.to_s + " after method " + invokee.class.to_s + '.' + @method_name
-        end
+      if ret_valid == false
+        raise TypeMismatchException, "invalid return type in " + @method_name.to_s
       end
 
-      ret_value
+      new_obj = Rtc::ProxyObject.new(ret_value, method_type.return_type)
+      return new_obj
     end
 
     private
@@ -208,7 +115,7 @@ module Rtc
 
       class_obj = @class_obj
       constraints = @constraints
-      
+
       this_obj = self
       original_method = @original_method = class_obj.instance_method(method_name)
       wrapper_lambda = lambda {
@@ -235,6 +142,7 @@ module Rtc
           end
         end
       }
+
       class_obj.send(:define_method, method_name, wrapper_lambda)
     end
   end

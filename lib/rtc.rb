@@ -28,4 +28,6 @@ def rtc_typesig(my_sig)
   Rtc::ClassModifier.handle_class_annot(class_annot)
 end
 
-require 'rtc/typing/base_types.rb'
+#Rtc::MasterSwitch.turn_off
+#require 'rtc/typing/base_types2.rb'
+#Rtc::MasterSwitch.turn_on

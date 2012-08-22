@@ -9,8 +9,60 @@ require 'rtc/proxy_object'
 require 'set'
 
 class Object
-  attr_reader :proxy_types
   attr_reader :annotated_methods
+  attr_reader :proxies
+  attr_writer :proxies
+
+  @@typesigs = {}
+  @@native_methods = Set.new
+  @@non_native_methods = Set.new
+  @@mutant_methods = Set.new
+  @@non_mutant_methods = Set.new
+
+  def self.get_native_methods
+    @@native_methods
+  end
+
+  def self.get_non_native_methods
+    @@non_native_methods
+  end
+
+  def self.get_mutant_methods
+    @@native_methods
+  end
+
+  def self.get_non_mutant_methods
+    @@non_native_methods
+  end
+
+  def self.add_to_typesigs(id, type, mutate, native)
+    if mutate
+      @@mutant_methods.add(id)
+    else
+      @@non_mutant_methods.add(id)
+    end
+
+    if native
+      @@native_methods.add(id)
+    else
+      @@non_native_methods.add(id)
+    end
+
+    if @@typesigs.keys.include?(id)
+      @@typesigs[id].push(type)
+    else
+      @@typesigs[id] = [type]
+    end
+  end
+
+  def self.get_typesigs(id)
+    @@typesigs[id]
+  end
+
+  def self.get_class_parameters
+    params = Rtc::ClassModifier.get_class_parameters
+    params[self]
+  end
 
   def add_annotated_method(id, type)
     if @annotated_methods
@@ -22,7 +74,7 @@ class Object
     end
   end
 
-  def add_type(t)
+  def add_type2(t)
     if @proxy_types
       found = @proxy_types.any? {|pt| t <= pt and pt <= t}
       @proxy_types.add(t) if found == false
@@ -36,6 +88,8 @@ class Object
   def proxy_types_to_s
     if @proxy_types
       return @proxy_types.to_a.map {|i| i.to_s} 
+    else
+      raise Exception, " object has no proxy_types"
     end
   end
 
@@ -57,59 +111,94 @@ class Object
   end  
 
   def rtc_cast(annotation_string)
-    parser = Rtc::TypeAnnotationParser.new(self.class)
-    annotated_type = parser.scan_str("##"+annotation_string)
-
-    my_type = self.rtc_type
-
-    if not my_type <= annotated_type
-      raise Rtc::CastException, "object type " + my_type.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s
+    if annotation_string.class == String
+      parser = Rtc::TypeAnnotationParser.new(self.class)
+      annotated_type = parser.scan_str("##"+annotation_string)
+    else
+      annotated_type = annotation_string
+    end
+    
+    if self.class == Rtc::ProxyObject
+      my_type = self.object.rtc_type
+    else
+      my_type = self.rtc_type
     end
 
-    self.add_type(annotated_type)
+    if not my_type <= annotated_type
+      raise Rtc::CastException, "object type " + my_type.to_s + " NOT <= rtc_cast argument type " + annotated_type.to_s
+    end
 
-    return self
+    if self.class == Rtc::ProxyObject
+      add_type(annotated_type)
+    else
+      Rtc::ProxyObject.new(self, annotated_type)
+    end
   end
   
   def rtc_annotate(annotation_string)
-    parser = Rtc::TypeAnnotationParser.new(self.class)
-    annotated_type = parser.scan_str("##"+annotation_string)
-    my_type = self.rtc_type
+    status = Rtc::MasterSwitch.is_on?
+    Rtc::MasterSwitch.turn_off if status == true
 
-    if not my_type <= annotated_type
-      raise Rtc::AnnotateException, "object type " + my_type.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s
+    if annotation_string.class == String
+      parser = Rtc::TypeAnnotationParser.new(self.class)
+      annotated_type = parser.scan_str("##"+annotation_string)
+    else
+      annotated_type = annotation_string
     end
 
-    if self.proxy_types
-      valid_type = self.proxy_types.all?{|t| t <= annotated_type}
-
-      if not valid_type
-        raise Rtc::AnnotateException, "not all proxy_types " + self.proxy_types_to_s.to_s + " for object <= annotated_type " + annotated_type.to_s
+    if self.respond_to?(:is_proxy_object)
+      if not self.proxy_type <= annotated_type
+         raise Rtc::AnnotateException, "object proxy type " + self.proxy_type.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s        
       end
+
+      r = Rtc::ProxyObject.new(@object, annotated_type)        
+    else
+      if not self.rtc_type <= annotated_type 
+        raise Rtc::AnnotateException, "object type " + self.rtc_type.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s        
+      end
+
+      r = Rtc::ProxyObject.new(self, annotated_type)        
     end
 
-    self.add_type(annotated_type)
+    if self.proxies == nil
+      self.proxies = Set.new([r])
+    else
+      self.proxies.each {|p|
+        if not p.proxy_type <= annotated_type
+          raise Rtc::AnnotateException, "object type " + p.proxy_type.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s        
+        end
+      }
 
-    return self
+      self.proxies.add(r)
+    end
+
+    Rtc::MasterSwitch.turn_on if status == true
+    r
   end
 end
+
 
 # Mixin for annotated classes. The module defines class methods for declaring
 # type annotations and querying a class for the types of various methods.
 #
 # Note that this should be +extend+ed, not +include+ded.
 module Rtc::Annotated
+
     # Adds a type signature for a method to the class's method type table.
-    def typesig(string_signature)
+    def typesig(string_signature, mutate, native=false)
         signatures = @annot_parser.scan_str(string_signature)
         return unless signatures
-        
+
+        signatures.each {|s| self.add_to_typesigs(s.id.to_s, s.type, mutate, native)}
+
         if signatures.instance_of?(Rtc::ClassAnnotation)
            Rtc::ClassModifier.handle_class_annot(signatures)
            return
         end
         this_type = Rtc::Types::NominalType.of(self)
+
         meta_type = self.rtc_type
+
         (signatures.map {
           |sig|
           if sig.instance_of?(Rtc::InstanceVariableTypeSignature)
@@ -146,6 +235,7 @@ module Rtc::Annotated
         return
       end
       this_type = Rtc::Types::NominalType.of(self)
+
       this_type.add_method(signature.id.to_s, signature.type)
       if self.instance_methods(false).include?(signature.id.to_sym)
         @method_wrappers[signature.id.to_s] = Rtc::MethodWrapper.make_wrapper(self, signature.id.to_s)
@@ -187,7 +277,7 @@ module Rtc::Annotated
         @class_method_wrappers[method_name.to_s] = Rtc::MethodWrapper.make_wrapper(class << self; self; end, method_name.to_s) 
       end
     end
-    
+
     def method_added(method_name)
       return if not defined? @annot_parser
       if @deferred_methods.include?(method_name.to_s)
@@ -211,6 +301,7 @@ module Rtc::Annotated
       if Rtc::ClassModifier.deferred?(extendee)
         Rtc::ClassModifier.modify_class(extendee)
       end
+
       #FIXME: there must be a better way to do this
       [[:@annot_parser, Rtc::TypeAnnotationParser.new(extendee)],
        [:@method_wrappers,{}],
@@ -224,3 +315,5 @@ module Rtc::Annotated
       }
     end
 end
+
+
