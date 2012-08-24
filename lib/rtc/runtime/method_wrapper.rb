@@ -27,19 +27,26 @@ module Rtc
     end
 
     def invoke(invokee, arg_vector)
+
       regular_args = arg_vector[:args]
 
       if regular_args[-1] == "@@from_proxy@@"
-        method_type = regular_args[-2]
 
-        if regular_args.length == 3
+        new_mt = regular_args[-2]
+
+        if regular_args.length == 4
           regular_args = []
         else
-          regular_args = regular_args[0..regular_args.length-4]
+#          if self.class.get_native_methods.include?(@method_name.to_s)
+            regular_args = regular_args[0..regular_args.length-5]
+ #         else
+  #        end
         end
+
       else
         method_types = invokee.class.get_typesigs(@method_name.to_s)
         method_type = method_types[0]
+
         Rtc::MethodCheck.check_args(method_types, invokee, regular_args, @method_name, @constraints)
 
         if @constraints.empty?
@@ -77,18 +84,24 @@ module Rtc
 #          return ret_value.rtc_cast(method_type.return_type)
 #      end
 
-      if method_type.return_type.has_parameterized
-        ret_valid = ret_value.rtc_type.le_poly(method_type.return_type, @constraints)
+
+      if new_mt.return_type.has_parameterized
+        ret_valid = ret_value.rtc_type.le_poly(new_mt.return_type, @constraints)
       else
-        ret_valid = ret_value.rtc_type <= method_type.return_type
+        ret_valid = ret_value.rtc_type <= new_mt.return_type
       end
 
       if ret_valid == false
         raise TypeMismatchException, "invalid return type in " + @method_name.to_s
       end
 
-      new_obj = Rtc::ProxyObject.new(ret_value, method_type.return_type)
-      return new_obj
+      if ret_value.respond_to?(:is_proxy_object)
+        ret_value.proxy_type = new_mt.return_type
+        return ret_value
+      else
+        new_obj = Rtc::ProxyObject.new(ret_value, new_mt.return_type)
+        return new_obj
+      end
     end
 
     private
