@@ -911,10 +911,11 @@ module Rtc::Types
             when ParameterizedType
                 return false unless (@nominal.le_poly(other.nominal, h) and
                                      other.nominal.le_poly(@nominal, h))
+
                 zipped = @parameters.zip(other.parameters)
-                
+
                 return false unless zipped.all? do |t, u|
-                    t.le_poly(u, h)
+                   return t.le_poly(u, h)
                 end
 
                 true
@@ -1056,7 +1057,6 @@ module Rtc::Types
 
         def replace_constraints(c)
           new_ret = @return_type.replace_constraints(c)
-
           new_args = []
 
           for a in @arg_types
@@ -1463,6 +1463,7 @@ module Rtc::Types
         def self.of(types)
             return types[0] if types.size == 1
 
+            t0 = types[0]
             types.each{|t| types.delete(t) if t.instance_of?(BottomType)}
 
             pairs = types.product(types)
@@ -1470,7 +1471,7 @@ module Rtc::Types
             pairs.each do |t, u|
                 # pairs includes [t, t] and [u, u], and since t <= t, skip
                 # these.
-                next if t.equal?(u)
+                next if t.equal?(u) 
                 # pairs includes [t, u] and [u, t], so we don't do symmetric
                 # checks.
                 if t <= u
@@ -1478,6 +1479,7 @@ module Rtc::Types
                 end
             end
 
+            return t0 if types == []
             return types[0] if types.size == 1
             return UnionType.new(types)
         end
@@ -1679,7 +1681,12 @@ module Rtc::Types
       end
 
       def <=(other)
-        eql?(other)
+        # eql?(other)
+        true
+      end
+
+      def le_poly(other, h)
+        true
       end
 
       def self.instance
@@ -1713,10 +1720,8 @@ module Rtc::Types
           else
             self
           end
-        elsif @wrapped_type.instance_of?(ParameterizedType)
-          @wrapped_type.replace_constraints(c)
         else
-          raise Exception, "NOT IMPLEMENTED 4"
+          @wrapped_type.replace_constraints(c)
         end
       end
       
