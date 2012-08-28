@@ -28,15 +28,15 @@ class Object
   end
 
   def self.get_mutant_methods
-    @@native_methods
+    @@mutant_methods
   end
 
   def self.get_non_mutant_methods
-    @@non_native_methods
+    @@non_mutant_methods
   end
 
   def self.add_to_typesigs(id, type, mutate, native)
-    if mutate
+    if mutate == true
       @@mutant_methods.add(id)
     else
       @@non_mutant_methods.add(id)
