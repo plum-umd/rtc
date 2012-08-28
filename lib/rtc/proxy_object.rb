@@ -26,8 +26,8 @@ module Rtc
     end
 
     def inspect
-      @object.inspect
-#      rtc_to_str
+#      @object.inspect
+      rtc_to_str
     end
 
     def rtc_inspect
@@ -65,17 +65,21 @@ module Rtc
       constraints = {}
       method_name = args[0]
       method_args = args[1..-1]
+      native = false
+      mutate = false
       
       method_types = @object.class.get_typesigs(method_name.to_s)
 
       if method_types == nil
-        Rtc::MasterSwitch.turn_on
         if method_args == []
+          Rtc::MasterSwitch.turn_on
           ret = @object.send method_name
+          Rtc::MasterSwitch.turn_off    
         else
+          Rtc::MasterSwitch.turn_on
           ret = @object.send method_name, *method_args
+          Rtc::MasterSwitch.turn_off    
         end
-        Rtc::MasterSwitch.turn_off    
 
         return ret
       end
@@ -90,11 +94,6 @@ module Rtc
         new_mt = method_types[0].replace_constraints(constraints)
       end
 
-      stype = self.class.get_class_parameters
-      stype = stype.replace_constraints(constraints)
-
-      $gstype = stype
-
       i = 0
       new_mt.arg_types.each { |arg_type|
         method_args[i] = method_args[i].rtc_annotate(arg_type)
@@ -106,33 +105,44 @@ module Rtc
       end
 
       if self.class.get_native_methods.include?(method_name.to_s)
+        native = true
         new_args = method_args.map {|a| a.object}
       else
         new_args = method_args
       end
 
+      stype = nil
       new_args.concat([stype, constraints, new_mt, "@@from_proxy@@"])
 
-      Rtc::MasterSwitch.turn_on
       if new_args == nil
+        Rtc::MasterSwitch.turn_on
         ret = @object.send method_name
+        Rtc::MasterSwitch.turn_off    
       else
+        Rtc::MasterSwitch.turn_on
         ret = @object.send method_name, *new_args
+        Rtc::MasterSwitch.turn_off    
       end
-      Rtc::MasterSwitch.turn_off    
-
-      #      ret = ret.rtc_annotate(new_mt.return_type)
 
       if @object.class.get_mutant_methods.include?(method_name.to_s)
+        mutate = true
+
         if not @object.rtc_type <= new_mt.return_type
           raise Rtc::TypeMismatchException, "type mismatch on return value"
         end
-        @proxy_type = new_mt.return_type
-      else
-        ret.proxy_type = new_mt.return_type
       end
 
-      @proxy_type = $gstype
+      if mutate == true and not self.proxies == nil
+        ret_type = ret.object.rtc_type
+
+         self.proxies.each {|p|
+          if not ret_type <= p.proxy_type
+            raise Rtc::TypeMismatchException, "Return object run-time type #{ret_type.inspect} NOT <= one of the object\'s proxy list types #{p.proxy_type.inspect}"
+          end
+        }
+      end
+
+      Rtc::MasterSwitch.turn_on if not Rtc::MasterSwitch.is_on?
 
       return ret
     end

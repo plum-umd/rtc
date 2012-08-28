@@ -27,20 +27,17 @@ module Rtc
     end
 
     def invoke(invokee, arg_vector)
-
       regular_args = arg_vector[:args]
+      from_proxy = false
 
       if regular_args[-1] == "@@from_proxy@@"
-
+        from_proxy = true
         new_mt = regular_args[-2]
 
         if regular_args.length == 4
           regular_args = []
         else
-#          if self.class.get_native_methods.include?(@method_name.to_s)
-            regular_args = regular_args[0..regular_args.length-5]
- #         else
-  #        end
+          regular_args = regular_args[0..regular_args.length-5]
         end
 
       else
@@ -80,11 +77,6 @@ module Rtc
       ret_value = @original_method.bind(invokee).call(*regular_args)
       Rtc::MasterSwitch.turn_off
 
-#      if ret_value.eql?(invokee) and invokee.class.get_mutant_methods.include?(@method_name.to_s)
-#          return ret_value.rtc_cast(method_type.return_type)
-#      end
-
-
       if new_mt.return_type.has_parameterized
         ret_valid = ret_value.rtc_type.le_poly(new_mt.return_type, @constraints)
       else
@@ -95,13 +87,19 @@ module Rtc
         raise TypeMismatchException, "invalid return type in " + @method_name.to_s
       end
 
-      if ret_value.respond_to?(:is_proxy_object)
-        ret_value.proxy_type = new_mt.return_type
-        return ret_value
-      else
-        new_obj = Rtc::ProxyObject.new(ret_value, new_mt.return_type)
-        return new_obj
+      ret_proxy = ret_value.rtc_annotate(new_mt.return_type)
+
+      if not ret_value.proxies == nil and from_proxy == false
+        ret_type = ret_value.rtc_type 
+
+        ret_value.proxies.each {|p|
+          if not ret_type <= p.proxy_type
+            raise Rtc::TypeMismatchException, "Return object run-time type #{ret_type.inspect} NOT <= one of the object\'s proxy list types #{p.proxy_type.inspect}"
+          end
+        }
       end
+
+      return ret_proxy
     end
 
     private

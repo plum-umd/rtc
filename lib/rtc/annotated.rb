@@ -163,16 +163,11 @@ class Object
     if self.proxies == nil
       self.proxies = Set.new([r])
     else
-      self.proxies.each {|p|
-        if not p.proxy_type <= annotated_type
-          raise Rtc::AnnotateException, "object type " + p.proxy_type.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s        
-        end
-      }
-
       self.proxies.add(r)
     end
 
     Rtc::MasterSwitch.turn_on if status == true
+
     r
   end
 end
