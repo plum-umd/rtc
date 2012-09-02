@@ -628,19 +628,20 @@ module Rtc::Types
             when TopType
               true
             when NominalType
-              if other.klass.respond_to?(:name) and @klass.respond_to?(:name)
+              if other.klass.respond_to?(:name) and @klass.respond_to?(:name) and @klass.name != nil
                 return true if other.klass.name == @klass.name
-              else
-                if self.klass.class < other.klass.class or self.klass.class == other.klass.class
-                  return true
-                else
-                  return false
-                end
+              #else
+              #  if self.klass.class < other.klass.class or self.klass.class == other.klass.class
+              #    return true
+              #  else
+              #    return false
+              #  end
               end
 
               other_class = other.klass
               it = InheritanceChainIterator.new(@klass)
-              #TODO(jtoman): memoize this lookup for fast access?
+
+               #TODO(jtoman): memoize this lookup for fast access?
               while (it_class = it.next)
                 return true if other_class == it_class 
               end
@@ -1039,6 +1040,7 @@ module Rtc::Types
         attr_reader :return_type
         attr_reader :arg_types
         attr_reader :block_type
+        attr_reader :parameters
 
         # Create a new ProceduralType.
         #
@@ -1465,7 +1467,6 @@ module Rtc::Types
 
             t0 = types[0]
             types.each{|t| types.delete(t) if t.instance_of?(BottomType)}
-
             pairs = types.product(types)
 
             pairs.each do |t, u|
