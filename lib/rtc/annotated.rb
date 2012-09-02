@@ -8,55 +8,63 @@ require 'rtc/runtime/class_modifier.rb'
 require 'rtc/proxy_object'
 require 'set'
 
+class TypeSigInfo
+  attr_reader :sig
+  attr_reader :mutate
+  attr_reader :unwrap
+  
+  def initialize(sig, mutate, unwrap)
+    @sig = sig
+    @mutate = mutate
+    @unwrap = unwrap
+  end
+end
+
 class Object
   attr_reader :annotated_methods
   attr_reader :proxies
   attr_writer :proxies
 
-  @@typesigs = {}
-  @@native_methods = Set.new
-  @@non_native_methods = Set.new
-  @@mutant_methods = Set.new
-  @@non_mutant_methods = Set.new
-
-  def self.get_native_methods
-    @@native_methods
-  end
-
-  def self.get_non_native_methods
-    @@non_native_methods
-  end
+  @@class_info = {}
 
   def self.get_mutant_methods
-    @@mutant_methods
+    return [] if not @@class_info.keys.include?(self)
+    @@class_info[self]['mutant_methods']
   end
 
   def self.get_non_mutant_methods
-    @@non_mutant_methods
+    return [] if not @@class_info.keys.include?(self)
+    @@class_info[self]['non_mutant_methods']
   end
 
-  def self.add_to_typesigs(id, type, mutate, native)
+  def self.add_to_typesigs(id, type, mutate, unwrap)
+    if not @@class_info.keys.include?(self)
+      @@class_info[self] = {}
+      @@class_info[self]['mutant_methods'] = Set.new
+      @@class_info[self]['non_mutant_methods'] = Set.new
+      @@class_info[self]['typesigs'] = {}
+    end
+
     if mutate == true
-      @@mutant_methods.add(id)
+      @@class_info[self]['mutant_methods'].add(id)
     else
-      @@non_mutant_methods.add(id)
+      @@class_info[self]['non_mutant_methods'].add(id)
     end
 
-    if native
-      @@native_methods.add(id)
-    else
-      @@non_native_methods.add(id)
-    end
+    ts = TypeSigInfo.new(type, mutate, unwrap)
 
-    if @@typesigs.keys.include?(id)
-      @@typesigs[id].push(type)
+    if @@class_info[self]['typesigs'].keys.include?(id)
+      @@class_info[self]['typesigs'][id].push(ts)
     else
-      @@typesigs[id] = [type]
+      @@class_info[self]['typesigs'][id] = [ts]
     end
   end
 
-  def self.get_typesigs(id)
-    @@typesigs[id]
+  def self.get_typesig_info(id)
+    id = id.to_s
+    return nil if not @@class_info.keys.include?(self)
+    return nil if not @@class_info[self]['typesigs'].include?(id)
+    @@class_info[self]['typesigs'][id]
   end
 
   def self.get_class_parameters
@@ -180,11 +188,23 @@ end
 module Rtc::Annotated
 
     # Adds a type signature for a method to the class's method type table.
-    def typesig(string_signature, mutate, native=false)
+    def typesig(string_signature, meta_info={})
+        if meta_info.keys.include?('mutate')
+          mutate = meta_info['mutate']
+        else
+          mutate = false
+        end
+
+        if meta_info.keys.include?('unwrap')
+          unwrap = meta_info['unwrap']
+        else
+          unwrap = []
+        end
+
         signatures = @annot_parser.scan_str(string_signature)
         return unless signatures
 
-        signatures.each {|s| self.add_to_typesigs(s.id.to_s, s.type, mutate, native)}
+        signatures.each {|s| self.add_to_typesigs(s.id.to_s, s.type, mutate, unwrap)}
 
         if signatures.instance_of?(Rtc::ClassAnnotation)
            Rtc::ClassModifier.handle_class_annot(signatures)

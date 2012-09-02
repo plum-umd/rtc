@@ -28,6 +28,8 @@ module Rtc
 
     def invoke(invokee, arg_vector)
       regular_args = arg_vector[:args]
+      blk = arg_vector[:block]
+      
       from_proxy = false
 
       if regular_args[-1] == "@@from_proxy@@"
@@ -39,12 +41,21 @@ module Rtc
         else
           regular_args = regular_args[0..regular_args.length-5]
         end
-
       else
-        method_types = invokee.class.get_typesigs(@method_name.to_s)
+        method_type_info = invokee.class.get_typesig_info(@method_name.to_s)
+        method_types = method_type_info.map {|i| i.sig}
+
+
         method_type = method_types[0]
 
         Rtc::MethodCheck.check_args(method_types, invokee, regular_args, @method_name, @constraints)
+
+        unwrap_arg_pos = method_type_info.map {|i| i.unwrap}
+        unwrap_arg_pos = unwrap_arg_pos[0]
+        
+        mutate = method_type_info.map {|i| i.mutate}
+        mutate = mutate[0]
+
 
         if @constraints.empty?
           new_mt = method_types[0]
@@ -59,23 +70,26 @@ module Rtc
         }
 
         if not invokee.rtc_type.has_method?(@method_name)
-          raise NoMethodError, invokee.inspect + " has no method " + method_name.to_s
+          raise NoMethodError, invokee.inspect + " has no method " + @method_name.to_s
         end
       end
-
-      if invokee.class.get_native_methods.include?(@method_name)
-        regular_args = regular_args.map {|a|
-          if a.respond_to?(:is_proxy_object)
-            a.object
-          else
-            a
-          end
+      
+      if from_proxy == false
+        unwrap_arg_pos.each {|pop| 
+          regular_args[pos] = regular_args[pos].object
         }
       end
 
-      Rtc::MasterSwitch.turn_on
-      ret_value = @original_method.bind(invokee).call(*regular_args)
-      Rtc::MasterSwitch.turn_off
+      if blk
+        wb = wrap_block(blk)
+        Rtc::MasterSwitch.turn_on
+        ret_value = @original_method.bind(invokee).call(*regular_args, &wb)
+        Rtc::MasterSwitch.turn_off
+      else
+        Rtc::MasterSwitch.turn_on
+        ret_value = @original_method.bind(invokee).call(*regular_args)
+        Rtc::MasterSwitch.turn_off
+      end
 
       if new_mt.return_type.has_parameterized
         ret_valid = ret_value.rtc_type.le_poly(new_mt.return_type, @constraints)

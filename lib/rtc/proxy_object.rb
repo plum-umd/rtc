@@ -68,9 +68,9 @@ module Rtc
       native = false
       mutate = false
       
-      method_types = @object.class.get_typesigs(method_name.to_s)
+      method_type_info = @object.class.get_typesig_info(method_name)
 
-      if method_types == nil
+      if method_type_info == nil
         if method_args == []
           Rtc::MasterSwitch.turn_on
           ret = @object.send method_name
@@ -85,7 +85,8 @@ module Rtc
       end
 
       constraints = {}
-      
+      method_types = method_type_info.map {|t| t.sig}
+
       Rtc::MethodCheck.check_args(method_types, self, method_args, method_name, constraints)
         
       if constraints.empty?
@@ -104,12 +105,15 @@ module Rtc
         raise NoMethodError, self.rtc_to_str + " has no method " + method_name.to_s
       end
 
-      if self.class.get_native_methods.include?(method_name.to_s)
-        native = true
-        new_args = method_args.map {|a| a.object}
-      else
-        new_args = method_args
-      end
+
+      unwrap_arg_pos = method_type_info.map {|i| i.unwrap}
+      unwrap_arg_pos = unwrap_arg_pos[0]
+      
+      new_args = method_args
+
+      unwrap_arg_pos.each {|p|
+        new_args[p] = method_args.object
+      }
 
       stype = nil
       new_args.concat([stype, constraints, new_mt, "@@from_proxy@@"])
