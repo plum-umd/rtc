@@ -112,7 +112,7 @@ module Rtc
       new_args = method_args
 
       unwrap_arg_pos.each {|p|
-        new_args[p] = method_args.object
+        new_args[p] = method_args[p].object
       }
 
       stype = nil
