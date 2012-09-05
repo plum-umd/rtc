@@ -27,6 +27,8 @@ module Rtc
     end
 
     def invoke(invokee, arg_vector)
+      Rtc::MasterSwitch.turn_off 
+
       regular_args = arg_vector[:args]
       blk = arg_vector[:block]
       
@@ -44,18 +46,16 @@ module Rtc
       else
         method_type_info = invokee.class.get_typesig_info(@method_name.to_s)
         method_types = method_type_info.map {|i| i.sig}
-
-
         method_type = method_types[0]
 
         Rtc::MethodCheck.check_args(method_types, invokee, regular_args, @method_name, @constraints)
+
 
         unwrap_arg_pos = method_type_info.map {|i| i.unwrap}
         unwrap_arg_pos = unwrap_arg_pos[0]
         
         mutate = method_type_info.map {|i| i.mutate}
         mutate = mutate[0]
-
 
         if @constraints.empty?
           new_mt = method_types[0]
@@ -73,9 +73,9 @@ module Rtc
           raise NoMethodError, invokee.inspect + " has no method " + @method_name.to_s
         end
       end
-      
+
       if from_proxy == false
-        unwrap_arg_pos.each {|pop| 
+        unwrap_arg_pos.each {|pos| 
           regular_args[pos] = regular_args[pos].object
         }
       end
@@ -100,8 +100,14 @@ module Rtc
       if ret_valid == false
         raise TypeMismatchException, "invalid return type in " + @method_name.to_s
       end
+      
+
+      if not @constraints.empty?
+        new_mt = new_mt.replace_constraints(@constraints)
+      end
 
       ret_proxy = ret_value.rtc_annotate(new_mt.return_type)
+
 
       if not ret_value.proxies == nil and from_proxy == false
         ret_type = ret_value.rtc_type 
@@ -191,30 +197,42 @@ module Rtc
     end
 
     def call(*args)
+      Rtc::MasterSwitch.turn_off
+
       arg = args[0]
-      args_valid = check_args(args, @block_type)
 
-      if not args_valid
-        message = "Function #{@class_obj.name.to_s}##{@method_name.to_s} block argument type mismatch:" +
-          "   Expected function type: " + method_type.to_s
-        on_error(message)
-      end
-
-      ret = @proc.call(arg)
-
-      if @block_type.return_type.has_parameterized
-        return_valid = ret.rtc_type.le_poly(@block_type.return_type, @constraints)
+      if @constraints.empty?
+        method_type = @block_type
       else
-        return_valid = ret.rtc_type <= @block_type.return_type
+        method_type = @block_type.replace_constraints(@constraints)
       end
 
-      if not return_valid # ret.rtc_type <= @block_type.return_type 
-        message = "Function #{@class_obj.name.to_s}##{@method_name.to_s} block return type mismatch:" +
-          "   Expected function type: " + method_type.to_s
-        on_error(message)
+      i = 0
+      for a in args
+        valid = true
+
+        if method_type.arg_types[i].has_parameterized
+          raise Rtc::TypeMismatchException, "Unable to infer block argument type from regular argument types"
+        end
+
+        if a.respond_to?(:is_proxy_object)
+          valid = a.proxy_type <= method_type.arg_types[i]
+        else
+          valid = a.rtc_type <= method_type.arg_types[i]
+        end
+
+        if valid == false
+          raise Rtc::TypeMismatchException, "block argument mismatch"
+        end
+
+        i += 1
       end
 
-      ret
+      Rtc::MasterSwitch.turn_on
+      ret = @proc.call(arg)
+      Rtc::MasterSwitch.turn_off
+
+      return ret
     end
   end
 end
