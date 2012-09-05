@@ -1064,7 +1064,7 @@ module Rtc::Types
           for a in @arg_types
             new_args.push(a.replace_constraints(c))
           end
-          
+
           if @block_type == nil
             ProceduralType.new(@parameters, new_ret, new_args)
           else
@@ -1134,12 +1134,16 @@ module Rtc::Types
         end
 
         def to_s  # :nodoc:
-            if @block_type
-                "[ (#{@arg_types.join(', ')}) " \
-                "{#{@block_type}} -> #{@return_type} ]"
+          if @block_type
+            "[ (#{@arg_types.join(', ')}) " \
+            "{#{@block_type}} -> #{@return_type} ]"
+          else
+            if @arg_types
+              "[ (#{@arg_types.join(', ')}) -> #{@return_type} ]"
             else
-                "[ (#{@arg_types.join(', ')}) -> #{@return_type} ]"
+              "[ () -> #{@return_type} ]"
             end
+          end
         end
 
         # Return true if all of the following are true:
@@ -1721,8 +1725,10 @@ module Rtc::Types
           else
             self
           end
-        else
+        elsif @wrapped_type != nil
           @wrapped_type.replace_constraints(c)
+        else
+          self
         end
       end
       
