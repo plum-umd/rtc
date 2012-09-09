@@ -98,7 +98,7 @@ rule
 
 
   method_type:
-  	method_name T_LESS type_id_list T_GREATER T_COLON method_sig
+      method_name T_LESS type_id_list T_GREATER T_COLON method_sig
       { result = handle_mtype(val[0], val[2], val[6]) }
     | method_name T_COLON method_sig 
       { result = handle_mtype(val[0], nil, val[2]) }
@@ -232,6 +232,9 @@ rule
     | type_ident T_LESS type_expr_comma_list T_GREATER {
         nominal = handle_type_ident(val[0])
         result = Rtc::Types::ParameterizedType.new(nominal, val[2])
+      }
+    | T_LPAREN type_expr_comma_list T_RPAREN T_RARROW single_type_expr { 
+       result = Rtc::Types::ProceduralType.new(nil, val[4], val[1], nil)
       }
     | K_NIL {
     	result = Rtc::Types::NominalType.of(NilClass)
