@@ -26,12 +26,7 @@ module Rtc
     end
 
     def inspect
-#      @object.inspect
-      rtc_to_str
-    end
-
-    def rtc_inspect
-      rtc_to_str
+      @object.inspect
     end
 
     def rtc_type
@@ -53,7 +48,8 @@ module Rtc
     def rtc_to_str
       status = Rtc::MasterSwitch.is_on?
       Rtc::MasterSwitch.turn_off if status == true
-      str = "{ProxyObject @object: " + @object.inspect + ", @proxy_type: " + @proxy_type.to_s + "}"
+#      str = "{ProxyObject @object: " + @object.inspect + ", @proxy_type: " + @proxy_type.to_s + "}"
+      str = "{ProxyObject @object: " + @object.rtc_to_str + ", @proxy_type: " + @proxy_type.rtc_to_str + "}"
       Rtc::MasterSwitch.turn_on if status == true
       str
     end
@@ -62,91 +58,53 @@ module Rtc
       status = Rtc::MasterSwitch.is_on?
       Rtc::MasterSwitch.turn_off if status
 
-      constraints = {}
       method_name = args[0]
       method_args = args[1..-1]
-      native = false
-      mutate = false
-      
-      method_type_info = @object.class.get_typesig_info(method_name)
+      arg_size = method_args.size
 
-      if method_type_info == nil
+      if status == false
         if method_args == []
-          Rtc::MasterSwitch.turn_on
-          ret = @object.send method_name
-          Rtc::MasterSwitch.turn_off    
+          if block
+            ret = @object.send method_name, &block
+          else
+            ret = @object.send method_name
+          end
         else
-          Rtc::MasterSwitch.turn_on
-          ret = @object.send method_name, *method_args
-          Rtc::MasterSwitch.turn_off    
+          if block
+            ret = @object.send method_name, *method_args, &block
+          else
+            ret = @object.send method_name, *method_args
+          end
         end
-
+        
         return ret
       end
 
-      constraints = {}
-      method_types = method_type_info.map {|t| t.sig}
-
-      Rtc::MethodCheck.check_args(method_types, self, method_args, method_name, constraints)
-        
-      if constraints.empty?
-        new_mt = method_types[0]
-      else
-        new_mt = method_types[0].replace_constraints(constraints)
-      end
-
-      i = 0
-      new_mt.arg_types.each { |arg_type|
-        method_args[i] = method_args[i].rtc_annotate(arg_type)
-        i += 1
-      }
+      mutate = false      
+      method_types = @object.class.get_typesig_info(method_name)
 
       if not @proxy_type.has_method?(method_name)
         raise NoMethodError, self.rtc_to_str + " has no method " + method_name.to_s
       end
 
+      if method_types != nil
+        extra_arg = {}
+        extra_arg['__rtc_special'] = true
+        extra_arg['self_proxy'] = self
+        method_args.push(extra_arg)
+      end
 
-      unwrap_arg_pos = method_type_info.map {|i| i.unwrap}
-      unwrap_arg_pos = unwrap_arg_pos[0]
+      Rtc::MasterSwitch.turn_on 
       
-      new_args = method_args
-
-      unwrap_arg_pos.each {|p|
-        new_args[p] = method_args[p].object
-      }
-
-      stype = nil
-      new_args.concat([stype, constraints, new_mt, "@@from_proxy@@"])
-
-      if new_args == nil
-        Rtc::MasterSwitch.turn_on
-        ret = @object.send method_name
-        Rtc::MasterSwitch.turn_off    
+      if block
+        ret = @object.send method_name, *method_args, &block
       else
-        Rtc::MasterSwitch.turn_on
-        ret = @object.send method_name, *new_args
-        Rtc::MasterSwitch.turn_off    
+        ret = @object.send method_name, *method_args
       end
+      
+      Rtc::MasterSwitch.turn_off    
 
-      if @object.class.get_mutant_methods.include?(method_name.to_s)
-        mutate = true
-
-        if not @object.rtc_type <= new_mt.return_type
-          raise Rtc::TypeMismatchException, "type mismatch on return value"
-        end
-      end
-
-      if mutate == true and not self.proxies == nil
-        ret_type = ret.object.rtc_type
-
-         self.proxies.each {|p|
-          if not ret_type <= p.proxy_type
-            raise Rtc::TypeMismatchException, "Return object run-time type #{ret_type.inspect} NOT <= one of the object\'s proxy list types #{p.proxy_type.inspect}"
-          end
-        }
-      end
-
-      Rtc::MasterSwitch.turn_on if not Rtc::MasterSwitch.is_on?
+      Rtc::MasterSwitch.turn_on if status == true
 
       return ret
     end
