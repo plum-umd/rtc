@@ -3,9 +3,25 @@ require 'rtc/options'
 
 module Rtc::MethodCheck
   def self.check_args(method_types, invokee, args, method_name, constraints)
-    method_type = method_types[0]
-    method_arg_types = method_type.arg_types
     class_param_type = invokee.class.get_class_parameters
+    
+    if Rtc::ClassModifier.get_class_parameters.keys.include?(invokee.class.to_s)
+      class_param_type = Rtc::ClassModifier.get_class_parameters[invokee.class.to_s]
+    end
+
+    if class_param_type.class == Array
+      n = Rtc::Types::NominalType.of(invokee.class)
+      class_param_type = Rtc::Types::ParameterizedType.new(n, class_param_type)
+    end
+
+    if class_param_type != nil
+      h = {}
+      invokee.rtc_type.le_poly(class_param_type, h)
+    end
+
+    constraint_m = {}
+    method_types.each {|i| constraint_m[i] = {}}
+
 
     if class_param_type != nil
       if class_param_type.has_parameterized
@@ -17,30 +33,52 @@ module Rtc::MethodCheck
       end
     end
 
-    args.zip(method_arg_types).each {|arg, method_arg_type|
-      b = true
+    method_types.each {|i| constraint_m[i] = constraints}
+    possible_types = Set.new(method_types)
 
-      if method_arg_type.has_parameterized
-        if arg.respond_to?(:is_proxy_object)
-          b = arg.proxy_type.le_poly(method_arg_type, constraints)
-        else
-          b = arg.rtc_type.le_poly(method_arg_type, constraints)
-        end
+    for m in method_types
+      expected_arg_types = m.sig.arg_types
 
-        if b == false
-          raise Rtc::TypeMismatchException, "Cannot get solve for polymorphic types for method " + method_name.to_s
-        end
-      else
-        if arg.respond_to?(:is_proxy_object)
-          b = arg.proxy_type <= method_arg_type
-        else
-          b = arg.rtc_type <= method_arg_type
-        end
-
-        if b == false
-          raise Rtc::TypeMismatchException, "argument type mismatch for method " + method_name.to_s
-        end
+      if expected_arg_types.size != args.size
+        possible_types.delete(m)
+        next
       end
-    }
+
+      args.zip(expected_arg_types).each {|arg, expected_arg_type|
+        b = true
+        next if expected_arg_type.instance_of?(Rtc::Types::ProceduralType)
+
+        if expected_arg_type.has_parameterized
+          if arg.respond_to?(:is_proxy_object)
+            b = arg.proxy_type.le_poly(expected_arg_type, constraint_m[m])
+          else
+            b = arg.rtc_type.le_poly(expected_arg_type, constraint_m[m])
+          end
+
+          if b == false
+            possible_types.delete(m)
+          end
+        else
+          if arg.respond_to?(:is_proxy_object)
+            b = arg.proxy_type <= expected_arg_type
+          else
+            b = arg.rtc_type <= expected_arg_type
+          end
+          
+          if b == false
+            possible_types.delete(m)
+          end
+        end
+      }
+    end
+
+    if possible_types.size != 1
+      raise Rtc::TypeMismatchException, "cannot infer type in intersecton type"
+    end
+
+    correct_type = possible_types.to_a[0]
+    constraints = constraint_m[correct_type]
+
+    return correct_type
   end
 end
