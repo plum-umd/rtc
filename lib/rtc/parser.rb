@@ -53,6 +53,7 @@ module Rtc
           else
             qualified_name = (@proxy.instance_of?(Object)? "" : (@proxy.name + "::")) + ident[:name_list].join("::")
           end
+
           return ClassAnnotation.new(qualified_name, ids)
         end
 
@@ -66,7 +67,7 @@ module Rtc
             block  = msig[:block]
             range  = msig[:range]
             if block
-                block = Rtc::Types::ProceduralType.new(block[:range],
+                block = Rtc::Types::ProceduralType.new(parameters, block[:range],
                                                                block[:domain],
                                                                nil)
             end
