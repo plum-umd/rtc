@@ -590,7 +590,8 @@ module Rtc::Types
 
         def has_method?(method)
           method = method.to_sym
-          self.klass.instance_methods(false).include?(method)
+          methods = self.klass.instance_methods(false) + [:initialize]
+          methods.include?(method)
         end
         
         def type_parameters
@@ -916,7 +917,7 @@ module Rtc::Types
                 zipped = @parameters.zip(other.parameters)
 
                 return false unless zipped.all? do |t, u|
-                   return t.le_poly(u, h)
+                   t.le_poly(u, h)
                 end
 
                 true
