@@ -27,6 +27,10 @@ class Object
 
   @@class_info = {}
 
+  def rtc_to_str
+    self.to_s
+  end
+
   def self.get_mutant_methods
     return [] if not @@class_info.keys.include?(self)
     @@class_info[self]['mutant_methods']
@@ -156,7 +160,7 @@ class Object
 
     if self.respond_to?(:is_proxy_object)
       if not self.proxy_type <= annotated_type
-         raise Rtc::AnnotateException, "object proxy type " + self.proxy_type.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s        
+        raise Rtc::AnnotateException, "object proxy type " + self.proxy_type.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s        
       end
 
       r = Rtc::ProxyObject.new(@object, annotated_type)        
@@ -168,6 +172,7 @@ class Object
       r = Rtc::ProxyObject.new(self, annotated_type)        
     end
 
+
     if self.proxies == nil
       self.proxies = Set.new([r])
     else
@@ -175,7 +180,6 @@ class Object
     end
 
     Rtc::MasterSwitch.turn_on if status == true
-
     r
   end
 end
@@ -253,7 +257,9 @@ module Rtc::Annotated
 
       this_type.add_method(signature.id.to_s, signature.type)
       if self.instance_methods(false).include?(signature.id.to_sym)
-        @method_wrappers[signature.id.to_s] = Rtc::MethodWrapper.make_wrapper(self, signature.id.to_s)
+        if not @method_wrappers.keys.include?(signature.id.to_s)
+          @method_wrappers[signature.id.to_s] = Rtc::MethodWrapper.make_wrapper(self, signature.id.to_s)
+        end
       else
         @deferred_methods << signature.id.to_s
       end
