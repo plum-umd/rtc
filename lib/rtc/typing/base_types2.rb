@@ -1,3 +1,11 @@
+class Fixnum
+  rtc_annotated
+
+  typesig("'+': (t) -> t", {'unwrap'=>[0]})
+  typesig("'to_s': () -> String")
+end
+
+
 rtc_typesig("class Array<t>")
 
 class Array
@@ -5,21 +13,24 @@ class Array
 
   alias :old_initialize :initialize
 
-#  typesig("'[]': (Fixnum) -> t or nil")
-  typesig("'[]': (Fixnum) -> t", false, true)
+  typesig("'[]' : (Range) -> Array<t>", {'unwrap'=>[0]})
+  typesig("'[]' : (Fixnum, Fixnum) -> Array<t>")
+  typesig("'[]' : (Fixnum) -> t", {'unwrap'=>[0]})
 
-  typesig("initialize: (Array<t>) -> Array<t>", true, true)
-  def initialize(x)
-    old_initialize x
-  end
 
-  typesig("push: (t) -> Array<t>", true, true)
+#  typesig("initialize: (Array<t>) -> Array<t>", true, true)
+#  typesig("initialize: () -> Array<t>", true, true)
+#  def initialize(*x)
+#    if x == nil
+#      old_initialize
+#    else
+#      old_initialize x
+#    end
+#  end
 
-#  typesig("'[]': (Fixnum) -> t or nil")
-#  typesig("'[]': (Fixnum, Fixnum) -> Array<t> or nil")
-#  typesig("'[]': (Range) -> Array<t> or nil")
-#  typesig("'+': (t) -> Array<t>")
-#  typesig("push: (t) -> Array<t>")
+  typesig("map: () {(t) -> t} -> Array<t>")
+ # typesig("'+': (Array<t>) -> Array<t>")
+  typesig("push: (t) -> Array<t>", {'mutate'=>true})
 end
 
 #rtc_typesig("class Set<t>")
@@ -32,5 +43,9 @@ end
 
 rtc_typesig("class Hash<k, v>")
 class Hash
- # rtc_annotated
+  rtc_annotated
+
+  typesig("'[]' : (k) -> v")
+  typesig("'[]=' : (k, v) -> v")
+
 end
