@@ -37,6 +37,18 @@ module Rtc
       @object.to_s
     end
 
+    def hash
+      @object.hash
+    end
+
+    def eql?(other)
+      if other.respond_to?(:is_proxy_object)
+        @object.eql?(other.object)
+      else
+        @object.eql?(other)
+      end
+    end
+
     def rtc_to_s
       status = Rtc::MasterSwitch.is_on?
       Rtc::MasterSwitch.turn_off if status == true
