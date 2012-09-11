@@ -123,7 +123,7 @@ class SudokuSolver
 
 	# Search if constraint satisfaction does not solve the puzzle
 
-  typesig("search: (Hash<String, String>) -> FalseClass or Hash<String, String>")
+  typesig("search: (FalseClass or Hash<String, String>) -> FalseClass or Hash<String, String>")
   def search(values)
     return false if values == false
 
@@ -154,7 +154,7 @@ class SudokuSolver
   end
     
 	# Print a text Sudoku grid to STDOUT
-  typesig("print_grid: (Hash<String, String>) -> Hash<String, String>")
+  typesig("print_grid: (FalseClass or Hash<String, String>) -> Hash<String, String>")
   def print_grid(values)
     return if values == false
     max = 0
