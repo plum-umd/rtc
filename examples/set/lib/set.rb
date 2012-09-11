@@ -54,7 +54,7 @@
 require 'rtc_lib'
 
 Rtc::MasterSwitch.turn_off
-rtc_typesig("Set<a>")
+rtc_typesig("class Set<a>")
 class Set
   rtc_annotated
 
@@ -205,7 +205,7 @@ class Set
   alias member? include?
 
   # Returns true if the set is a superset of the given set.
-  typesig("'superset?': Set<a> -> TrueClass or FalseClass")
+  typesig("'superset?': (Set<a>) -> TrueClass or FalseClass")
   def superset?(set)
     set.is_a?(Set) or raise ArgumentError, "value must be a set"
     return false if size < set.size
@@ -213,7 +213,7 @@ class Set
   end
 
   # Returns true if the set is a proper superset of the given set.
-  typesig("'proper_superset?': Set<a> -> TrueClass or FalseClass")
+  typesig("'proper_superset?': (Set<a>) -> TrueClass or FalseClass")
   def proper_superset?(set)
     set.is_a?(Set) or raise ArgumentError, "value must be a set"
     return false if size <= set.size
@@ -221,7 +221,7 @@ class Set
   end
 
   # Returns true if the set is a subset of the given set.
-  typesig("'subset?': Set<a> -> TrueClass or FalseClass")
+  typesig("'subset?': (Set<a>) -> TrueClass or FalseClass")
   def subset?(set)
     set.is_a?(Set) or raise ArgumentError, "value must be a set"
     return false if set.size < size
@@ -229,7 +229,7 @@ class Set
   end
 
   # Returns true if the set is a proper subset of the given set.
-  typesig("'proper_subset?': Set<a> -> TrueClass or FalseClass")
+  typesig("'proper_subset?': (Set<a>) -> TrueClass or FalseClass")
   def proper_subset?(set)
     set.is_a?(Set) or raise ArgumentError, "value must be a set"
     return false if set.size <= size
@@ -239,7 +239,7 @@ class Set
   # Calls the given block once for each element in the set, passing
   # the element as parameter.  Returns an enumerator if no block is
   # given.
-  typesig("each: {(a) -> Object} -> Set<a>")
+  typesig("each: () {(a) -> Object} -> Set<a>")
   def each
     block_given? or return enum_for(__method__)
     @hash.each_key { |o| yield(o) }
@@ -287,7 +287,7 @@ class Set
 
   # Deletes every element of the set for which block evaluates to
   # true, and returns self.
-  typesig("delete_if: {(a) -> Object} -> Set<a>", {"mutate" => true})
+  typesig("delete_if: () {(a) -> Object} -> Set<a>", {"mutate" => true})
   def delete_if
     block_given? or return enum_for(__method__)
     to_a.each { |o| @hash.delete(o) if yield(o) }
@@ -296,7 +296,7 @@ class Set
 
   # Deletes every element of the set for which block evaluates to
   # false, and returns self.
-  typesig("keep_if: {(a) -> Object} -> Set<a>", {"mutate" => true})
+  typesig("keep_if: () {(a) -> Object} -> Set<a>", {"mutate" => true})
   def keep_if
     block_given? or return enum_for(__method__)
     to_a.each { |o| @hash.delete(o) unless yield(o) }
@@ -304,7 +304,7 @@ class Set
   end
 
   # Replaces the elements with ones returned by collect().
-  typesig("'collect!': {(a) -> a} -> Set<a>", {"mutate" => true})
+  typesig("'collect!': () {(a) -> a} -> Set<a>", {"mutate" => true})
   def collect!
     block_given? or return enum_for(__method__)
     set = self.class.new
@@ -315,7 +315,7 @@ class Set
 
   # Equivalent to Set#delete_if, but returns nil if no changes were
   # made.
-  typesig("'reject!' : {(a) - Object} -> Set<a>", {"mutate" => true})
+  typesig("'reject!' : () {(a) -> Object} -> Set<a>", {"mutate" => true})
   def reject!
     block_given? or return enum_for(__method__)
     n = size
@@ -325,7 +325,7 @@ class Set
 
   # Equivalent to Set#keep_if, but returns nil if no changes were
   # made.
-  typesig("'select!' : {(a) - Object} -> Set<a>", {"mutate" => true})
+  typesig("'select!' : () {(a) -> Object} -> Set<a>", {"mutate" => true})
   def select!
     block_given? or return enum_for(__method__)
     n = size
