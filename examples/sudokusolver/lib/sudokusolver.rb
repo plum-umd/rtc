@@ -84,7 +84,7 @@ class SudokuSolver
 	# Assign a value to a square in the Sudoku grid:
 	# Eliminate all other possible digits from the square
 	# by calling the eliminate function (mutually recursive)
-  typesig("assign: (Hash<String, String>, String, String) -> FalseClass or Hash<String, String>", {"mutate" => true})
+  typesig("assign: (Hash<String, String>, String, String) -> FalseClass or Hash<String, String>")
   def assign(values, s, d)
     values[s].split('').each do |d2|
       unless d2 == d
@@ -96,7 +96,7 @@ class SudokuSolver
   
 	# Remove a possibility from a square.
 	# Recursively propagate the constraints: look at the source code for how this is done.
-  typesig("eliminate: (Hash<String, String>, String, String) -> FalseClass or Hash<String, String>", {"mutate" => true})
+  typesig("eliminate: (Hash<String, String>, String, String) -> FalseClass or Hash<String, String>")
   def eliminate(values, s, d)
     return values unless values[s].include?(d) ## Already eliminated.
 
@@ -123,7 +123,7 @@ class SudokuSolver
 
 	# Search if constraint satisfaction does not solve the puzzle
 
-  typesig("search: (Hash<String, String>) -> FalseClass or Hash<String, String>", {"mutate" => true})
+  typesig("search: (Hash<String, String>) -> FalseClass or Hash<String, String>")
   def search(values)
     return false if values == false
 
