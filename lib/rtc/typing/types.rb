@@ -52,7 +52,7 @@ class Object
   end
   
   def rtc_type
-#    return self.proxy_types if not self.proxy_types == nil
+    return Rtc::Types::BottomType.new if self == nil
 
     meta_hash = rtc_meta
     if meta_hash[:_type]
@@ -590,7 +590,7 @@ module Rtc::Types
 
         def has_method?(method)
           method = method.to_sym
-          methods = self.klass.instance_methods(false) + [:initialize]
+          methods = self.klass.instance_methods(false) + [:initialize, :new]
           methods.include?(method)
         end
         
