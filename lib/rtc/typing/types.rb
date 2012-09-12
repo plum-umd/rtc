@@ -1369,6 +1369,28 @@ module Rtc::Types
         end
       end
 
+      def le_poly(other, h)
+        if other.instance_of?(SymbolType)
+          return eql?(other)
+        elsif other.instance_of?(NominalType) and other.klass == Symbol
+          return true
+        elsif other.instance_of?(TypeParameter)
+          if h.keys.include?(other.symbol)
+            if h[other.symbol].instance_of?(UnionType)
+              h[other.symbol] = UnionType.of(h[other.symbol].types.to_a + [self])
+            else
+              h[other.symbol] = UnionType.of([h[other.symbol], self])
+            end
+          else
+            h[other.symbol] = self
+          end
+
+          return true
+        else
+          super
+        end
+      end
+
       def replace_constraints(h)
         self
       end
@@ -1481,7 +1503,8 @@ module Rtc::Types
             pairs.each do |t, u|
                 # pairs includes [t, t] and [u, u], and since t <= t, skip
                 # these.
-                next if t.equal?(u) 
+                next if t.eql?(u) 
+
                 # pairs includes [t, u] and [u, t], so we don't do symmetric
                 # checks.
                 if t <= u
