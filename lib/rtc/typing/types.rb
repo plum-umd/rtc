@@ -36,7 +36,7 @@ class Object
       end
     end
   end
-  
+
   def rtc_gc
     Rtc::GlobalCache.cache[object_id] = nil
   end
@@ -50,7 +50,7 @@ class Object
     end
     @@old_freeze_meth.bind(self).call()
   end
-  
+
   def rtc_type
     return Rtc::Types::BottomType.new if self == nil
 
@@ -1354,7 +1354,7 @@ module Rtc::Types
       def hash
         symbol.to_s.hash
       end
-      
+
       def to_s
         ":#{@symbol}"
       end
@@ -1367,6 +1367,10 @@ module Rtc::Types
         else
           super
         end
+      end
+
+      def replace_constraints(h)
+        self
       end
     end
 
