@@ -50,6 +50,7 @@ module Rtc
 
       method_types = invokee.class.get_typesig_info(@method_name.to_s)
 
+
       method_type_info = Rtc::MethodCheck.check_args(method_types, new_invokee, regular_args, @method_name, @constraints)
 
       unwrap_arg_pos = method_type_info.unwrap
@@ -71,7 +72,13 @@ module Rtc
         if arg_type.instance_of?(Rtc::Types::ProceduralType)
           regular_args[i] = BlockProxy.new(regular_args[i], arg_type, @method_name, @constraints, invokee)
         else
-          regular_args[i] = regular_args[i].rtc_annotate(arg_type)
+          if unwrap_arg_pos.include?(i)
+            if regular_args[i].respond_to?(:is_proxy_object)
+              regular_args[i] = regular_args[i].object
+            end
+          else
+            regular_args[i] = regular_args[i].rtc_annotate(arg_type)
+          end
         end
         
         i += 1
@@ -81,10 +88,9 @@ module Rtc
         raise NoMethodError, invokee.inspect + " has no method " + @method_name.to_s
       end
 
-      unwrap_arg_pos.each {|pos| 
-        regular_args[pos] = regular_args[pos].object
-      }
-
+#      unwrap_arg_pos.each {|pos| 
+#        regular_args[pos] = regular_args[pos].object
+#      }
 
       if blk
         wb = wrap_block(blk)
@@ -103,7 +109,9 @@ module Rtc
         ret_valid = ret_value.rtc_type <= new_mt.return_type
       end
 
-      if ret_valid == false
+      if ret_valid == false 
+        puts "INVOKE ***RETURN*** method=#{@method_name}  invokee=#{invokee.inspect}  args=#{regular_args.inspect}   ret=#{ret_value.inspect}  new_mt=#{new_mt.inspect}"
+
         raise TypeMismatchException, "invalid return type in " + @method_name.to_s
       end
 
@@ -123,12 +131,12 @@ module Rtc
         ret_proxy = ret_value.rtc_annotate(new_mt.return_type)
       end
 
-      if not ret_value.proxies == nil and from_proxy == false
+      if not ret_value.proxies == nil and from_proxy == false and mutate == true
         ret_type = ret_value.rtc_type 
 
         ret_value.proxies.each {|p|
           if not ret_type <= p.proxy_type
-            raise Rtc::TypeMismatchException, "Return object run-time type #{ret_type.inspect} NOT <= one of the object\'s proxy list types #{p.proxy_type.inspect}"
+            raise Rtc::TypeMismatchException, "Return object run-time type #{ret_type.inspect} NOT <= one of the object\'s proxy list types #{p.proxy_type.inspect}  method=#{@method_name},  invokee=#{invokee.rtc_to_str},   args=#{regular_args.rtc_to_str},   ret=#{ret_value.inspect},    invokee_type=#{invokee.rtc_type.inspect}   #{new_mt.inspect}"
           end
         }
       end
