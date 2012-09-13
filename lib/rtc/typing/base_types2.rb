@@ -46,8 +46,9 @@ rtc_typesig("class Hash<k, v>")
 class Hash
   rtc_annotated
 
-#  typesig("'[]' : (k) -> v", {'unwrap'=>[0]})
-  typesig("'[]' : (k) -> v")
-  typesig("'[]=' : (k, v) -> v")
+  typesig("'[]' : (k) -> v", {'unwrap'=>[0]})
+#  typesig("'[]' : (k) -> v")
+  typesig("'[]=' : (k, v) -> v", {'unwrap'=>[0]})
+#  typesig("'[]=' : (k, v) -> v")
 
 end

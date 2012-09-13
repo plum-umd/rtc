@@ -75,74 +75,46 @@ module Rtc
 
     def rtc_to_s
       status = Rtc::MasterSwitch.is_on?
-      Rtc::MasterSwitch.turn_off if status == true
-      str = "{ProxyObject @object: " + @object.inspect + ", @proxy_type: " + @proxy_type.inspect + "}"
-      Rtc::MasterSwitch.turn_on if status == true
+      Rtc::MasterSwitch.turn_off if status
+      str = "{ProxyObject @object: #{@object.inspect}, @proxy_type: #{@proxy_type.inspect}}"
+      Rtc::MasterSwitch.turn_on if status
       str
     end
 
     def rtc_to_str
       status = Rtc::MasterSwitch.is_on?
-      Rtc::MasterSwitch.turn_off if status == true
+      Rtc::MasterSwitch.turn_off if status
 #      str = "{ProxyObject @object: " + @object.inspect + ", @proxy_type: " + @proxy_type.to_s + "}"
-      str = "{ProxyObject @object: " + @object.rtc_to_str + ", @proxy_type: " + @proxy_type.rtc_to_str + "}"
-      Rtc::MasterSwitch.turn_on if status == true
+      str = "{ProxyObject @object: #{@object.rtc_to_str}, @proxy_type: #{@proxy_type.rtc_to_str}}"
+      Rtc::MasterSwitch.turn_on if status
       str
     end
 
-    def method_missing(*args, &block)
-      status = Rtc::MasterSwitch.is_on?
-      Rtc::MasterSwitch.turn_off if status
-
-      method_name = args[0]
-      method_args = args[1..-1]
-      arg_size = method_args.size
-
-      if status == false
-        if method_args == []
-          if block
-            ret = @object.send method_name, &block
-          else
-            ret = @object.send method_name
-          end
-        else
-          if block
-            ret = @object.send method_name, *method_args, &block
-          else
-            ret = @object.send method_name, *method_args
-          end
-        end
-        
-        return ret
+    def method_missing(method, *args, &block)
+      unless Rtc::MasterSwitch.is_on?
+        return @object.send method, *args, &block
       end
 
+      Rtc::MasterSwitch.turn_off
+
+      arg_size = args.size
       mutate = false      
-      method_types = @object.class.get_typesig_info(method_name)
+      method_types = @object.class.get_typesig_info(method)
 
-      if not @proxy_type.has_method?(method_name)
-        raise NoMethodError, self.rtc_to_str + " has no method " + method_name.to_s
+      unless @proxy_type.has_method?(method)
+        raise NoMethodError, "#{self.rtc_to_str} has no method #{method}"
       end
 
-      if method_types != nil
+      if method_types
         extra_arg = {}
         extra_arg['__rtc_special'] = true
         extra_arg['self_proxy'] = self
-        method_args.push(extra_arg)
+        args.push(extra_arg)
       end
 
       Rtc::MasterSwitch.turn_on 
       
-      if block
-        ret = @object.send method_name, *method_args, &block
-      else
-        ret = @object.send method_name, *method_args
-      end
-      
-      Rtc::MasterSwitch.turn_off    
-
-      Rtc::MasterSwitch.turn_on if status == true
-
-      return ret
+      return @object.send method, *args, &block
     end
   end
 end
