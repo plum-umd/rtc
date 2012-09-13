@@ -16,6 +16,7 @@ class Array
   typesig("'[]' : (Range) -> Array<t>", {'unwrap'=>[0]})
   typesig("'[]' : (Fixnum, Fixnum) -> Array<t>")
   typesig("'[]' : (Fixnum) -> t", {'unwrap'=>[0]})
+#  typesig("zip<u> : (Array<u>) -> Array<Array<u or t> >")
 
 
 #  typesig("initialize: (Array<t>) -> Array<t>", true, true)
@@ -45,6 +46,7 @@ rtc_typesig("class Hash<k, v>")
 class Hash
   rtc_annotated
 
+#  typesig("'[]' : (k) -> v", {'unwrap'=>[0]})
   typesig("'[]' : (k) -> v")
   typesig("'[]=' : (k, v) -> v")
 
