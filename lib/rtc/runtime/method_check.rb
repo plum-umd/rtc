@@ -5,7 +5,7 @@ module Rtc::MethodCheck
   def self.check_args(method_types, invokee, args, method_name, constraints)
     class_param_type = invokee.class.get_class_parameters
     
-    if Rtc::ClassModifier.get_class_parameters.keys.include?(invokee.class.to_s)
+    unless Rtc::ClassModifier.get_class_parameters[invokee.class.to_s].nil?
       class_param_type = Rtc::ClassModifier.get_class_parameters[invokee.class.to_s]
     end
 
@@ -14,22 +14,19 @@ module Rtc::MethodCheck
       class_param_type = Rtc::Types::ParameterizedType.new(n, class_param_type)
     end
 
-    if class_param_type != nil
-      h = {}
-      invokee.rtc_type.le_poly(class_param_type, h)
+    if class_param_type
+      invokee.rtc_type.le_poly(class_param_type, {})
     end
 
     constraint_m = {}
     method_types.each {|i| constraint_m[i] = {}}
 
 
-    if class_param_type != nil
-      if class_param_type.has_parameterized
-        if invokee.respond_to?(:is_proxy_object)
-          invokee.proxy_type.le_poly(class_param_type, constraints)
-        else
-          invokee.rtc_type.le_poly(class_param_type, constraints)
-        end
+    if class_param_type and class_param_type.has_parameterized
+      if invokee.respond_to?(:is_proxy_object)
+        invokee.proxy_type.le_poly(class_param_type, constraints)
+      else
+        invokee.rtc_type.le_poly(class_param_type, constraints)
       end
     end
 
@@ -55,9 +52,7 @@ module Rtc::MethodCheck
             b = arg.rtc_type.le_poly(expected_arg_type, constraint_m[m])
           end
 
-          if b == false
-            possible_types.delete(m)
-          end
+          possible_types.delete(m) unless b
         else
           if arg.respond_to?(:is_proxy_object)
             b = arg.proxy_type <= expected_arg_type
@@ -65,9 +60,7 @@ module Rtc::MethodCheck
             b = arg.rtc_type <= expected_arg_type
           end
           
-          if b == false
-            possible_types.delete(m)
-          end
+          possible_types.delete(m) unless b
         end
       }
     end
