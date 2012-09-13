@@ -31,16 +31,12 @@ module Rtc
       from_proxy = false
 
       last_arg = regular_args[-1]
-      if last_arg.is_a?(Hash) and not last_arg['__rtc_special'].nil?
+      if last_arg.is_a?(Hash) and last_arg['__rtc_special']
         regular_args.pop
-      else
-        last_arg = nil
-      end
-
-      if last_arg and not last_arg['self_proxy'].nil?
         new_invokee = last_arg['self_proxy']
         from_proxy = true
       else
+        last_arg = nil
         new_invokee = invokee
       end
 

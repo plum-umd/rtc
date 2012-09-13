@@ -590,8 +590,7 @@ module Rtc::Types
 
         def has_method?(method)
           method = method.to_sym
-          methods = self.klass.instance_methods(false) + [:initialize, :new]
-          methods.include?(method)
+          self.klass.method_defined?(method)
         end
         
         def type_parameters
@@ -1344,7 +1343,7 @@ module Rtc::Types
       end
 
       def has_method?(method)
-        Symbol.instance_methods.include?(method)
+        Symbol.method_defined?(method)
       end
       
       def eql?(other)

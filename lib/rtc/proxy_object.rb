@@ -2,7 +2,16 @@ require 'weakref'
 require 'rtc/runtime/method_check.rb'
 
 class String
+  alias :old_eq :==
   alias :old_eql? :eql?
+
+  def ==(other)
+    if other.respond_to?(:is_proxy_object)
+      old_eq(other.object)
+    else
+      old_eq(other)
+    end
+  end
 
   def eql?(other)
     if other.respond_to?(:is_proxy_object)

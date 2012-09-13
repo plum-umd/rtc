@@ -2,6 +2,7 @@ class Fixnum
   rtc_annotated
 
   typesig("'+': (t) -> t", {'unwrap'=>[0]})
+  typesig("'*': (t) -> t", {'unwrap'=>[0]})
   typesig("'to_s': () -> String")
 end
 

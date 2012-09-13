@@ -165,6 +165,9 @@ class SudokuSolver
   typesig("print_grid: (FalseClass or Hash<String, String>) -> Hash<String, String>")
   def print_grid(values)
     return if values == false
+
+    values = values.rtc_cast("Hash<String, String>")
+
     max = 0
     squares.each { |s| max = values[s].length if values[s].length > max }
     width = 1 + max
