@@ -97,15 +97,11 @@ module Rtc
 
       Rtc::MasterSwitch.turn_off
 
-      arg_size = args.size
-      mutate = false      
-      method_types = @object.class.get_typesig_info(method)
-
       unless @proxy_type.has_method?(method)
         raise NoMethodError, "#{self.rtc_to_str} has no method #{method}"
       end
 
-      if method_types
+      if @object.class.get_typesig_info(method)
         extra_arg = {}
         extra_arg['__rtc_special'] = true
         extra_arg['self_proxy'] = self
