@@ -123,30 +123,40 @@ class Object
   end  
 
   def rtc_cast(annotation_string)
+    status = Rtc::MasterSwitch.is_on?
+    Rtc::MasterSwitch.turn_off if status == true
+
     if annotation_string.class == String
       parser = Rtc::TypeAnnotationParser.new(self.class)
       annotated_type = parser.scan_str("##"+annotation_string)
     else
       annotated_type = annotation_string
     end
-    
-    if self.class == Rtc::ProxyObject
-      my_type = self.object.rtc_type
+
+    if self.respond_to?(:is_proxy_object)
+      if not self.object.rtc_type <= annotated_type
+        raise Rtc::AnnotateException, "object run-time type " + self.object.rtc_type.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s        
+      end
+
+      r = Rtc::ProxyObject.new(@object, annotated_type)        
     else
-      my_type = self.rtc_type
+      if not self.rtc_type <= annotated_type 
+        raise Rtc::AnnotateException, "object type " + self.rtc_type.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s        
+      end
+
+      r = Rtc::ProxyObject.new(self, annotated_type)        
     end
 
-    if not my_type <= annotated_type
-      raise Rtc::CastException, "object type " + my_type.to_s + " NOT <= rtc_cast argument type " + annotated_type.to_s
+    if self.proxies == nil
+      self.proxies = Set.new([r])
+    else
+      self.proxies.add(r)
     end
 
-    if self.class == Rtc::ProxyObject
-      add_type(annotated_type)
-    else
-      Rtc::ProxyObject.new(self, annotated_type)
-    end
+    Rtc::MasterSwitch.turn_on if status == true
+    r
   end
-  
+
   def rtc_annotate(annotation_string)
     status = Rtc::MasterSwitch.is_on?
     Rtc::MasterSwitch.turn_off if status == true
