@@ -1342,6 +1342,10 @@ module Rtc::Types
       def has_parameterized
         false
       end
+
+      def has_method?(method)
+        Symbol.instance_methods.include?(method)
+      end
       
       def eql?(other)
         other.instance_of?(SymbolType) and other.symbol == symbol
