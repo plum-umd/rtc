@@ -1,7 +1,20 @@
 require 'weakref'
 require 'rtc/runtime/method_check.rb'
 
+class String
+  alias :old_eql? :eql?
+
+  def eql?(other)
+    if other.respond_to?(:is_proxy_object)
+      old_eql?(other.object)
+    else
+      old_eql?(other)
+    end
+  end
+end
+
 module Rtc
+
   class ProxyObject
     attr_reader :object
     attr_reader :proxy_type
@@ -38,15 +51,26 @@ module Rtc
     end
 
     def hash
-      @object.hash
+      status = Rtc::MasterSwitch.is_on?
+      Rtc::MasterSwitch.turn_off if status
+      r = @object.hash
+
+      Rtc::MasterSwitch.turn_on if status
+      r
     end
 
     def eql?(other)
       if other.respond_to?(:is_proxy_object)
-        @object.eql?(other.object)
+        r = @object.eql?(other.object)
       else
-        @object.eql?(other)
+        r = @object.eql?(other)
       end
+
+      r
+    end
+
+    def ==(other)
+      eql?(other)
     end
 
     def rtc_to_s
