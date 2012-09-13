@@ -102,10 +102,7 @@ module Rtc
       end
 
       if @object.class.get_typesig_info(method)
-        extra_arg = {}
-        extra_arg['__rtc_special'] = true
-        extra_arg['self_proxy'] = self
-        args.push(extra_arg)
+        args.push({'__rtc_special' => true, 'self_proxy' => self})
       end
 
       Rtc::MasterSwitch.turn_on 
