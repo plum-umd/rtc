@@ -15,6 +15,8 @@
 
 require 'rtc_lib'
 
+Rtc::MasterSwitch.turn_off
+
 class SudokuSolver
 	VERSION = "1.4"
   attr_reader :rows, :cols, :squares, :unitlist, :peers, :units
@@ -35,7 +37,7 @@ class SudokuSolver
 
   def initialize() 
     @rows = ('A'..'I').to_a
-    @cols = ('1'..'9').to_a 
+    @cols = ('1'..'9').to_a
     @squares = cross(@rows, @cols)  
     @unitlist = Array.new
     cols.each { |c| @unitlist.push(cross(rows, [c])) }
@@ -75,9 +77,11 @@ class SudokuSolver
     values = Hash.new
     # Initially any square can be anything.
     squares.each { |s| values[s] = "123456789" }
+
     for s,d in squares.zip(g)
       return false unless assign(values, s, d) if d =~ /\d/
     end
+
     return values
   end
   
@@ -91,6 +95,7 @@ class SudokuSolver
         return false if eliminate(values, s, d2) == false
       end
     end
+
     return values
   end
   
@@ -118,6 +123,7 @@ class SudokuSolver
       return false if dplaces.length == 0 # bad
       return false if assign(values, dplaces[0], d) == false if dplaces.length == 1
     end
+
     return values
   end
 
@@ -126,6 +132,8 @@ class SudokuSolver
   typesig("search: (FalseClass or Hash<String, String>) -> FalseClass or Hash<String, String>")
   def search(values)
     return false if values == false
+
+    values = values.rtc_cast("Hash<String, String>")
 
     solved = true # assumption 
     squares.each do |s|
@@ -216,9 +224,13 @@ class SudokuSolver
   
 end
 
+Rtc::MasterSwitch.turn_on
+
+
 # Algorithm by Peter Norvig @ http://www.norvig.com/sudoku.html
 
 # More constraints:
 # http://www.scanraid.com/BasicStrategies.htm
 # http://www.krazydad.com/blog/2005/09/29/an-index-of-sudoku-strategies/
 # http://www2.warwick.ac.uk/fac/sci/moac/currentstudents/peter_cock/python/sudoku/
+
