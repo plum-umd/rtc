@@ -37,7 +37,7 @@ module Rtc
         last_arg = nil
       end
 
-      if last_arg and not last_arg[self_proxy].nil?
+      if last_arg and not last_arg['self_proxy'].nil?
         new_invokee = last_arg['self_proxy']
         from_proxy = true
       else
