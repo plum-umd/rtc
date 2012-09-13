@@ -72,8 +72,18 @@ module Rtc::MethodCheck
       }
     end
 
-    if possible_types.size != 1
-      raise Rtc::TypeMismatchException, "cannot infer type in intersecton type"
+    if possible_types.size > 1
+      raise Rtc::TypeMismatchException, "cannot infer type in intersecton type for method #{method_name}, whose types are #{method_types.inspect}"
+    elsif possible_types.size == 0
+      arg_types = args.map {|a| 
+        if a.respond_to?(:is_proxy_object)
+          a.proxy_type
+        else
+          a.rtc_type
+        end
+      }
+
+      raise Rtc::TypeMismatchException, "In method #{method_name}, annotated types are #{method_types.inspect}, but actual arguments are #{args.rtc_to_str}, with argument types #{arg_types.inspect}"
     end
 
     correct_type = possible_types.to_a[0]
