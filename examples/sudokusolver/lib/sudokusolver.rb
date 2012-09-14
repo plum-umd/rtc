@@ -208,7 +208,7 @@ class SudokuSolver
   end
   
 	# Verify the Sudoku solution
-  typesig("check_solution: (Hash<String, String>) -> TrueClass or FalseClass")
+  typesig("check_solution: (String) -> TrueClass or FalseClass")
   def check_solution(solution)
     values = Hash.new
     for s,d in squares.zip(solution.split(''))
