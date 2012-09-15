@@ -131,7 +131,7 @@ module Rtc
         ret_proxy = ret_value.rtc_annotate(new_mt_return_type)
       end
 
-      if ret_value.proxies and not from_proxy and mutate and 0 == 1
+      if ret_value.proxies and not from_proxy and mutate 
         ret_type = ret_value.rtc_type 
 
         ret_value.proxies.each {|p|
@@ -150,7 +150,7 @@ module Rtc
 
         if invokee.proxies
           invokee.proxies.each {|p|
-            unless ret_value.rtc_type <= p.proxy_type or 0 == 0
+            unless ret_value.rtc_type <= p.proxy_type 
               raise Rtc::TypeMismatchException, "Return object run-time type #{ret_value.rtc_type.inspect} NOT <= one of the object's proxy list types #{p.proxy_type.inspect}"
             end
           }       
