@@ -239,7 +239,7 @@ class MySet
   # Calls the given block once for each element in the set, passing
   # the element as parameter.  Returns an enumerator if no block is
   # given.
-  typesig("each: () {(a) -> Object} -> MySet<a>")
+  typesig("each: () {(a) -> .?} -> MySet<a>")
   def each
     block_given? or return enum_for(__method__)
     @hash.each_key { |o| yield(o) }
@@ -287,7 +287,7 @@ class MySet
 
   # Deletes every element of the set for which block evaluates to
   # true, and returns self.
-  typesig("delete_if: () {(a) -> Object} -> MySet<a>", {"mutate" => true})
+  typesig("delete_if: () {(a) -> .?} -> MySet<a>", {"mutate" => true})
   def delete_if
     block_given? or return enum_for(__method__)
     to_a.each { |o| @hash.delete(o) if yield(o) }
@@ -296,7 +296,7 @@ class MySet
 
   # Deletes every element of the set for which block evaluates to
   # false, and returns self.
-  typesig("keep_if: () {(a) -> Object} -> MySet<a>", {"mutate" => true})
+  typesig("keep_if: () {(a) -> .?} -> MySet<a>", {"mutate" => true})
   def keep_if
     block_given? or return enum_for(__method__)
     to_a.each { |o| @hash.delete(o) unless yield(o) }
@@ -315,7 +315,7 @@ class MySet
 
   # Equivalent to MySet#delete_if, but returns nil if no changes were
   # made.
-  typesig("'reject!' : () {(a) -> Object} -> MySet<a>", {"mutate" => true})
+  typesig("'reject!' : () {(a) -> .?} -> MySet<a>", {"mutate" => true})
   def reject!
     block_given? or return enum_for(__method__)
     n = size
@@ -325,7 +325,7 @@ class MySet
 
   # Equivalent to MySet#keep_if, but returns nil if no changes were
   # made.
-  typesig("'select!' : () {(a) -> Object} -> MySet<a>", {"mutate" => true})
+  typesig("'select!' : () {(a) -> .?} -> MySet<a>", {"mutate" => true})
   def select!
     block_given? or return enum_for(__method__)
     n = size
@@ -480,7 +480,7 @@ class MySet
     end
   end
 
-#  InspectKey = :__inspect_key__         # :nodoc:
+  InspectKey = :__inspect_key__         # :nodoc:
 
   # Returns a string containing a human-readable representation of the
   # set. ("#<MySet: {element1, element2, ...}>")
