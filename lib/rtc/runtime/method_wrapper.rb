@@ -29,6 +29,7 @@ module Rtc
       blk = arg_vector[:block]
       extra_arg = nil
       from_proxy = false
+      cons = {}
 
       last_arg = regular_args[-1]
       if last_arg.is_a?(Hash) and last_arg['__rtc_special']
@@ -39,25 +40,33 @@ module Rtc
         last_arg = nil
         new_invokee = invokee
       end
-
-      for i in @constraints.keys
-        @constraints.delete(i)
-      end
-
+      
       method_types = invokee.class.get_typesig_info(@method_name.to_s)
 
 
-      method_type_info = Rtc::MethodCheck.check_args(method_types, new_invokee, regular_args, @method_name, @constraints)
+      method_type_info = Rtc::MethodCheck.check_args(method_types, new_invokee, regular_args, @method_name, cons)
+
+      
+      if not $method_stack.keys.include?(invokee.class)
+        $method_stack[invokee.class] = {}
+      end
+      
+      if not $method_stack[invokee.class].keys.include?(@method_name)
+        $method_stack[invokee.class][@method_name] = []
+      end
+
+      $method_stack[invokee.class][@method_name].push(cons)
 
       unwrap_arg_pos = method_type_info.unwrap
       mutate = method_type_info.mutate
       method_type = method_type_info.sig
 
-      if @constraints.empty?
+      if cons.empty?
         new_mt = method_type
       else
-        new_mt = method_type.replace_constraints(@constraints)
+        new_mt = method_type.replace_constraints(cons)
       end
+
 
       i = 0
       new_mt.arg_types.each { |arg_type|
@@ -66,7 +75,7 @@ module Rtc
         end
         
         if arg_type.instance_of?(Rtc::Types::ProceduralType)
-          regular_args[i] = BlockProxy.new(regular_args[i], arg_type, @method_name, @constraints, invokee)
+          regular_args[i] = BlockProxy.new(regular_args[i], arg_type, @method_name, invokee)
         else
           if unwrap_arg_pos.include?(i)
             if regular_args[i].respond_to?(:is_proxy_object)
@@ -84,10 +93,6 @@ module Rtc
         raise NoMethodError, invokee.inspect + " has no method " + @method_name.to_s
       end
 
-#      unwrap_arg_pos.each {|pos| 
-#        regular_args[pos] = regular_args[pos].object
-#      }
-
       if blk
         wb = wrap_block(blk)
         Rtc::MasterSwitch.turn_on
@@ -99,35 +104,34 @@ module Rtc
         Rtc::MasterSwitch.turn_off
       end
 
-      if new_mt.return_type.has_parameterized
+      c = $method_stack[invokee.class][@method_name][-1]
+
+      new_mt_return_type = new_mt.return_type.replace_constraints(c)
+
+      if new_mt_return_type.has_parameterized
         ret_valid = ret_value.rtc_type.le_poly(new_mt.return_type, {})
       else
-        ret_valid = ret_value.rtc_type <= new_mt.return_type
+        ret_valid = ret_value.rtc_type <= new_mt_return_type
       end
 
       unless ret_valid
         puts "INVOKE ***RETURN*** method=#{@method_name}  invokee=#{invokee.inspect}  args=#{regular_args.inspect}   ret=#{ret_value.inspect}  new_mt=#{new_mt.inspect}"
-
         raise TypeMismatchException, "invalid return type in " + @method_name.to_s
       end
 
-      unless @constraints.empty?
-        new_mt = new_mt.replace_constraints(@constraints)
-      end
-
-      if new_mt.return_type.has_parameterized
+      if new_mt_return_type.has_parameterized
         h = {}
-        if ret_value.rtc_type.le_poly(new_mt.return_type, h)
-          nr = new_mt.return_type.replace_constraints(h)
+        if ret_value.rtc_type.le_poly(new_mt_return_type, h)
+          nr = new_mt_return_type.replace_constraints(h)
           ret_proxy = ret_value.rtc_annotate(nr)
         else
           raise Rtc::TypeMismatchException, "Invalid return type for method #{@method_name}"
         end
       else
-        ret_proxy = ret_value.rtc_annotate(new_mt.return_type)
+        ret_proxy = ret_value.rtc_annotate(new_mt_return_type)
       end
 
-      if ret_value.proxies and not from_proxy and mutate
+      if ret_value.proxies and not from_proxy and mutate and 0 == 1
         ret_type = ret_value.rtc_type 
 
         ret_value.proxies.each {|p|
@@ -146,13 +150,15 @@ module Rtc
 
         if invokee.proxies
           invokee.proxies.each {|p|
-            unless ret_value.rtc_type <= p.proxy_type
+            unless ret_value.rtc_type <= p.proxy_type or 0 == 0
               raise Rtc::TypeMismatchException, "Return object run-time type #{ret_value.rtc_type.inspect} NOT <= one of the object's proxy list types #{p.proxy_type.inspect}"
             end
           }       
         end
 
       end
+
+      $method_stack[invokee.class][@method_name].pop
 
       return ret_proxy
     end
@@ -177,10 +183,8 @@ module Rtc
     def initialize(class_obj,method_name)
       @method_name = method_name
       @class_obj = class_obj
-      @constraints = {}
 
       class_obj = @class_obj
-      constraints = @constraints
 
       this_obj = self
       original_method = @original_method = class_obj.instance_method(method_name)
@@ -192,8 +196,7 @@ module Rtc
 
           if args[:block]
             method_type = self.rtc_typeof(method_name, class_obj)
-            args[:block] = BlockProxy.new(args[:block], method_type, method_name, constraints, class_obj)
-            #args[:block] = BlockProxy.new(args[:block], method_type, method_name, class_obj)
+            args[:block] = BlockProxy.new(args[:block], method_type, method_name, class_obj)
           end
 
           begin
@@ -223,12 +226,11 @@ module Rtc
     attr_reader :constraints
     attr_reader :class_obj
 
-    def initialize(proc, type, method_name, constraints, class_obj)
+    def initialize(proc, type, method_name, class_obj)
       @proc = proc
       @method_type = type
       @block_type = type.block_type
       @method_name = method_name
-      @constraints = constraints
       @class_obj = class_obj
     end
 
@@ -236,7 +238,10 @@ module Rtc
       Rtc::MasterSwitch.turn_off
       arg = args[0]
 
-      if @constraints.empty?
+      c = $method_stack[@class_obj][@method_name][-1]
+
+
+      if c.empty?
         unless @block_type
           method_type = @method_type
         else
@@ -244,9 +249,9 @@ module Rtc
         end
       else
         unless @block_type
-          method_type = @method_type.replace_constraints(@constraints)
+          method_type = @method_type.replace_constraints(c)
         else
-          method_type = @block_type.replace_constraints(@constraints)
+          method_type = @block_type.replace_constraints(c)
         end
       end
 
@@ -261,8 +266,11 @@ module Rtc
         if a.respond_to?(:is_proxy_object)
           valid = a.proxy_type <= method_type.arg_types[i]
         else
+
           valid = a.rtc_type <= method_type.arg_types[i]
         end
+
+
 
         unless valid
           raise Rtc::TypeMismatchException, "block argument mismatch"
@@ -275,10 +283,17 @@ module Rtc
       ret = @proc.call(arg)
       Rtc::MasterSwitch.turn_off
 
-      new_ret_type = method_type.return_type.replace_constraints(@constraints)
+      # new_ret_type = method_type.return_type.replace_constraints(c)
+      new_ret_type = method_type.return_type
 
-      unless ret.rtc_type <= new_ret_type
-        raise Rtc::TypeMismatchException, "block return type mismatch"
+      if new_ret_type.has_parameterized
+        if not ret.rtc_type.le_poly(new_ret_type, c)
+          raise Rtc::TypeMismatchException, "block return type mismatch"
+        end
+      else
+        unless ret.rtc_type <= new_ret_type
+          raise Rtc::TypeMismatchException, "block return type mismatch"
+        end
       end
 
       return ret

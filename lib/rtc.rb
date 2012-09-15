@@ -12,6 +12,8 @@ require 'rtc/annotated'
 require 'rtc/options'
 require 'rtc/runtime/class_modifier'
 
+$method_stack = {}
+
 def rtc_annotated
   extend Rtc::Annotated
 end
