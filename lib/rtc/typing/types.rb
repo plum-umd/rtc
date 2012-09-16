@@ -628,15 +628,7 @@ module Rtc::Types
             when TopType
               true
             when NominalType
-              if other.klass.respond_to?(:name) and @klass.respond_to?(:name) and @klass.name != nil
-                return true if other.klass.name == @klass.name
-              #else
-              #  if self.klass.class < other.klass.class or self.klass.class == other.klass.class
-              #    return true
-              #  else
-              #    return false
-              #  end
-              end
+              return true if other.klass.name == @klass.name
 
               other_class = other.klass
               it = InheritanceChainIterator.new(@klass)
