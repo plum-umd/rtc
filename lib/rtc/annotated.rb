@@ -31,28 +31,10 @@ class Object
     self.to_s
   end
 
-  def self.get_mutant_methods
-    return [] if not @@class_info.keys.include?(self)
-    @@class_info[self]['mutant_methods']
-  end
-
-  def self.get_non_mutant_methods
-    return [] if not @@class_info.keys.include?(self)
-    @@class_info[self]['non_mutant_methods']
-  end
-
   def self.add_to_typesigs(id, type, mutate, unwrap)
     if not @@class_info.keys.include?(self)
       @@class_info[self] = {}
-      @@class_info[self]['mutant_methods'] = Set.new
-      @@class_info[self]['non_mutant_methods'] = Set.new
       @@class_info[self]['typesigs'] = {}
-    end
-
-    if mutate == true
-      @@class_info[self]['mutant_methods'].add(id)
-    else
-      @@class_info[self]['non_mutant_methods'].add(id)
     end
 
     ts = TypeSigInfo.new(type, mutate, unwrap)
