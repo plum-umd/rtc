@@ -1,7 +1,7 @@
 require 'weakref'
 require 'rtc/runtime/method_check.rb'
 
-class String
+class Object
   alias :old_eq :==
   alias :old_eql? :eql?
 
@@ -30,6 +30,8 @@ module Rtc
     attr_writer :proxy_type
 
     alias :old_inspect :inspect
+    alias :object_id :__id__
+    alias :enum_for :to_enum
 
     def initialize(object, proxy_type)
       # type = WeakRef.new(type)      
@@ -39,47 +41,169 @@ module Rtc
       @proxy_type = proxy_type
     end
 
-    def is_proxy_object
-      true
+    def !~(other)
+      @object !~ (other)
+    end
+
+    def <=>(other)
+      @object <=> (other)
+    end
+
+    def ===(other)
+      @object === (other)
+    end
+
+    def =~(other)
+      @object =~ (other)
     end
 
     def class
       @object.class
     end
 
-    def inspect
-      @object.inspect
+    def clone 
+      @object.clone
     end
 
-    def rtc_type
-      @object.rtc_type
+    # def define_singleton_method 
+    # def display(port=$>)
+    # def dup
+
+    def to_enum(method, *args)
+      @object.to_enum(method, args)
     end
 
-    def to_s
-      @object.to_s
+    def ==(other)
+      eql?(other)
     end
+
+    def equal?(other)
+      eql?(other)
+    end
+
+    def eql?(other)
+      if other.respond_to?(:is_proxy_object)
+        @object.eql?(other.object)
+      else
+        @object.eql?(other)
+      end
+    end
+
+    # def extend
+    # def freeze
+    # def frozen?
 
     def hash
       status = Rtc::MasterSwitch.is_on?
       Rtc::MasterSwitch.turn_off if status
       r = @object.hash
-
       Rtc::MasterSwitch.turn_on if status
       r
     end
 
-    def eql?(other)
-      if other.respond_to?(:is_proxy_object)
-        r = @object.eql?(other.object)
-      else
-        r = @object.eql?(other)
-      end
-
-      r
+    def instance_of?(c)
+      @object.instance_of?(c)
     end
 
-    def ==(other)
-      eql?(other)
+    def inspect
+      @object.inspect
+    end
+
+    def instance_variable_defined?(symbol)
+      @object.instance_variable_defined?(symbol)
+    end
+
+    def instance_variable_get(symbol)
+      @object.instance_variable_get(symbol)
+    end
+
+    def instance_variable_set(symbol, obj)
+      @object.instance_variable_set(symbol, obj)
+    end
+
+    def instance_variables
+      @object.instance_variables
+    end
+
+    def is_a?(c)
+      @object.is_a?(c)
+    end
+
+    def kind_of?(c)
+      @object.kind_of?(c)
+    end
+
+    def method(sym)
+      @object.method(sym)
+    end
+
+    def nil?
+      @object.nil?
+    end
+
+    def __id__
+      @object.__id__
+    end
+
+    def public_method(sym)
+      @object.public_method(sym)
+    end
+
+    # def public_send
+    # def respond_to?
+
+    def respond_to_missing?(symbol, *i)
+      @object.respond_to_missing?(symbol, i)
+    end
+
+    # def send
+
+    def singleton_class
+      @object.singleton_class
+    end
+
+    def singleton_methods
+      @object.singleton_methods
+    end
+
+    def taint
+      @object.taint
+    end
+
+    def tainted?
+      @object.tainted?
+    end
+
+    # def tap
+
+    def to_s
+      @object.to_s
+    end
+
+    def trust
+      @object.trust
+    end
+
+    def untaint
+      @object.untaint
+    end
+
+    def untrust
+      @object.untrust
+    end
+
+    def untrusted?
+      @object.untrusted
+    end
+
+    # private def remove_instance_variable(symbol)
+
+    def is_proxy_object
+      true
+    end
+
+    def rtc_type
+      @object.rtc_type
     end
 
     def rtc_to_s
