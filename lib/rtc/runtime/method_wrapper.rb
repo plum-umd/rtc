@@ -42,10 +42,7 @@ module Rtc
       end
       
       method_types = invokee.class.get_typesig_info(@method_name.to_s)
-
-
-      method_type_info = Rtc::MethodCheck.check_args(method_types, new_invokee, regular_args, @method_name, cons)
-
+      method_type_info = Rtc::MethodCheck.check_args(method_types, new_invokee, regular_args, @method_name, cons, blk)
       
       if not $method_stack.keys.include?(invokee.class)
         $method_stack[invokee.class] = {}
@@ -104,8 +101,8 @@ module Rtc
         Rtc::MasterSwitch.turn_off
       end
 
-      c = $method_stack[invokee.class][@method_name][-1]
 
+      c = $method_stack[invokee.class][@method_name][-1]
       new_mt_return_type = new_mt.return_type.replace_constraints(c)
 
       if new_mt_return_type.has_parameterized
@@ -115,7 +112,6 @@ module Rtc
       end
 
       unless ret_valid
-        puts "INVOKE ***RETURN*** method=#{@method_name}  invokee=#{invokee.inspect}  args=#{regular_args.inspect}   ret=#{ret_value.inspect}  new_mt=#{new_mt.inspect}"
         raise TypeMismatchException, "invalid return type in " + @method_name.to_s
       end
 
@@ -131,7 +127,7 @@ module Rtc
         ret_proxy = ret_value.rtc_annotate(new_mt_return_type)
       end
 
-      if ret_value.proxies and not from_proxy and mutate 
+      if ret_value.proxies and not from_proxy and mutate
         ret_type = ret_value.rtc_type 
 
         ret_value.proxies.each {|p|
@@ -150,7 +146,7 @@ module Rtc
 
         if invokee.proxies
           invokee.proxies.each {|p|
-            unless ret_value.rtc_type <= p.proxy_type 
+            unless ret_value.rtc_type <= p.proxy_type
               raise Rtc::TypeMismatchException, "Return object run-time type #{ret_value.rtc_type.inspect} NOT <= one of the object's proxy list types #{p.proxy_type.inspect}"
             end
           }       
@@ -228,8 +224,18 @@ module Rtc
 
     def initialize(proc, type, method_name, class_obj)
       @proc = proc
-      @method_type = type
-      @block_type = type.block_type
+
+      if type.instance_of?(Rtc::Types::IntersectionType)
+        type.types.each {|t|
+          if t.block_type
+            @method_type = t
+          end
+        }
+      else
+        @method_type = type
+      end
+
+      @block_type = @method_type.block_type
       @method_name = method_name
       @class_obj = class_obj
     end
@@ -269,8 +275,6 @@ module Rtc
 
           valid = a.rtc_type <= method_type.arg_types[i]
         end
-
-
 
         unless valid
           raise Rtc::TypeMismatchException, "block argument mismatch"

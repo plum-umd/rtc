@@ -2,13 +2,13 @@ require 'rtc/runtime/master_switch.rb'
 require 'rtc/options'
 
 module Rtc::MethodCheck
-  def self.check_args(method_types, invokee, args, method_name, constraints)
+  def self.check_args(method_types, invokee, args, method_name, constraints, blk)
     class_param_type = invokee.class.get_class_parameters
     
     unless Rtc::ClassModifier.get_class_parameters[invokee.class.to_s].nil?
       class_param_type = Rtc::ClassModifier.get_class_parameters[invokee.class.to_s]
     end
-
+    
     if class_param_type.class == Array
       n = Rtc::Types::NominalType.of(invokee.class)
       class_param_type = Rtc::Types::ParameterizedType.new(n, class_param_type)
@@ -66,7 +66,23 @@ module Rtc::MethodCheck
     end
 
     if possible_types.size > 1
-      raise Rtc::TypeMismatchException, "cannot infer type in intersecton type for method #{method_name}, whose types are #{method_types.inspect}"
+      possible_types2 = Set.new
+
+      if blk
+        possible_types.each {|t|
+          possible_types2.add(t) if t.sig.block_type 
+        }
+      else
+        possible_types.each {|t|
+          possible_types2.add(t) if t.sig.block_type == nil
+        }
+      end
+
+      if possible_types2.size != 1
+        raise Rtc::TypeMismatchException, "cannot infer type in intersecton type for method #{method_name}, whose types are #{method_types.inspect}"
+      else
+        possible_types = possible_types2
+      end
     elsif possible_types.size == 0
       arg_types = args.map {|a| 
         if a.respond_to?(:is_proxy_object)
