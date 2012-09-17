@@ -240,6 +240,7 @@ class MySet
   # the element as parameter.  Returns an enumerator if no block is
   # given.
   typesig("each: () {(a) -> .?} -> MySet<a>")
+  typesig("each: () -> Enumerator")
   def each
     block_given? or return enum_for(__method__)
     @hash.each_key { |o| yield(o) }
