@@ -1,6 +1,126 @@
 require 'weakref'
 require 'rtc/runtime/method_check.rb'
 
+class Array
+  alias :old_eq :==
+  alias :old_eql? :eql?
+  alias :old_equal? :equal?
+
+  def ==(other)
+    if other.respond_to?(:is_proxy_object)
+      old_eq(other.object)
+    else
+      old_eq(other)
+    end
+  end
+
+  def eql?(other)
+    if other.respond_to?(:is_proxy_object)
+      old_eql?(other.object)
+    else
+      old_eql?(other)
+    end
+  end
+
+  def equal?(other)
+    if other.respond_to?(:is_proxy_object)
+      old_equal?(other.object)
+    else
+      old_equal?(other)
+    end
+  end
+end
+
+class Hash
+  alias :old_eq :==
+  alias :old_eql? :eql?
+  alias :old_equal? :equal?
+
+  def ==(other)
+    if other.respond_to?(:is_proxy_object)
+      old_eq(other.object)
+    else
+      old_eq(other)
+    end
+  end
+
+  def eql?(other)
+    if other.respond_to?(:is_proxy_object)
+      old_eql?(other.object)
+    else
+      old_eql?(other)
+    end
+  end
+
+  def equal?(other)
+    if other.respond_to?(:is_proxy_object)
+      old_equal?(other.object)
+    else
+      old_equal?(other)
+    end
+  end
+end
+
+class Symbol
+  alias :old_eq :==
+  alias :old_eql? :eql?
+  alias :old_equal? :equal?
+
+  def ==(other)
+    if other.respond_to?(:is_proxy_object)
+      old_eq(other.object)
+    else
+      old_eq(other)
+    end
+  end
+
+  def eql?(other)
+    if other.respond_to?(:is_proxy_object)
+      old_eql?(other.object)
+    else
+      old_eql?(other)
+    end
+  end
+
+  def equal?(other)
+    if other.respond_to?(:is_proxy_object)
+      old_equal?(other.object)
+    else
+      old_equal?(other)
+    end
+  end
+end
+
+class String
+  alias :old_eq :==
+  alias :old_eql? :eql?
+  alias :old_equal? :equal?
+
+  def ==(other)
+    if other.respond_to?(:is_proxy_object)
+      old_eq(other.object)
+    else
+      old_eq(other)
+    end
+  end
+
+  def eql?(other)
+    if other.respond_to?(:is_proxy_object)
+      old_eql?(other.object)
+    else
+      old_eql?(other)
+    end
+  end
+
+  def equal?(other)
+    if other.respond_to?(:is_proxy_object)
+      old_equal?(other.object)
+    else
+      old_equal?(other)
+    end
+  end
+end
+
 class Object
   alias :old_eq :==
   alias :old_eql? :eql?
@@ -30,6 +150,7 @@ class Object
     end
   end
 end
+
 
 module Rtc
 
