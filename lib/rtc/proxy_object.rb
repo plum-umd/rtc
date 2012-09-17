@@ -4,6 +4,7 @@ require 'rtc/runtime/method_check.rb'
 class Object
   alias :old_eq :==
   alias :old_eql? :eql?
+  alias :old_equal? :equal?
 
   def ==(other)
     if other.respond_to?(:is_proxy_object)
@@ -20,6 +21,14 @@ class Object
       old_eql?(other)
     end
   end
+
+  def equal?(other)
+    if other.respond_to?(:is_proxy_object)
+      old_equal?(other.object)
+    else
+      old_equal?(other)
+    end
+  end
 end
 
 module Rtc
@@ -30,8 +39,6 @@ module Rtc
     attr_writer :proxy_type
 
     alias :old_inspect :inspect
-    alias :object_id :__id__
-    alias :enum_for :to_enum
 
     def initialize(object, proxy_type)
       # type = WeakRef.new(type)      
@@ -71,6 +78,10 @@ module Rtc
 
     def to_enum(method, *args)
       @object.to_enum(method, args)
+    end
+
+    def enum_for(method, *args)
+      @object.enum_for(method, args)
     end
 
     def ==(other)
@@ -143,6 +154,10 @@ module Rtc
 
     def __id__
       @object.__id__
+    end
+
+    def object_id
+      @object.object_id
     end
 
     def public_method(sym)
