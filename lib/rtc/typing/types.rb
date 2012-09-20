@@ -55,10 +55,10 @@ class Object
     return Rtc::Types::BottomType.new if self == nil
 
     meta_hash = rtc_meta
+
     if meta_hash[:_type]
       meta_hash[:_type]
     else
-
       meta_hash[:_type] = rtc_get_type
     end
   end
@@ -82,7 +82,17 @@ class Object
 
       if class_obj.type_parameters.size == 0
           class_obj
-      elsif class_obj.klass == Array
+      elsif class_obj.klass == Array 
+          Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each)])
+      elsif class_obj.klass == MySet 
+          begin
+            self.flatten
+          rescue ArgumentError
+            return Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create([Object.new].each)])
+          end  
+
+          Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each)])
+      elsif class_obj.klass == Set 
           Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each)])
       elsif class_obj.klass == Hash
           Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each_key),
@@ -628,7 +638,15 @@ module Rtc::Types
             when TopType
               true
             when NominalType
-              return true if other.klass.name == @klass.name
+              if other.klass.respond_to?(:name) and @klass.respond_to?(:name) and @klass.name != nil
+                return true if other.klass.name == @klass.name
+              #else
+              #  if self.klass.class < other.klass.class or self.klass.class == other.klass.class
+              #    return true
+              #  else
+              #    return false
+              #  end
+              end
 
               other_class = other.klass
               it = InheritanceChainIterator.new(@klass)
@@ -891,7 +909,11 @@ module Rtc::Types
                 end
                 true
             when NominalType
-                false
+              if other.klass == Object
+                true
+              else
+                false 
+              end
             when TupleType
                 false
             else
@@ -1498,7 +1520,8 @@ module Rtc::Types
             pairs.each do |t, u|
                 # pairs includes [t, t] and [u, u], and since t <= t, skip
                 # these.
-                next if t.eql?(u) 
+                #  next if t.eql?(u) 
+                next if t <= u and u <= t
 
                 # pairs includes [t, u] and [u, t], so we don't do symmetric
                 # checks.
@@ -1548,7 +1571,7 @@ module Rtc::Types
               raise Exception, "NOT IMPLEMENTED 2"
             end
           else
-            self <= other
+            self.le_poly(other, h) 
           end
         end
 
@@ -1698,6 +1721,10 @@ module Rtc::Types
 
       def has_parameterized
         false
+      end
+
+      def has_method?(m)
+        nil.respond_to?(m)
       end
 
       def to_s
