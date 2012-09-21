@@ -19,7 +19,7 @@ token T_EOF
 token K_CLASS K_METACLASS K_MODULE K_INTERFACE K_TYPE K_TYPEVAR
 token K_ALIAS K_REQUIRE K_END
 token K_OR K_SELF K_TUPLE
-token T_BOTTOM
+token T_BOTTOM T_TOP
 token T_BEGIN_LINE T_SEMICOLON
 token T_COLON T_DOUBLE_COLON T_DOT
 token T_STAR T_QUESTION
@@ -217,11 +217,14 @@ rule
     | tuple {
         result = val[0] 
       } /* tuples are just arrays */
-    | T_DOT T_QUESTION { 
+    | T_TOP { 
         result = Rtc::Types::TopType.instance
       }
     | T_BOTTOM { 
     	result = Rtc::Types::BottomType.instance
+      }
+    | T_DOT T_QUESTION { 
+        result = Rtc::Types::TopType.instance
       }
     | T_QUESTION single_type_expr { 
         result = Rtc::Types::OptionalArg.new(val[1])
