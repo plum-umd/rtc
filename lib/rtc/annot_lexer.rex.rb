@@ -97,6 +97,9 @@ class TypeAnnotationParser < Racc::Parser
       when (text = @ss.scan(/type /))
          action { [:K_TYPE, text] }
 
+      when (text = @ss.scan(/b/))
+         action { [:T_BOTTOM, text] }
+
       when (text = @ss.scan(/typevar /))
          action { [:K_TYPEVAR, text] }
 
