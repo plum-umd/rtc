@@ -84,14 +84,14 @@ class Object
           class_obj
       elsif class_obj.klass == Array 
           Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each)])
-      elsif class_obj.klass == MySet 
-          begin
-            self.flatten
-          rescue ArgumentError
-            return Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create([Object.new].each)])
-          end  
-
-          Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each)])
+      # elsif class_obj.klass == MySet 
+          # begin
+            # self.flatten
+          # rescue ArgumentError
+            # return Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create([Object.new].each)])
+          # end  
+# 
+          # Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each)])
       elsif class_obj.klass == Set 
           Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each)])
       elsif class_obj.klass == Hash
