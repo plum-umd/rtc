@@ -54,14 +54,14 @@ class Object
 
   def rtc_type
     return Rtc::Types::BottomType.new if self == nil
-
-    meta_hash = rtc_meta
-
-    if meta_hash[:_type]
-      meta_hash[:_type]
-    else
-      meta_hash[:_type] = rtc_get_type
-    end
+    return rtc_get_type
+    # meta_hash = rtc_meta
+# 
+    # if meta_hash[:_type]
+      # meta_hash[:_type]
+    # else
+      # meta_hash[:_type] = rtc_get_type
+    # end
   end
   
   def rtc_typeof(name, which_class = nil)
@@ -1767,7 +1767,6 @@ module Rtc::Types
       attr_reader :name
       attr_reader :parent
       def initialize(param_name, parent, initial_type = nil)
-        puts param_name
         @instantiated = false
         @solving = false
         @constraints = initial_type ? [initial_type] :  []

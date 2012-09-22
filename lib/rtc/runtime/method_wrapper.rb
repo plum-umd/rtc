@@ -40,7 +40,6 @@ module Rtc
       end
       
       method_type = new_invokee.rtc_type.get_method(@method_name.to_s)
-      puts method_type
       
       if method_type.is_a?(Rtc::Types::ProceduralType)
         method_types = [method_type]
@@ -134,11 +133,12 @@ module Rtc
         end
       }
 
-      #c = $method_stack[invokee.class][@method_name][-1]
       unless ret_value.rtc_type <= chosen_type.return_type
-        p ret_value.rtc_type, chosen_type.return_type, @method_name, invokee, chosen_type
+        # p ret_value.rtc_type, chosen_type.return_type, @method_name, invokee, chosen_type,
+          # invokee.rtc_type
         
-        raise TypeMismatchException, "invalid return type in " + @method_name.to_s
+        raise TypeMismatchException, "invalid return type in " + @method_name.to_s + 
+          " for object #{invokee} (args #{regular_args})"
       end
       
       trailing_var.instantiate unless trailing_tvar.nil?
@@ -253,7 +253,6 @@ module Rtc
       @method_name = method_name
       @class_obj = class_obj
       @unsolved_type_variables = unsolved_tvars
-      p @unsolved_type_variables
       @needs_solving = true
     end
 
