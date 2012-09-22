@@ -160,7 +160,9 @@ module Rtc::Types
             @id = @@next_id
             @@next_id += 1
         end
-
+        def real_type
+          self
+        end
 #        def has_parameterized
 #        end
 
@@ -1009,6 +1011,8 @@ module Rtc::Types
         # [+arg_types+] List of types of the arguments of the procedure.
         # [+block_type+] The type of the block passed to this method, if it
         #                takes one.
+        # [+tvars+] The list of instantiated type variables that exist in this for this
+        #                 method
         def initialize(parameters, return_type, arg_types=[], block_type=nil, tvars = [])
             @parameters = parameters.nil? ? [] : parameters
             @return_type = return_type
@@ -1763,6 +1767,7 @@ module Rtc::Types
       attr_reader :name
       attr_reader :parent
       def initialize(param_name, parent, initial_type = nil)
+        puts param_name
         @instantiated = false
         @solving = false
         @constraints = initial_type ? [initial_type] :  []
@@ -1793,7 +1798,7 @@ module Rtc::Types
         if @instantiated
           return @type.replace_parameters(type_vars)
         end
-        raise "What"
+        self
       end
       
       def get_type
@@ -1806,6 +1811,16 @@ module Rtc::Types
         not @constraints.empty?
       end
       
+      def to_s
+        if @instantiated
+          @type.to_s
+        elsif @solving
+          "[#{name} = #{@constraints}]"
+        else
+          name
+        end
+      end
+      
       def <=(other)
         if @instantiated
           return @type <= other
@@ -1816,7 +1831,9 @@ module Rtc::Types
         #TODO(jtoman): refine this later, what to do during solving, etc
         false
       end
-      
+      def real_type
+        get_type
+      end
     end
     
 end  # module Rtc::Types

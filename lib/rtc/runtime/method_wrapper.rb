@@ -60,6 +60,7 @@ module Rtc
 # 
       # $method_stack[invokee.class][@method_name].push(cons)
       #method_meta = invokee.rtc_meta["function_meta"][@method_name][chosen_type]
+      
       #TODO(jtoman): figure out what to do with this metadata
       #unwrap_arg_pos = method_meta.unwrap
       unwrap_arg_pos = []
@@ -85,7 +86,8 @@ module Rtc
         #end
         
         if arg_type.instance_of?(Rtc::Types::ProceduralType)
-          regular_args[i] = BlockProxy.new(regular_args[i], arg_type, @method_name, invokee)
+          regular_args[i] = BlockProxy.new(regular_args[i], arg_type, @method_name, invokee,
+            unsolved_type_variables)
         else
           if unwrap_arg_pos.include?(i)
             if regular_args[i].respond_to?(:is_proxy_object)
@@ -105,9 +107,11 @@ module Rtc
 
 
       if blk
-        wb = wrap_block(blk)
+        block_proxy = BlockProxy.new(blk, chosen_type.block_type,@method_name,
+          invokee, unsolved_type_variables)
+        wrapped_block = wrap_block(block_proxy)
         Rtc::MasterSwitch.turn_on
-        ret_value = @original_method.bind(invokee).call(*regular_args, &wb)
+        ret_value = @original_method.bind(invokee).call(*regular_args, &wrapped_block)
         Rtc::MasterSwitch.turn_off
       else
         Rtc::MasterSwitch.turn_on
@@ -121,6 +125,9 @@ module Rtc
         |tvar|
         if tvar.solvable? 
           tvar.solve
+        # this type variable was solved in a block
+        elsif tvar.instantiated
+          next
         else
           raise "Invalid tsig" unless trailing_tvar.nil?
           trailing_tvar = tvar
@@ -234,58 +241,70 @@ module Rtc
 
   class BlockProxy < MethodWrapper
     attr_reader :proc
-    attr_reader :block_type
-    attr_writer :block_type
+    attr_accessor :block_type
     attr_reader :method_type
     attr_reader :method_name
-    attr_reader :constraints
     attr_reader :class_obj
 
-    def initialize(proc, type, method_name, class_obj)
+    def initialize(proc, type, method_name, class_obj,
+        unsolved_tvars)
       @proc = proc
       @block_type = type
       @method_name = method_name
       @class_obj = class_obj
+      @unsolved_type_variables = unsolved_tvars
+      p @unsolved_type_variables
+      @needs_solving = true
     end
 
     def call(*args)
       Rtc::MasterSwitch.turn_off
       #arg = args[0]
 
-      i = 0
-      for a in args
-        valid = true
-
-        #if method_type.arg_types[i].has_parameterized
-        #  raise Rtc::TypeMismatchException, "Unable to infer block argument type from regular argument types"
-        #end
-        valid = a.rtc_type <= method_type.arg_types[i]
-
-        unless valid
-          raise Rtc::TypeMismatchException, "block argument mismatch"
-        end
-
-        i += 1
-      end
+      #TODO(jtoman): refactor
+      raise Rtc::TypeMismatchException, "Arg count different in block" unless 
+        args.length == block_type.arg_types.length
+      arg_type_pairs = args.zip(block_type.arg_types)
+      arg_type_pairs.each {
+        |value, expected_type|
+        raise Rtc::TypeMismatchException, "block argument mismatch" unless
+          value.rtc_type <= expected_type
+      }
+      
+      update_type_variables
+      
+      annotated_args = arg_type_pairs.map {
+        |value, type|
+        value.rtc_annotate(type.real_type)
+      }
 
       Rtc::MasterSwitch.turn_on
-      ret = @proc.call(arg)
+      ret = @proc.call(*annotated_args)
       Rtc::MasterSwitch.turn_off
 
-      # new_ret_type = method_type.return_type.replace_constraints(c)
-      new_ret_type = method_type.return_type
-
-      if new_ret_type.has_parameterized
-        if not ret.rtc_type.le_poly(new_ret_type, c)
-          raise Rtc::TypeMismatchException, "block return type mismatch"
-        end
-      else
-        unless ret.rtc_type <= new_ret_type
-          raise Rtc::TypeMismatchException, "block return type mismatch"
-        end
+      raise Rtc::TypeMismatchException, "Block return type mismatch" unless ret.rtc_type <= block_type.return_type
+      
+      update_type_variables
+      
+      return ret.rtc_annotate(block_type.return_type.real_type)
+    end
+    
+    private
+    
+    def update_type_variables
+      if @needs_solving
+        @needs_solving = false
+        new_unsolved = []
+        @unsolved_type_variables.each { |utv|
+          if utv.solvable?
+            utv.solve
+          else
+            @needs_solving = true
+            new_unsolved << utv
+          end
+        }
+        @unsolved_type_variables = new_unsolved
       end
-
-      return ret
     end
   end
 end
