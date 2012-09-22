@@ -1034,7 +1034,7 @@ module Rtc::Types
             arg_types.map { |p| p.replace_parameters(type_vars) },
             block_type.nil? ? nil : block_type.replace_parameters(type_vars),
             type_variables,
-            mutate, unwrap)
+            { "mutate" => mutate, "unwrap" =>  unwrap})
         end
         
         def instantiate
@@ -1050,7 +1050,7 @@ module Rtc::Types
           arg_types.map{ |p| p.replace_parameters(type_vars) },
           block_type.nil? ? nil : block_type.replace_parameters(type_vars),
           type_vars.values,
-          mutate, unwrap)
+          { "mutate" => mutate, "unwrap" => unwrap})
         end
         
         def parameterized?
