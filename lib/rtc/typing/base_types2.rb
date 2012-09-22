@@ -1,8 +1,8 @@
 class Fixnum
   rtc_annotated
 
-  typesig("'+': (t) -> t", {'unwrap'=>[0]})
-  typesig("'*': (t) -> t", {'unwrap'=>[0]})
+  typesig("'+': (Fixnum) -> Fixnum", {'unwrap'=>[0]})
+  typesig("'*': (Fixnum) -> Fixnum", {'unwrap'=>[0]})
   typesig("'to_s': () -> String")
 end
 
@@ -30,7 +30,7 @@ class Array
 #    end
 #  end
 
-  typesig("map: () {(t) -> t} -> Array<t>")
+  typesig("map<u>: () {(t) ->  u } -> Array<u>")
  # typesig("'+': (Array<t>) -> Array<t>")
   typesig("push: (t) -> Array<t>", {'mutate'=>true})
 end

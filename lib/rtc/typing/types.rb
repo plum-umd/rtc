@@ -7,6 +7,7 @@ require 'singleton'
 
 require 'rtc/tools/hash-builder.rb'
 require 'rtc/runtime/class_loader'
+require 'rtc/runtime/type_inferencer'
 
 class Rtc::GlobalCache
   @@cache = {}
@@ -82,8 +83,8 @@ class Object
 
       if class_obj.type_parameters.size == 0
           class_obj
-      elsif class_obj.klass == Array 
-          Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each)])
+      elsif class_obj.klass == Array
+          Rtc::Types::ParameterizedType.new(class_obj, [Rtc::TypeInferencer.infer_type(self.each)], true)
       # elsif class_obj.klass == MySet 
           # begin
             # self.flatten
@@ -93,11 +94,16 @@ class Object
 # 
           # Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each)])
       elsif class_obj.klass == Set 
-          Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each)])
+          Rtc::Types::ParameterizedType.new(class_obj, [Rtc::TypeInferencer.infer_type(self.each)], true)
       elsif class_obj.klass == Hash
-          Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each_key),
-            Rtc::Types::TypeVariable.create(self.each_value)])
+          #Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each_key),
+          #  Rtc::Types::TypeVariable.create(self.each_value)])
+          Rtc::Types::ParameterizedType.new(class_obj, [
+            Rtc::TypeInferencer.infer_type(self.each_key),
+            Rtc::TypeInferencer.infer_type(self.each_value)
+          ], true)
       else
+          #I dunno man
           lst = []
           
           self.get_parameters.each {|t|
@@ -171,12 +177,10 @@ module Rtc::Types
                 self <= a
               end
             when TypeVariable
-              if other.dynamic
-                true
-              else
-                typ = other.wrapped_type
-                self <= typ
-              end
+              return self <= other.get_type if other.instantiated
+              return false unless other.solving             
+              other.add_constraint(self)
+              true
             when TopType
               true
             when TupleType
@@ -594,6 +598,11 @@ module Rtc::Types
           self
         end
 
+
+        def replace_parameters(_type_vars)
+          self
+        end
+        
         def has_parameterized
           false
         end
@@ -727,7 +736,9 @@ module Rtc::Types
         end
         def get_method(name, which = nil)
           if @method_types[name] && (which.nil? or which == @klass)
-            @method_types[name]
+            @method_types[name].is_a?(IntersectionType) ?
+              @method_types[name].map { |it| it.instantiate } :
+              @method_types[name].instantiate
           else
             (sc = superclass) ? sc.get_method(name, which) : nil
           end
@@ -859,43 +870,29 @@ module Rtc::Types
         attr_accessor :nominal
         # The list of type parameters, in order.
         attr_accessor :parameters
+        attr_accessor :dynamic
         
         # Creates a new ParameterizedType, parameterizing +nominal+ with
         # +parameters+. Note that +parameters+ must be listed in order.
-        def initialize(nominal, parameters)
+        def initialize(nominal, parameters, dynamic = false)
             if nominal.type_parameters.size > 0
               raise Exception.new("Type parameter mismatch") unless parameters.size == nominal.type_parameters.length
             end
 
             @nominal = nominal
-            @parameters = parameters.map {
-              |t_param|
-              t_param.instance_of?(TypeVariable) ? t_param : TypeVariable.create(t_param)
-            }
+            @parameters = parameters
             @_method_cache = {}
+            @dynamic = dynamic
             super({},{})
         end
 
-        def has_parameterized
-          @parameters.any? {|p| p.wrapped_type.has_parameterized}
+        def replace_parameters(type_vars)
+          ParameterizedType.new(nominal, 
+            parameters.map { |p| p.replace_parameters(type_vars) })
         end
 
         def has_method?(method)
           @nominal.has_method?(method)
-        end
-
-        def replace_constraints(c)
-          np = []
-
-          for p in @parameters
-            if p.instance_of?(TypeVariable)
-              np.push(p.replace_constraints(c))
-            else
-              raise Exception, "NA"
-            end
-          end
-
-          ParameterizedType.new(@nominal, np)
         end
         
         def <=(other)
@@ -963,87 +960,37 @@ module Rtc::Types
         end
 
         def get_field(name, which = nil)
-          return replace_type(@nominal.get_field(name, which), @parameters)
+          return replace_type(@nominal.get_field(name, which))
         end
         
         def get_method(name, which = nil)
-          #TODO(jtoman): get caching to work with which parameter
-          #return @_method_cache[name] if @_method_cache.has_key?(name)
-          #@_method_cache[name] = 
-          replace_type(@nominal.get_method(name, which),@parameters)
+          replacement_map = {}
+          if dynamic
+            @nominal.type_parameters.each_with_index {
+              |t_param, type_index|
+              replacement_map[t_param.symbol] = TypeVariable.new(t_param.symbol, self, parameters[type_index])
+            }
+            to_ret = @nominal.get_method(name, which).replace_parameters(replacement_map)
+            if to_ret.is_a?(IntersectionType)
+              to_ret.types.each {
+                  |inter_type|
+                  inter_type.type_variables += replacement_map.values
+               }
+            else
+              to_ret.type_variables += replacement_map.values
+            end
+            to_ret
+          else
+            @nominal.type_parameters.each_with_index {
+              |t_param, type|
+              replacement_map[t_param.symbol] = type
+            }
+            @nominal.get_method(name, which).replace_parameters(replacement_map)
+          end
         end
         
         def to_s
             "#{@nominal.klass.name}<#{parameters.join(", ")}>"
-        end
-        
-        private
-        # perform type replacement recursively
-        def replace_type(type, formal_type_parameters)
-          return type
-          case type
-          when TypeParameter
-            t_ind = @nominal.type_parameters.index(type)
-            raise Exception.new("Unknown type id #{type}") if t_ind == nil
-            if formal_type_parameters[t_ind].dynamic
-              formal_type_parameters[t_ind]
-            else
-              formal_type_parameters[t_ind].wrapped_type
-            end
-          when OptionalArg
-            OptionalArg.new(replace_type(type.type,formal_type_parameters))
-          when Vararg
-            Vararg.new(replace_type(type.type, formal_type_parameters))
-          when ParameterizedType
-            ParameterizedType.new(
-              type.nominal,
-              type.parameters.map { |t_param|
-                replace_type(t_param, formal_type_parameters)
-              }
-            )
-          when StructuralType
-            #TODO(jtoman): implement me?
-            type
-          when NominalType
-            type
-          when ProceduralType
-            block = nil
-            if type.block_type != nil
-              block = replace_type(type.block_type, formal_type_parameters)
-            end
-            ProceduralType.new(
-              replace_type(type.return_type,formal_type_parameters),
-              (type.arg_types.map do |t|
-                replace_type(t,formal_type_parameters)
-              end),
-              block)
-          when SymbolType
-            type
-          when UnionType
-            UnionType.of(
-              type.types.map do |t|
-                replace_type(t,formal_type_parameters)
-              end
-            )
-          when IntersectionType
-            IntersectionType.of(
-              type.types.map do |t|
-                replace_type(t,formal_type_parameters)
-              end
-            )
-          when TypeVariable
-            # it's unclear how exactly a type could be dynamic
-            # in a method signature, but put this here just in case...?
-            # fixed type variables however may appear in the type signature of a function
-            # if the type signature is (for instance) foo: () -> Array<Bar>
-            # where the type variable that is a paremter to the Array return value is
-            # wrapping "Bar"
-            if type.dynamic
-              type
-            else
-              replace_type(type.wrapped_type, formal_type_parameters)
-            end
-          end
         end
     end
 
@@ -1055,22 +1002,50 @@ module Rtc::Types
         attr_reader :arg_types
         attr_reader :block_type
         attr_reader :parameters
-
+        attr_accessor :type_variables
         # Create a new ProceduralType.
         #
         # [+return_type+] The type that the procedure returns.
         # [+arg_types+] List of types of the arguments of the procedure.
         # [+block_type+] The type of the block passed to this method, if it
         #                takes one.
-        def initialize(parameters, return_type, arg_types=[], block_type=nil)
-            @parameters = parameters
+        def initialize(parameters, return_type, arg_types=[], block_type=nil, tvars = [])
+            @parameters = parameters.nil? ? [] : parameters
             @return_type = return_type
             @arg_types = arg_types
             @block_type = block_type
-
+            @type_variables = tvars
             super()
         end
-
+        
+        def replace_parameters(type_vars)
+          ProceduralType.new(
+            parameters,
+            return_type.replace_parameters(type_vars),
+            arg_types.map { |p| p.replace_parameters(type_vars) },
+            block_type.nil? ? nil : block_type.replace_parameters(type_vars),
+            type_variables)
+        end
+        
+        def instantiate
+          if not parameterized?
+            return self
+          end
+          type_vars = {}
+          parameters.map {
+            |t_param|
+            type_vars[t_param.symbol] = TypeVariable.new(t_param.symbol, self)
+          }
+          ProceduralType.new([], return_type.replace_parameters(type_vars),
+          arg_types.map{ |p| p.replace_parameters(type_vars) },
+          block_type.nil? ? nil : block_type.replace_parameters(type_vars),
+          type_vars.values)
+        end
+        
+        def parameterized?
+          not parameters.empty?
+        end
+                
         def replace_constraints(c)
           new_ret = @return_type.replace_constraints(c)
           new_args = []
@@ -1312,6 +1287,10 @@ module Rtc::Types
             31 + type.hash
         end
         
+        def initialize(type_vars)
+          Vararg.new(type.replace_parameters(type_vars))
+        end
+        
         def <=(other)
           if other.instance_of(Vararg)
             type <= other.type
@@ -1338,6 +1317,10 @@ module Rtc::Types
         def eql?(other)
             other.instance_of?(OptionalArg) and type.eql?(other.type)
         end
+        
+        def replace_parameters(type_vars)
+          OptionalArg.new(type.replace_parameters(type_vars))
+        end
 
         def hash
             23 + type.hash
@@ -1362,6 +1345,10 @@ module Rtc::Types
       
       def eql?(other)
         other.instance_of?(SymbolType) and other.symbol == symbol
+      end
+      
+      def replace_parameters(type_vars)
+        self
       end
       
       def ==(other)
@@ -1439,6 +1426,21 @@ module Rtc::Types
             end
             return types[0] if types.size == 1
             return IntersectionType.new(types)
+        end
+
+        def map
+          IntersectionType.new(types.map {
+            |t|
+            yield t
+          })
+        end
+
+        def replace_parameters(type_vars)
+          IntersectionType.of(
+            types.to_a.map {
+              |t| t.replace_parameters(type_vars)
+            }
+          )
         end
 
         # The set of all the types intersected in this instance.
@@ -1544,11 +1546,15 @@ module Rtc::Types
 
           UnionType.of(nt)
         end
+        
+        def replace_parameters(type_vars)
+          UnionType.of(types.map{ |t| t.replace_parameters(type_vars) })
+        end
 
         def has_method?(method)
           @types.all? {|t| t.has_method?(method)}
         end
-
+        
         def le_poly(other, h)
           if other.has_parameterized
             if other.instance_of?(TypeParameter)
@@ -1630,16 +1636,11 @@ module Rtc::Types
             super()
         end
         
-        def has_parameterized
-          true
-        end
-
-        def replace_constraints(c)
-          if c.keys.include?(@symbol)
-            c[@symbol]
-          else
-            self
+        def replace_parameters(type_vars)
+          if type_vars.has_key? symbol
+            return type_vars[symbol]
           end
+          self
         end
 
         # Return true if self is a subtype of other.
@@ -1658,7 +1659,7 @@ module Rtc::Types
         end
         
         def eql?(other)
-          other.symbol.eql?(@symbol)
+          other.is_a?(TypeParameter) and other.symbol.eql?(@symbol)
         end        
     end
 
@@ -1670,9 +1671,9 @@ module Rtc::Types
       def to_s
         "t"
       end
-
-      def replace_constraints(c)
-        return TopType.new
+      
+      def replace_parameters(type_vars)
+        self
       end
       
       def self.instance
@@ -1723,6 +1724,10 @@ module Rtc::Types
         false
       end
 
+      def replace_parameters(type_vars)
+        self
+      end
+
       def has_method?(m)
         nil.respond_to?(m)
       end
@@ -1752,239 +1757,68 @@ module Rtc::Types
     end
     
     class TypeVariable < Type
-      attr_reader :dynamic
-      alias :dynamic? :dynamic
-      def self.create(type_param)
-        raise(Exception, "Type Parameter must be an enumerator (for dynamic types) or a type class (for annotated types)") if
-          !type_param.instance_of?(Enumerator) && !type_param.kind_of?(Type)
-        TypeVariable.new(type_param)
-      end
-
-      def has_parameterized
-        if @wrapped_type == nil
-          false
-        else
-          @wrapped_type.has_parameterized
-        end
-      end
-
-      def replace_constraints(c)
-        if @wrapped_type.instance_of?(TypeParameter)
-          if c.keys.include?(@wrapped_type.symbol)
-            TypeVariable.create(c[@wrapped_type.symbol])
-          else
-            self
-          end
-        elsif @wrapped_type != nil
-          @wrapped_type.replace_constraints(c)
-        else
-          self
-        end
-      end
       
-      def ==(other)
-        eql?(other)
-      end
-      
-      def eql?(other)
-        other.instance_of?(TypeVariable) && other.id == id
-      end
-      
-      def constrain_to(type)
-        raise Rtc::TypeNarrowingError, "Constrained #{type} is too narrow for type #{wrapped_type}" unless
-          wrapped_type <= type
-        @dynamic = false
-        @wrapped_type = type
-      end
-      
-      def wrapped_type
-        if !dynamic
-          @wrapped_type
-        elsif @dirty and !@wrapped_type
-          gen_type
-        elsif @wrapped_type
-          @wrapped_type
-        else
-          @type_cache
-        end
-      end
-      
-      def to_s
-        wrapped_type.to_s
-      end
-      
-      def inspect
-        "TVar(#{id},#{dynamic}): #{wrapped_type.inspect}"
-      end
-      
-      #this should not be called externally
-      def initialize(type, is_hint = false)
-        if type.instance_of?(Enumerator)
-          @wrapped_type = nil # maybe the bottom type?
-          @dynamic = true        
-          @it = type
-          @dirty = true
-          @type_cache = nil
-        elsif type.kind_of?(Type)
-          @wrapped_type = type
-          @dynamic = is_hint
-        end
+      attr_reader :solving
+      attr_reader :instantiated
+      attr_reader :name
+      attr_reader :parent
+      def initialize(param_name, parent, initial_type = nil)
+        @instantiated = false
+        @solving = false
+        @constraints = initial_type ? [initial_type] :  []
+        @name = param_name 
+        @parent = parent
         super()
       end
       
+      def add_constraint(type) 
+        @constraints.push(type)
+      end
+      
+      def start_solve
+        @solving = true
+      end
+      
+      def solve
+        @instantiated = true
+        @solving = false
+        p @constraints
+        if @constraints.empty?
+          raise "Error, could not infer the types #{id}"
+        else
+          @type = UnionType.of(@constraints)
+        end
+      end
+      
+      def replace_parameters(type_vars)
+        if @instantiated
+          return @type.replace_parameters(type_vars)
+        end
+        raise "What"
+      end
+      
+      def get_type
+        puts "get_type called on #{id}"
+        return @type
+      end
+      
+      def solvable?
+        return false if @instatianted
+        return false unless @solving 
+        not @constraints.empty?
+      end
+      
       def <=(other)
-        if other.instance_of?(TypeVariable)
-          if dynamic
-            my_type = wrapped_type
-            their_type = other.wrapped_type
-            my_type <= their_type
-          else
-            if other.instance_of?(TypeVariable)
-              wrapped_type <= other.wrapped_type
-            else
-              typ = wrapped_type
-              other.wrapped_type <= typ && typ <= other.wrapped_type
-            end
-          end
-        else
-          if dynamic
-            return wrapped_type <= other
-          end
-          # otherwise our type has been constrained! this means that the other type must
-          # match this type exactly
-          typ = wrapped_type
-          other <= typ && typ <= other
+        if @instantiated
+          return @type <= other
         end
-      end
-
-      def le_poly(other, h)
-        if other.instance_of?(TypeVariable)
-          if dynamic
-            my_type = wrapped_type
-            their_type = other.wrapped_type
-
-            if not their_type.respond_to?(:symbol)
-              my_type.le_poly(their_type, h)
-            else
-              if h.keys.include?(their_type.symbol)
-                if h[their_type.symbol].instance_of?(UnionType)
-                  h[their_type.symbol] = UnionType.of(h[their_type.symbol].types.to_a + [my_type])
-                else
-                  h[their_type.symbol] = UnionType.of([h[their_type.symbol], my_type])
-                end
-              else
-                h[their_type.symbol] = my_type
-              end
-
-              true
-            end
-          else
-            if other.instance_of?(TypeVariable)
-              wrapped_type.le_poly(other.wrapped_type, h)
-            else
-              typ = wrapped_type
-              other.wrapped_type.le_poly(typ, h) && typ.le_poly(other.wrapped_type, h)
-            end
-          end
-        else
-          if dynamic
-            return wrapped_type <= other
-          end
-          # otherwise our type has been constrained! this means that the other type must
-          # match this type exactly
-          typ = wrapped_type
-          other <= typ && typ <= other
+        if self.instance_of?(TypeVariable) and other.instance_of?(TypeVariable) and other.parent.object_id  == self.parent.object_id
+          return true
         end
-      end
-
-      private 
-      
-      def gen_type
-        curr_type = Set.new
-        has_parameterized_type = false
-        @it.each {
-          |elem|
-          elem_type = elem.rtc_type
-          super_count = 0
-          if curr_type.size == 0 
-            curr_type << elem_type
-            next
-          end
-          was_subtype = curr_type.any? {
-            |seen_type|
-            if elem_type <= seen_type
-              true
-            elsif seen_type <= elem_type
-              super_count = super_count + 1
-              false
-            end
-          }
-          if was_subtype
-            next
-          elsif super_count == curr_type.size
-            curr_type = Set.new([elem_type])
-          else
-            curr_type << elem_type
-          end
-        }
-        if curr_type.size == 0
-          curr_type = BottomType.instance
-        elsif curr_type.size == 1
-          curr_type = curr_type.to_a[0]
-        else
-          curr_type = UnionType.of(unify_param_types(curr_type))
-        end
-        @dirty = true
-        @type_cache = curr_type
+        #TODO(jtoman): refine this later, what to do during solving, etc
+        false
       end
       
-      #FIXME(jtoman): see if we can lift this step into the gen_type step
-      def unify_param_types(type_set)
-        non_param_classes = []
-        parameterized_classes = {}
-        type_set.each {
-          |member_type|
-          if member_type.parameterized?
-            nominal_type = member_type.nominal
-            tparam_set = parameterized_classes.fetch(nominal_type) {
-              |n_type|
-              [].fill([], 0, n_type.type_parameters.size)
-            }
-            ((0..(nominal_type.type_parameters.size - 1)).map {
-              |tparam_index|
-              extract_types(member_type.parameters[tparam_index])
-            }).each_with_index {
-              |type_parameter,index|
-              tparam_set[index]+=type_parameter
-            }
-            parameterized_classes[nominal_type] = tparam_set
-          else
-            non_param_classes << member_type
-          end
-        }
-        parameterized_classes.each {
-          |nominal,type_set|
-          non_param_classes << ParameterizedType.new(nominal,
-          type_set.map {
-            |unioned_type_parameter|
-            TypeVariable.new(UnionType.of(unify_param_types(unioned_type_parameter)),true)
-          })
-        }
-        non_param_classes
-      end
-      
-      def extract_types(param_type)
-        wrapped_type = param_type.wrapped_type
-        wrapped_type.instance_of?(UnionType) ? wrapped_type.types.to_a : [wrapped_type]
-      end
-      
-      # this could be used to implement caching of wrapped types
-      # we could add an annotation that would say which functions would mark a type
-      # as dirty, and then at each call to those functions mark the wrapped type as
-      # dirty. It is a questionable optimization, so at the moment this method
-      # remains unused
-      def _mark_dirty
-        @dirty = true
-      end
     end
+    
 end  # module Rtc::Types

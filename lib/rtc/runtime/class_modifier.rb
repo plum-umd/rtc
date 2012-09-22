@@ -21,7 +21,6 @@ module Rtc
           @@cache[annot_obj.qualified_name] = annot_obj.parameters
           return nil          
         end
-
         Rtc::Types::NominalType.of(the_obj).type_parameters = annot_obj.parameters
         n = Rtc::Types::NominalType.of(the_obj)
         t = Rtc::Types::ParameterizedType.new(n, annot_obj.parameters)

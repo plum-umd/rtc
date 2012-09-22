@@ -341,6 +341,14 @@ module Rtc
     def rtc_type
       @object.rtc_type
     end
+    
+    def rtc_type
+      @proxy_type
+    end
+    
+    def true_rtc_type
+      @object.rtc_type
+    end
 
     def rtc_to_s
       status = Rtc::MasterSwitch.is_on?

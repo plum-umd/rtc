@@ -27,9 +27,7 @@ module Rtc
     def invoke(invokee, arg_vector)
       regular_args = arg_vector[:args]
       blk = arg_vector[:block]
-      extra_arg = nil
       from_proxy = false
-      cons = {}
 
       last_arg = regular_args[-1]
       if last_arg.is_a?(Hash) and last_arg['__rtc_special']
@@ -41,35 +39,49 @@ module Rtc
         new_invokee = invokee
       end
       
-      method_types = invokee.class.get_typesig_info(@method_name.to_s)
-      method_type_info = Rtc::MethodCheck.check_args(method_types, new_invokee, regular_args, @method_name, cons, blk)
+      method_type = new_invokee.rtc_typeof(@method_name.to_s)
       
-      if not $method_stack.keys.include?(invokee.class)
-        $method_stack[invokee.class] = {}
-      end
-      
-      if not $method_stack[invokee.class].keys.include?(@method_name)
-        $method_stack[invokee.class][@method_name] = []
-      end
-
-      $method_stack[invokee.class][@method_name].push(cons)
-
-      unwrap_arg_pos = method_type_info.unwrap
-      mutate = method_type_info.mutate
-      method_type = method_type_info.sig
-
-      if cons.empty?
-        new_mt = method_type
+      if method_type.is_a?(Rtc::Types::ProceduralType)
+        method_types = [method_type]
       else
-        new_mt = method_type.replace_constraints(cons)
+        method_types = method_type.types.to_a
       end
-
+            
+      chosen_type = Rtc::MethodCheck.check_args(method_types, @method_name, regular_args,  (not blk.nil?), @class_obj)
+      
+      # if not $method_stack.keys.include?(invokee.class)
+        # $method_stack[invokee.class] = {}
+      # end
+#       
+      # if not $method_stack[invokee.class].keys.include?(@method_name)
+        # $method_stack[invokee.class][@method_name] = []
+      # end
+# 
+      # $method_stack[invokee.class][@method_name].push(cons)
+      #method_meta = invokee.rtc_meta["function_meta"][@method_name][chosen_type]
+      #TODO(jtoman): figure out what to do with this metadata
+      #unwrap_arg_pos = method_meta.unwrap
+      unwrap_arg_pos = []
+      #mutate = method_meta.mutate
+      mutate = false
+      unsolved_type_variables = []
+      
+      chosen_type.type_variables.each {
+        |tvar|
+        if tvar.solvable?
+          tvar.solve
+        else
+          unsolved_type_variables << tvar
+        end
+      }
+      
 
       i = 0
-      new_mt.arg_types.each { |arg_type|
-        if arg_type.has_parameterized
-          raise Rtc::TypeMismatchException, "Unbound parameter in method #{invokee.class}##{@method_name}"
-        end
+      chosen_type.arg_types.each { |arg_type|
+        #TODO(jtoman): detect this error at the parser level
+        #if arg_type.has_parameterized
+        #  raise Rtc::TypeMismatchException, "Unbound parameter in method #{invokee.class}##{@method_name}"
+        #end
         
         if arg_type.instance_of?(Rtc::Types::ProceduralType)
           regular_args[i] = BlockProxy.new(regular_args[i], arg_type, @method_name, invokee)
@@ -79,7 +91,7 @@ module Rtc
               regular_args[i] = regular_args[i].object
             end
           else
-            regular_args[i] = regular_args[i].rtc_annotate(arg_type)
+            regular_args[i] = regular_args[i].rtc_annotate(arg_type.is_a?(Rtc::Types::TypeVariable) ? arg_type.get_type : arg_type)
           end
         end
         
@@ -89,7 +101,9 @@ module Rtc
       unless invokee.rtc_type.has_method?(@method_name)
         raise NoMethodError, invokee.inspect + " has no method " + @method_name.to_s
       end
-
+      
+      puts "calling #{@method_name} on #{invokee}"
+      puts "args are #{regular_args}"
       if blk
         wb = wrap_block(blk)
         Rtc::MasterSwitch.turn_on
@@ -100,31 +114,32 @@ module Rtc
         ret_value = @original_method.bind(invokee).call(*regular_args)
         Rtc::MasterSwitch.turn_off
       end
+      
+      trailing_tvar = nil
+      
+      unsolved_type_variables.each {
+        |tvar|
+        if tvar.solvable? 
+          tvar.solve
+        else
+          raise "Invalid tsig" unless trailing_tvar.nil?
+          trailing_tvar = tvar
+        end
+      }
 
-
-      c = $method_stack[invokee.class][@method_name][-1]
-      new_mt_return_type = new_mt.return_type.replace_constraints(c)
-
-      if new_mt_return_type.has_parameterized
-        ret_valid = ret_value.rtc_type.le_poly(new_mt.return_type, {})
-      else
-        ret_valid = ret_value.rtc_type <= new_mt_return_type
-      end
-
-      unless ret_valid
+      #c = $method_stack[invokee.class][@method_name][-1]
+      unless ret_value.rtc_type <= chosen_type.return_type
+        p ret_value.rtc_type, chosen_type.return_type, @method_name, invokee, chosen_type
+        
         raise TypeMismatchException, "invalid return type in " + @method_name.to_s
       end
+      
+      trailing_var.instantiate unless trailing_tvar.nil?
 
-      if new_mt_return_type.has_parameterized
-        h = {}
-        if ret_value.rtc_type.le_poly(new_mt_return_type, h)
-          nr = new_mt_return_type.replace_constraints(h)
-          ret_proxy = ret_value.rtc_annotate(nr)
-        else
-          raise Rtc::TypeMismatchException, "Invalid return type for method #{@method_name}"
-        end
+      if chosen_type.return_type.is_a?(Rtc::Types::TypeVariable)
+        ret_proxy = ret_value.rtc_annotate(chosen_type.return_type.get_type)
       else
-        ret_proxy = ret_value.rtc_annotate(new_mt_return_type)
+        ret_proxy = ret_value.rtc_annotate(chosen_type.return_type)
       end
 
       if ret_value.proxies and not from_proxy and mutate
@@ -137,9 +152,7 @@ module Rtc
         }
       end
 
-
-
-      if method_type_info.mutate
+      if mutate
         unless invokee.rtc_type <= new_mt.return_type
           raise Rtc::TypeMismatchException, "type mismatch on return value"
         end
@@ -154,7 +167,7 @@ module Rtc
 
       end
 
-      $method_stack[invokee.class][@method_name].pop
+      #$method_stack[invokee.class][@method_name].pop
 
       return ret_proxy
     end
@@ -187,13 +200,9 @@ module Rtc
       wrapper_lambda = lambda {
         |*__rtc_args, &__rtc_block|
         if Rtc::MasterSwitch.is_on?
+          puts "intercepted call"
           Rtc::MasterSwitch.turn_off 
           args = {:args => __rtc_args, :block => __rtc_block }
-
-          if args[:block]
-            method_type = self.rtc_typeof(method_name, class_obj)
-            args[:block] = BlockProxy.new(args[:block], method_type, method_name, class_obj)
-          end
 
           begin
             this_obj.invoke(self, args)
@@ -224,57 +233,23 @@ module Rtc
 
     def initialize(proc, type, method_name, class_obj)
       @proc = proc
-
-      if type.instance_of?(Rtc::Types::IntersectionType)
-        type.types.each {|t|
-          if t.block_type
-            @method_type = t
-          end
-        }
-      else
-        @method_type = type
-      end
-
-      @block_type = @method_type.block_type
+      @block_type = type
       @method_name = method_name
       @class_obj = class_obj
     end
 
     def call(*args)
       Rtc::MasterSwitch.turn_off
-      arg = args[0]
-
-      c = $method_stack[@class_obj][@method_name][-1]
-
-
-      if c.empty?
-        unless @block_type
-          method_type = @method_type
-        else
-          method_type = @block_type
-        end
-      else
-        unless @block_type
-          method_type = @method_type.replace_constraints(c)
-        else
-          method_type = @block_type.replace_constraints(c)
-        end
-      end
+      #arg = args[0]
 
       i = 0
       for a in args
         valid = true
 
-        if method_type.arg_types[i].has_parameterized
-          raise Rtc::TypeMismatchException, "Unable to infer block argument type from regular argument types"
-        end
-
-        if a.respond_to?(:is_proxy_object)
-          valid = a.proxy_type <= method_type.arg_types[i]
-        else
-
-          valid = a.rtc_type <= method_type.arg_types[i]
-        end
+        #if method_type.arg_types[i].has_parameterized
+        #  raise Rtc::TypeMismatchException, "Unable to infer block argument type from regular argument types"
+        #end
+        valid = a.rtc_type <= method_type.arg_types[i]
 
         unless valid
           raise Rtc::TypeMismatchException, "block argument mismatch"
