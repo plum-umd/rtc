@@ -143,15 +143,6 @@ module Rtc
         unless invokee.rtc_type <= new_mt.return_type
           raise Rtc::TypeMismatchException, "type mismatch on return value"
         end
-
-        if invokee.proxies
-          invokee.proxies.each {|p|
-            unless ret_value.rtc_type <= p.proxy_type
-              raise Rtc::TypeMismatchException, "Return object run-time type #{ret_value.rtc_type.inspect} NOT <= one of the object's proxy list types #{p.proxy_type.inspect}"
-            end
-          }       
-        end
-
       end
 
       $method_stack[invokee.class][@method_name].pop
