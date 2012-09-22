@@ -65,7 +65,9 @@ rule
   {REQUIRE_RE}                               { [:K_REQUIRE, text] }
   {END_RE}                                   { [:K_END, text] }
   {TYPE_RE}                                  { [:K_TYPE, text] }
+  %none											 { [:T_BOTTOM, text] }
   {TYPEVAR_RE}                               { [:K_TYPEVAR, text] }
+  %any										 { [:T_TOP, text] }
 
 
 # keywords
