@@ -60,11 +60,8 @@ module Rtc
       # $method_stack[invokee.class][@method_name].push(cons)
       #method_meta = invokee.rtc_meta["function_meta"][@method_name][chosen_type]
       
-      #TODO(jtoman): figure out what to do with this metadata
-      #unwrap_arg_pos = method_meta.unwrap
-      unwrap_arg_pos = []
-      #mutate = method_meta.mutate
-      mutate = false
+      unwrap_arg_pos = chosen_type.unwrap
+      mutate = chosen_type.mutate
       unsolved_type_variables = []
       
       chosen_type.type_variables.each {
@@ -93,7 +90,7 @@ module Rtc
               regular_args[i] = regular_args[i].object
             end
           else
-            regular_args[i] = regular_args[i]#.rtc_annotate(arg_type.is_a?(Rtc::Types::TypeVariable) ? arg_type.get_type : arg_type)
+            regular_args[i] = regular_args[i].rtc_annotate(arg_type.is_a?(Rtc::Types::TypeVariable) ? arg_type.get_type : arg_type)
           end
         end
         
@@ -209,7 +206,7 @@ module Rtc
       wrapper_lambda = lambda {
         |*__rtc_args, &__rtc_block|
         if Rtc::MasterSwitch.is_on?
-          Rtc::MasterSwitch.turn_off 
+          Rtc::MasterSwitch.turn_off
           args = {:args => __rtc_args, :block => __rtc_block }
 
           begin

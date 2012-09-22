@@ -1004,8 +1004,8 @@ module Rtc::Types
         attr_reader :arg_types
         attr_reader :block_type
         attr_reader :parameters
-        attr_reader :mutate
-        attr_reader :unwrap
+        attr_accessor :mutate
+        attr_accessor :unwrap
 
         attr_accessor :type_variables
         # Create a new ProceduralType.

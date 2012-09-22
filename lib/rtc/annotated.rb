@@ -204,6 +204,15 @@ module Rtc::Annotated
 
         signatures.each {|s| self.add_to_typesigs(s.id.to_s, s.type, mutate, unwrap)}
 
+        signatures.each {
+          |s|
+          if s.instance_of?(Rtc::ClassMethodTypeSignature) or
+            s.instance_of?(Rtc::MethodTypeSignature)
+            s.type.mutate = mutate
+            s.type.unwrap = unwrap
+          end
+        }
+
         if signatures.instance_of?(Rtc::ClassAnnotation)
            Rtc::ClassModifier.handle_class_annot(signatures)
            return
