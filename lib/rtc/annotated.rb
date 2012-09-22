@@ -185,6 +185,8 @@ module Rtc::Annotated
 
     # Adds a type signature for a method to the class's method type table.
     def typesig(string_signature, meta_info={})
+      status = Rtc::MasterSwitch.is_on?
+      Rtc::MasterSwitch.turn_off
         if meta_info.keys.include?('mutate')
           mutate = meta_info['mutate']
         else
@@ -238,6 +240,7 @@ module Rtc::Annotated
             handle_instance_typesig(signature)
           end
         end
+        Rtc::MasterSwitch.set_to(status)
     end
     
     def handle_instance_typesig(signature)

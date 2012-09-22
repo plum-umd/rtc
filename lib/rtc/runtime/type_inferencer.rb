@@ -30,7 +30,7 @@ module Rtc
           end
         }
         if curr_type.size == 0
-          BottomType.instance
+          Rtc::Types::BottomType.instance
         elsif curr_type.size == 1
           curr_type.to_a[0]
         else

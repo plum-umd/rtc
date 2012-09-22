@@ -982,8 +982,8 @@ module Rtc::Types
             to_ret
           else
             @nominal.type_parameters.each_with_index {
-              |t_param, type|
-              replacement_map[t_param.symbol] = type
+              |t_param, type_index|
+              replacement_map[t_param.symbol] = parameters[type_index]
             }
             @nominal.get_method(name, which).replace_parameters(replacement_map)
           end
@@ -1782,7 +1782,6 @@ module Rtc::Types
       def solve
         @instantiated = true
         @solving = false
-        p @constraints
         if @constraints.empty?
           raise "Error, could not infer the types #{id}"
         else
@@ -1798,7 +1797,6 @@ module Rtc::Types
       end
       
       def get_type
-        puts "get_type called on #{id}"
         return @type
       end
       

@@ -39,7 +39,8 @@ module Rtc
         new_invokee = invokee
       end
       
-      method_type = new_invokee.rtc_typeof(@method_name.to_s)
+      method_type = new_invokee.rtc_type.get_method(@method_name.to_s)
+      puts method_type
       
       if method_type.is_a?(Rtc::Types::ProceduralType)
         method_types = [method_type]
@@ -91,7 +92,7 @@ module Rtc
               regular_args[i] = regular_args[i].object
             end
           else
-            regular_args[i] = regular_args[i].rtc_annotate(arg_type.is_a?(Rtc::Types::TypeVariable) ? arg_type.get_type : arg_type)
+            regular_args[i] = regular_args[i]#.rtc_annotate(arg_type.is_a?(Rtc::Types::TypeVariable) ? arg_type.get_type : arg_type)
           end
         end
         
@@ -101,9 +102,8 @@ module Rtc
       unless invokee.rtc_type.has_method?(@method_name)
         raise NoMethodError, invokee.inspect + " has no method " + @method_name.to_s
       end
-      
-      puts "calling #{@method_name} on #{invokee}"
-      puts "args are #{regular_args}"
+
+
       if blk
         wb = wrap_block(blk)
         Rtc::MasterSwitch.turn_on
@@ -141,6 +141,17 @@ module Rtc
       else
         ret_proxy = ret_value.rtc_annotate(chosen_type.return_type)
       end
+      
+      # if ret_proxy.proxy_type == Rtc::Types::UnionType.of([
+        # Rtc::Types::SymbolType.new(:relative),
+        # Rtc::Types::ParameterizedType.new(
+          # Rtc::Types::NominalType.of(Array),
+          # [Rtc::Types::NominalType.of(String)]
+        # )
+      # ]) then
+        # puts invokee, @method_name
+        # puts ret_value
+      # end
 
       if ret_value.proxies and not from_proxy and mutate
         ret_type = ret_value.rtc_type 
@@ -200,7 +211,6 @@ module Rtc
       wrapper_lambda = lambda {
         |*__rtc_args, &__rtc_block|
         if Rtc::MasterSwitch.is_on?
-          puts "intercepted call"
           Rtc::MasterSwitch.turn_off 
           args = {:args => __rtc_args, :block => __rtc_block }
 
