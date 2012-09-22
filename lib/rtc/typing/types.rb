@@ -1004,6 +1004,9 @@ module Rtc::Types
         attr_reader :arg_types
         attr_reader :block_type
         attr_reader :parameters
+        attr_reader :mutate
+        attr_reader :unwrap
+
         attr_accessor :type_variables
         # Create a new ProceduralType.
         #
@@ -1013,12 +1016,14 @@ module Rtc::Types
         #                takes one.
         # [+tvars+] The list of instantiated type variables that exist in this for this
         #                 method
-        def initialize(parameters, return_type, arg_types=[], block_type=nil, tvars = [])
+        def initialize(parameters, return_type, arg_types=[], block_type=nil, tvars = [], meta={})
             @parameters = parameters.nil? ? [] : parameters
             @return_type = return_type
             @arg_types = arg_types
             @block_type = block_type
             @type_variables = tvars
+            @mutate = meta['mutate'].nil? ? false : meta['mutate']
+            @unwrap = meta['unwrap'].nil? ? [] : meta['unwrap']
             super()
         end
         
@@ -1028,7 +1033,8 @@ module Rtc::Types
             return_type.replace_parameters(type_vars),
             arg_types.map { |p| p.replace_parameters(type_vars) },
             block_type.nil? ? nil : block_type.replace_parameters(type_vars),
-            type_variables)
+            type_variables,
+            mutate, unwrap)
         end
         
         def instantiate
@@ -1043,7 +1049,8 @@ module Rtc::Types
           ProceduralType.new([], return_type.replace_parameters(type_vars),
           arg_types.map{ |p| p.replace_parameters(type_vars) },
           block_type.nil? ? nil : block_type.replace_parameters(type_vars),
-          type_vars.values)
+          type_vars.values,
+          mutate, unwrap)
         end
         
         def parameterized?
