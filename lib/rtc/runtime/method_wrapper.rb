@@ -135,7 +135,8 @@ module Rtc
       end
       
       trailing_var.instantiate unless trailing_tvar.nil?
-      if ret_value === false || ret_value === nil
+      if ret_value === false || ret_value === nil ||
+          ret_value.is_a?(Rtc::Types::Type)
         ret_proxy = ret_value
       elsif chosen_type.return_type.is_a?(Rtc::Types::TypeVariable)
         ret_proxy = ret_value.rtc_annotate(chosen_type.return_type.get_type)
@@ -256,7 +257,7 @@ module Rtc
       raise Rtc::TypeMismatchException, "Block return type mismatch" unless ret.rtc_type <= block_type.return_type
       
       update_type_variables
-      if ret === false or ret === nil
+      if ret === false or ret === nil or ret.is_a?(Rtc::Types::Type)
         ret
       else
         ret.rtc_annotate(block_type.return_type.real_type)
