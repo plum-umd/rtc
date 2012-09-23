@@ -38,7 +38,15 @@ module Rtc
         last_arg = nil
         new_invokee = invokee
       end
-      
+
+      if $invokee_proxy.empty? or not invokee.equal?($invokee_proxy[-1].object)
+        if blk == nil
+          return @original_method.bind(invokee).call(*regular_args)
+        else
+          return @original_method.bind(invokee).call(*regular_args, &blk)
+        end
+      end
+
       method_type = new_invokee.rtc_type.get_method(@method_name.to_s)
       
       if method_type.is_a?(Rtc::Types::ProceduralType)
@@ -60,8 +68,11 @@ module Rtc
       # $method_stack[invokee.class][@method_name].push(cons)
       #method_meta = invokee.rtc_meta["function_meta"][@method_name][chosen_type]
       
-      unwrap_arg_pos = chosen_type.unwrap
-      mutate = chosen_type.mutate
+      #TODO(jtoman): figure out what to do with this metadata
+      #unwrap_arg_pos = method_meta.unwrap
+      unwrap_arg_pos = []
+      #mutate = method_meta.mutate
+      mutate = false
       unsolved_type_variables = []
       
       chosen_type.type_variables.each {
@@ -90,7 +101,7 @@ module Rtc
               regular_args[i] = regular_args[i].object
             end
           else
-            regular_args[i] = regular_args[i].rtc_annotate(arg_type.is_a?(Rtc::Types::TypeVariable) ? arg_type.get_type : arg_type)
+            regular_args[i] = regular_args[i]#.rtc_annotate(arg_type.is_a?(Rtc::Types::TypeVariable) ? arg_type.get_type : arg_type)
           end
         end
         
@@ -130,12 +141,11 @@ module Rtc
         end
       }
 
+      #c = $method_stack[invokee.class][@method_name][-1]
       unless ret_value.rtc_type <= chosen_type.return_type
-        # p ret_value.rtc_type, chosen_type.return_type, @method_name, invokee, chosen_type,
-          # invokee.rtc_type
+        p ret_value.rtc_type, chosen_type.return_type, @method_name, invokee, chosen_type
         
-        raise TypeMismatchException, "invalid return type in " + @method_name.to_s + 
-          " for object #{invokee} (args #{regular_args})"
+        raise TypeMismatchException, "invalid return type in " + @method_name.to_s
       end
       
       trailing_var.instantiate unless trailing_tvar.nil?
@@ -173,8 +183,6 @@ module Rtc
         end
       end
 
-      #$method_stack[invokee.class][@method_name].pop
-
       return ret_proxy
     end
 
@@ -206,7 +214,7 @@ module Rtc
       wrapper_lambda = lambda {
         |*__rtc_args, &__rtc_block|
         if Rtc::MasterSwitch.is_on?
-          Rtc::MasterSwitch.turn_off
+          Rtc::MasterSwitch.turn_off 
           args = {:args => __rtc_args, :block => __rtc_block }
 
           begin
@@ -241,6 +249,7 @@ module Rtc
       @method_name = method_name
       @class_obj = class_obj
       @unsolved_type_variables = unsolved_tvars
+      p @unsolved_type_variables
       @needs_solving = true
     end
 
