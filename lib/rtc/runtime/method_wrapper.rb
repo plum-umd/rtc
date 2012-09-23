@@ -68,11 +68,8 @@ module Rtc
       # $method_stack[invokee.class][@method_name].push(cons)
       #method_meta = invokee.rtc_meta["function_meta"][@method_name][chosen_type]
       
-      #TODO(jtoman): figure out what to do with this metadata
-      #unwrap_arg_pos = method_meta.unwrap
-      unwrap_arg_pos = []
-      #mutate = method_meta.mutate
-      mutate = false
+      unwrap_arg_pos = method_meta.unwrap
+      mutate = method_meta.mutate
       unsolved_type_variables = []
       
       chosen_type.type_variables.each {
@@ -101,7 +98,7 @@ module Rtc
               regular_args[i] = regular_args[i].object
             end
           else
-            regular_args[i] = regular_args[i]#.rtc_annotate(arg_type.is_a?(Rtc::Types::TypeVariable) ? arg_type.get_type : arg_type)
+            regular_args[i] = regular_args[i].rtc_annotate(arg_type.is_a?(Rtc::Types::TypeVariable) ? arg_type.get_type : arg_type)
           end
         end
         
@@ -141,31 +138,20 @@ module Rtc
         end
       }
 
-      #c = $method_stack[invokee.class][@method_name][-1]
       unless ret_value.rtc_type <= chosen_type.return_type
-        p ret_value.rtc_type, chosen_type.return_type, @method_name, invokee, chosen_type
+        # p ret_value.rtc_type, chosen_type.return_type, @method_name, invokee, chosen_type
         
         raise TypeMismatchException, "invalid return type in " + @method_name.to_s
       end
       
       trailing_var.instantiate unless trailing_tvar.nil?
-
-      if chosen_type.return_type.is_a?(Rtc::Types::TypeVariable)
+      if ret_value === false || ret_value === nil
+        ret_proxy = ret_value
+      elsif chosen_type.return_type.is_a?(Rtc::Types::TypeVariable)
         ret_proxy = ret_value.rtc_annotate(chosen_type.return_type.get_type)
       else
         ret_proxy = ret_value.rtc_annotate(chosen_type.return_type)
       end
-      
-      # if ret_proxy.proxy_type == Rtc::Types::UnionType.of([
-        # Rtc::Types::SymbolType.new(:relative),
-        # Rtc::Types::ParameterizedType.new(
-          # Rtc::Types::NominalType.of(Array),
-          # [Rtc::Types::NominalType.of(String)]
-        # )
-      # ]) then
-        # puts invokee, @method_name
-        # puts ret_value
-      # end
 
       if ret_value.proxies and not from_proxy and mutate
         ret_type = ret_value.rtc_type 
@@ -249,7 +235,6 @@ module Rtc
       @method_name = method_name
       @class_obj = class_obj
       @unsolved_type_variables = unsolved_tvars
-      p @unsolved_type_variables
       @needs_solving = true
     end
 
@@ -281,8 +266,11 @@ module Rtc
       raise Rtc::TypeMismatchException, "Block return type mismatch" unless ret.rtc_type <= block_type.return_type
       
       update_type_variables
-      
-      return ret.rtc_annotate(block_type.return_type.real_type)
+      if ret === false or ret === nil
+        ret
+      else
+        ret.rtc_annotate(block_type.return_type.real_type)
+      end
     end
     
     private
