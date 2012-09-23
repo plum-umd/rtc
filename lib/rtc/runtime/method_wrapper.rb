@@ -57,19 +57,9 @@ module Rtc
             
       chosen_type = Rtc::MethodCheck.check_args(method_types, @method_name, regular_args,  (not blk.nil?), @class_obj)
       
-      # if not $method_stack.keys.include?(invokee.class)
-        # $method_stack[invokee.class] = {}
-      # end
-#       
-      # if not $method_stack[invokee.class].keys.include?(@method_name)
-        # $method_stack[invokee.class][@method_name] = []
-      # end
-# 
-      # $method_stack[invokee.class][@method_name].push(cons)
-      #method_meta = invokee.rtc_meta["function_meta"][@method_name][chosen_type]
       
-      unwrap_arg_pos = method_meta.unwrap
-      mutate = method_meta.mutate
+      unwrap_arg_pos = chosen_type.unwrap
+      mutate = chosen_type.mutate
       unsolved_type_variables = []
       
       chosen_type.type_variables.each {
