@@ -106,7 +106,7 @@ class Object
           #user defined parameterized classes
         tv = class_obj.type_parameters.map {
           |param|
-          Rtc::TypeInferences.infer_type(self.send(class_obj.klass.rtc_meta[:iterators][param.symbol]))
+          Rtc::TypeInferencer.infer_type(self.send(class_obj.klass.rtc_meta[:iterators][param.symbol]))
         }
 
         Rtc::Types::ParameterizedType.new(class_obj, tv, true)
