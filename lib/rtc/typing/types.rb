@@ -103,22 +103,13 @@ class Object
             Rtc::TypeInferencer.infer_type(self.each_value)
           ], true)
       else
-          #I dunno man
-          lst = []
-          
-          self.get_parameters.each {|t|
-            lst.push(Rtc::Types::TypeVariable.create([t].each))
-          }
+          #user defined parameterized classes
+        tv = class_obj.type_parameters.map {
+          |param|
+          Rtc::TypeInferences.infer_type(self.send(class_obj.klass.rtc_meta[:iterators][param.symbol]))
+        }
 
-          Rtc::Types::ParameterizedType.new(class_obj, lst)
-#      else
-#          #user defined parameterized classes
-#        tv = class_obj.type_parameters.map {
-#          |param|
-#          Rtc::Types::TypeVariable.create(self.send(class_obj.klass.rtc_meta[:iterators][param.symbol]))
-#        }
-
-#        Rtc::Types::ParameterizedType.new(class_obj, tv)
+        Rtc::Types::ParameterizedType.new(class_obj, tv, true)
       end
     end
   end
