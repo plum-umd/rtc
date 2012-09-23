@@ -23,7 +23,7 @@ module Rtc::MethodCheck
 # 
 # 
     # if class_param_type and class_param_type.has_parameterized
-      # if invokee.respond_to?(:is_proxy_object)
+      # if invokee.is_proxy_object?
         # invokee.proxy_type.le_poly(class_param_type, constraints)
       # else
         # invokee.rtc_type.le_poly(class_param_type, constraints)
@@ -51,7 +51,7 @@ module Rtc::MethodCheck
         next if expected_arg_type.instance_of?(Rtc::Types::ProceduralType)
         possible_types.delete(m) unless arg.rtc_type <= expected_arg_type
         # if expected_arg_type.has_parameterized
-          # if arg.respond_to?(:is_proxy_object)
+          # if arg.is_proxy_object?
             # b = arg.proxy_type.le_poly(expected_arg_type, constraint_m[m])
           # else
             # b = arg.rtc_type.le_poly(expected_arg_type, constraint_m[m])
@@ -59,7 +59,7 @@ module Rtc::MethodCheck
 # 
           # possible_types.delete(m) unless b
         # else
-          # if arg.respond_to?(:is_proxy_object)
+          # if arg.is_proxy_object?
             # b = arg.proxy_type <= expected_arg_type
           # else
             # b = arg.rtc_type <= expected_arg_type

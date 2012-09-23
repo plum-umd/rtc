@@ -97,7 +97,7 @@ module Rtc
             unsolved_type_variables)
         else
           if unwrap_arg_pos.include?(i)
-            if regular_args[i].respond_to?(:is_proxy_object)
+            if regular_args[i].is_proxy_object?
               regular_args[i] = regular_args[i].object
             end
           else

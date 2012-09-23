@@ -7,7 +7,7 @@ class Array
   alias :old_equal? :equal?
 
   def ==(other)
-    if other.respond_to?(:is_proxy_object)
+    if other.is_proxy_object?
       old_eq(other.object)
     else
       old_eq(other)
@@ -15,7 +15,7 @@ class Array
   end
 
   def eql?(other)
-    if other.respond_to?(:is_proxy_object)
+    if other.is_proxy_object?
       old_eql?(other.object)
     else
       old_eql?(other)
@@ -23,7 +23,7 @@ class Array
   end
 
   def equal?(other)
-    if other.respond_to?(:is_proxy_object)
+    if other.is_proxy_object?
       old_equal?(other.object)
     else
       old_equal?(other)
@@ -37,7 +37,7 @@ class Hash
   alias :old_equal? :equal?
 
   def ==(other)
-    if other.respond_to?(:is_proxy_object)
+    if other.is_proxy_object?
       old_eq(other.object)
     else
       old_eq(other)
@@ -45,7 +45,7 @@ class Hash
   end
 
   def eql?(other)
-    if other.respond_to?(:is_proxy_object)
+    if other.is_proxy_object?
       old_eql?(other.object)
     else
       old_eql?(other)
@@ -53,7 +53,7 @@ class Hash
   end
 
   def equal?(other)
-    if other.respond_to?(:is_proxy_object)
+    if other.is_proxy_object?
       old_equal?(other.object)
     else
       old_equal?(other)
@@ -67,7 +67,7 @@ class Symbol
   alias :old_equal? :equal?
 
   def ==(other)
-    if other.respond_to?(:is_proxy_object)
+    if other.is_proxy_object?
       old_eq(other.object)
     else
       old_eq(other)
@@ -75,7 +75,7 @@ class Symbol
   end
 
   def eql?(other)
-    if other.respond_to?(:is_proxy_object)
+    if other.is_proxy_object?
       old_eql?(other.object)
     else
       old_eql?(other)
@@ -83,7 +83,7 @@ class Symbol
   end
 
   def equal?(other)
-    if other.respond_to?(:is_proxy_object)
+    if other.is_proxy_object?
       old_equal?(other.object)
     else
       old_equal?(other)
@@ -97,7 +97,7 @@ class String
   alias :old_equal? :equal?
 
   def ==(other)
-    if other.respond_to?(:is_proxy_object)
+    if other.is_proxy_object?
       old_eq(other.object)
     else
       old_eq(other)
@@ -105,7 +105,7 @@ class String
   end
 
   def eql?(other)
-    if other.respond_to?(:is_proxy_object)
+    if other.is_proxy_object?
       old_eql?(other.object)
     else
       old_eql?(other)
@@ -113,7 +113,7 @@ class String
   end
 
   def equal?(other)
-    if other.respond_to?(:is_proxy_object)
+    if other.is_proxy_object?
       old_equal?(other.object)
     else
       old_equal?(other)
@@ -126,8 +126,12 @@ class Object
   alias :old_eql? :eql?
   alias :old_equal? :equal?
 
+  def is_proxy_object?
+    return false
+  end
+
   def ==(other)
-    if other.respond_to?(:is_proxy_object)
+    if other.is_proxy_object?
       old_eq(other.object)
     else
       old_eq(other)
@@ -135,7 +139,7 @@ class Object
   end
 
   def eql?(other)
-    if other.respond_to?(:is_proxy_object)
+    if other.is_proxy_object?
       old_eql?(other.object)
     else
       old_eql?(other)
@@ -143,7 +147,7 @@ class Object
   end
 
   def equal?(other)
-    if other.respond_to?(:is_proxy_object)
+    if other.is_proxy_object?
       old_equal?(other.object)
     else
       old_equal?(other)
@@ -214,7 +218,7 @@ module Rtc
     end
 
     def eql?(other)
-      if other.respond_to?(:is_proxy_object)
+      if other.is_proxy_object?
         @object.eql?(other.object)
       else
         @object.eql?(other)
@@ -277,10 +281,6 @@ module Rtc
       @object.__id__
     end
 
-    def object_id
-      @object.object_id
-    end
-
     def public_method(sym)
       @object.public_method(sym)
     end
@@ -334,7 +334,7 @@ module Rtc
 
     # private def remove_instance_variable(symbol)
 
-    def is_proxy_object
+    def is_proxy_object?
       true
     end
 

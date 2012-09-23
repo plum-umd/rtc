@@ -115,7 +115,7 @@ class Object
       annotated_type = annotation_string
     end
 
-    if self.respond_to?(:is_proxy_object)
+    if self.is_proxy_object?
       if not self.object.rtc_type <= annotated_type
         raise Rtc::AnnotateException, "object run-time type " + self.object.rtc_type.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s        
       end
@@ -150,7 +150,7 @@ class Object
       annotated_type = annotation_string
     end
 
-    if self.respond_to?(:is_proxy_object)
+    if self.is_proxy_object?
       if not self.proxy_type <= annotated_type
         raise Rtc::AnnotateException, "object proxy type " + self.proxy_type.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s        
       end
