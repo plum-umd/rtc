@@ -73,7 +73,7 @@ module Rtc::MethodCheck
     if possible_types.size > 1
       possible_types2 = Set.new
 
-      if blk
+      if has_block
         possible_types.each {|t|
           possible_types2.add(t) if t.sig.block_type 
         }
