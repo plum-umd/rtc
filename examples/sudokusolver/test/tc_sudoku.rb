@@ -14,7 +14,7 @@ class SudokuTest < Test::Unit::TestCase
     @easy = File.read(@path + '/test/easy_puzzles.txt').split("\n")
     @hard = File.read(@path + '/test/top95.txt').split("\n")
     Rtc::MasterSwitch.turn_on
-    @s = SudokuSolver.new
+    @s = SudokuSolver.new.rtc_annotate("SudokuSolver")
     Rtc::MasterSwitch.turn_off
   end
   
