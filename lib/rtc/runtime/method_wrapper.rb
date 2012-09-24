@@ -149,13 +149,13 @@ module Rtc
 
         ret_value.proxies.each {|p|
           unless ret_type <= p.proxy_type
-            raise Rtc::TypeMismatchException, "Return object run-time type #{ret_type.inspect} NOT <= one of the object\'s proxy list types #{p.proxy_type.inspect}  method=#{@method_name},  invokee=#{invokee.rtc_to_str},   args=#{regular_args.rtc_to_str},   ret=#{ret_value.inspect},    invokee_type=#{invokee.rtc_type.inspect}   #{new_mt.inspect}"
+            raise Rtc::TypeMismatchException, "Return object run-time type #{ret_type.inspect} NOT <= one of the object\'s proxy list types #{p.proxy_type.inspect}  method=#{@method_name},  invokee=#{invokee.rtc_to_str},   args=#{regular_args.rtc_to_str},   ret=#{ret_value.inspect},    invokee_type=#{invokee.rtc_type.inspect}   #{chosen_type.inspect}"
           end
         }
       end
 
       if mutate
-        unless invokee.rtc_type <= new_mt.return_type
+        unless invokee.rtc_type <= chosen_type.return_type
           raise Rtc::TypeMismatchException, "type mismatch on return value"
         end
       end

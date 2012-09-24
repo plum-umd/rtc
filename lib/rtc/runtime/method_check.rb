@@ -75,11 +75,11 @@ module Rtc::MethodCheck
 
       if has_block
         possible_types.each {|t|
-          possible_types2.add(t) if t.sig.block_type 
+          possible_types2.add(t) if t.block_type 
         }
       else
         possible_types.each {|t|
-          possible_types2.add(t) if t.sig.block_type == nil
+          possible_types2.add(t) if t.block_type == nil
         }
       end
 
