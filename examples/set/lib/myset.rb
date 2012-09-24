@@ -58,6 +58,9 @@ rtc_typesig("class MySet<a>")
 class MySet
   rtc_annotated
 
+  define_iterators :a => :each
+
+
   include Enumerable
 
   def get_parameters
@@ -162,6 +165,7 @@ class MySet
     @hash.keys
   end
 
+
   def flatten_merge(set, seen = MySet.new) # :nodoc:
     set.each { |e|
       if e.is_a?(MySet)
@@ -198,7 +202,7 @@ class MySet
   end
 
   # Returns true if the set contains the given object.
-  typesig("include: (a) -> TrueClass or FalseClass")
+  typesig("'include?': (a) -> TrueClass or FalseClass")
   def include?(o)
     @hash.include?(o)
   end
@@ -542,9 +546,15 @@ end
 #   p ary # => [1, 2, 3, 4, 5, 6]
 #
 #   set2 = SortedMySet.new([1, 2, "3"])
-#   set2.each { |obj| } # => raises ArgumentError: comparison of Fixnum with String failed
+#   set2.each { |obj| } # => raises ArgumentError: comparison of Fixnum with String faile
 #
+
+rtc_typesig("class SortedMySet<a>")
+
 class SortedMySet < MySet
+  rtc_annotated
+  define_iterators :a => :each
+
   @@setup = false
 
   class << self
