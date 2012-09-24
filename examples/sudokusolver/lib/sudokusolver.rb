@@ -26,7 +26,7 @@ class SudokuSolver
 	# Cross-product
   typesig("cross: (Array<String>, Array<String>) -> Array<String>")
   def cross(a, b)
-    cp = Array.new # cross product
+    cp = Array.new.rtc_annotate("Array<String>") # cross product
     a.each do |x|
       b.each do |y|
         cp << x+y
@@ -36,10 +36,10 @@ class SudokuSolver
   end
 
   def initialize() 
-    @rows = ('A'..'I').to_a
-    @cols = ('1'..'9').to_a
-    @squares = cross(@rows, @cols)  
-    @unitlist = Array.new
+    @rows = ('A'..'I').to_a.rtc_annotate("Array<String>")
+    @cols = ('1'..'9').to_a.rtc_annotate("Array<String>")
+    @squares = cross(@rows, @cols)
+    @unitlist = Array.new.rtc_annotate("Array<Array<String>>")
     cols.each { |c| @unitlist.push(cross(rows, [c])) }
     rows.each { |r| @unitlist.push(cross([r], cols)) }    
     for rb in ['ABC','DEF','GHI'] do
@@ -48,9 +48,9 @@ class SudokuSolver
       end
     end
 
-    @units = Hash.new
+    @units = Hash.new.rtc_annotate("Hash<String,Array<Array<String>>>")
     squares.each do |s|
-      @units[s] = Array.new
+      @units[s] = Array.new.rtc_annotate("Array<Array<String>>")
       unitlist.each do |u| 
         u.each do |x| 
           @units[s].push(u) if s == x
@@ -58,9 +58,9 @@ class SudokuSolver
       end
     end
 
-    @peers = Hash.new
+    @peers = Hash.new.rtc_annotate("Hash<String, Array<String>>")
     squares.each do |s|
-      @peers[s] = Array.new
+      @peers[s] = Array.new.rtc_annotate("Array<String>")
       units[s].each do |u|
         u.each { |s2| @peers[s] << s2 if s2 != s }
       end
@@ -74,7 +74,7 @@ class SudokuSolver
   def parse_grid(g)
     g = g.chomp
     g = g.split('')
-    values = Hash.new
+    values = Hash.new.rtc_annotate("Hash<String, String>")
     # Initially any square can be anything.
     squares.each { |s| values[s] = "123456789" }
 
