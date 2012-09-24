@@ -7,10 +7,9 @@ class Fixnum
 end
 
 
-rtc_typesig("class Array<t>")
-
+#rtc_typesig("class Array<t>")
 class Array
-  rtc_annotated
+  rtc_annotated [:t, :each]
 
   alias :old_initialize :initialize
 
@@ -43,9 +42,9 @@ end
 #  typesig("'includes?': (t) -> TrueClass or FalseClass")
 #end
 
-rtc_typesig("class Hash<k, v>")
+#rtc_typesig("class Hash<k, v>")
 class Hash
-  rtc_annotated
+  rtc_annotated [:k, :each_key], [:v, :each_value]
 
   typesig("'[]' : (k) -> v", {'unwrap'=>[0]})
 #  typesig("'[]' : (k) -> v")

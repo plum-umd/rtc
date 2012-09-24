@@ -15,8 +15,9 @@ require 'rtc/runtime/class_modifier'
 $method_stack = {}
 $invokee_proxy = []
 
-def rtc_annotated
+def rtc_annotated(*t_params)
   extend Rtc::Annotated
+  add_type_parameters(t_params)
 end
 
 #FIXME(jtoman): needs a catchier and better name

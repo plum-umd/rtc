@@ -187,13 +187,13 @@ module Rtc::Annotated
     def typesig(string_signature, meta_info={})
       status = Rtc::MasterSwitch.is_on?
       Rtc::MasterSwitch.turn_off
-        if meta_info.keys.include?('mutate')
+        if meta_info.has_key?('mutate')
           mutate = meta_info['mutate']
         else
           mutate = false
         end
 
-        if meta_info.keys.include?('unwrap')
+        if meta_info.has_key?('unwrap')
           unwrap = meta_info['unwrap']
         else
           unwrap = []
@@ -322,6 +322,19 @@ module Rtc::Annotated
       end
     end
     
+    def add_type_parameters(t_params)
+      return if t_params.empty?
+      t_parameters = []
+      iterators = {}
+      t_params.each {
+        |pair|
+        t_parameters << pair[0]
+        iterators[pair[0]] = pair[1]
+      }
+      Rtc::Types::NominalType.of(self).type_parameters = t_parameters
+      define_iterators(iterators)
+    end
+
     def self.extended(extendee)
       if Rtc::ClassModifier.deferred?(extendee)
         Rtc::ClassModifier.modify_class(extendee)

@@ -618,7 +618,7 @@ module Rtc::Types
         end
         
         def type_parameters=(t_params)
-          @type_parameters = t_params.each {
+          @type_parameters = t_params.map {
             |t_param|
             if t_param.instance_of?(Symbol)
               TypeParameter.new(t_param)
