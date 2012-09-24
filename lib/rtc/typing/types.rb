@@ -55,13 +55,6 @@ class Object
   def rtc_type
     return Rtc::Types::BottomType.new if self == nil
     return rtc_get_type
-    # meta_hash = rtc_meta
-# 
-    # if meta_hash[:_type]
-      # meta_hash[:_type]
-    # else
-      # meta_hash[:_type] = rtc_get_type
-    # end
   end
   
   def rtc_typeof(name, which_class = nil)
@@ -134,7 +127,15 @@ end
 class Rtc::TypeNarrowingError < StandardError; end
 
 module Rtc::Types
+  module TerminalType
+    def replace_parameters(_t_vars)
+      self
+    end
 
+    def _to_actual_type
+      self
+    end
+  end
     # Abstract base class for all types. Takes care of assigning unique ids to
     # each type instance and maintains sets of constraint edges. This class
     # should never be instantiated directly.
@@ -151,13 +152,7 @@ module Rtc::Types
             @id = @@next_id
             @@next_id += 1
         end
-        def real_type
-          self
-        end
-        #replaces any type variables with their defintions
-        def to_real_type
-          raise "you must implement this function"
-        end
+
         # Return true if +self+ is a subtype of +other+. Implemented in
         # subclasses.
         def <=(other)
@@ -210,7 +205,6 @@ module Rtc::Types
           "#{self.class.name}(#{@id}): #{to_s}" 
         end
 
-
         def replace_parameters(type_vars)
           map {
             |t|
@@ -219,6 +213,13 @@ module Rtc::Types
         end
 
         def to_actual_type
+          if not defined?(@actual_type)
+            @actual_type = _to_actual_type
+          end
+          @actual_type
+        end
+
+        def _to_actual_type
           map {
             |t|
             t.to_actual_type
@@ -273,6 +274,10 @@ module Rtc::Types
         
         def method_names
           @method_types.keys
+        end
+        
+        def any?
+          yield self
         end
 
         # Return +true+ if +self+ is a subtype of +other+. This follows the
@@ -446,6 +451,7 @@ module Rtc::Types
     # The simplest kind of type, where the name is the same as the type, such as
     # Fixnum, String, Object, etc.
     class NominalType < StructuralType
+      include TerminalType
         class InheritanceChainIterator
           #TODO(jtoman): add support for Enumerators?
           def initialize(class_obj)
@@ -485,7 +491,7 @@ module Rtc::Types
         end
         
         def map
-          yield self
+          return self
         end
 
         def has_method?(method)
@@ -765,12 +771,6 @@ module Rtc::Types
             super({},{})
         end
 
-        def replace_parameters(type_vars)
-          ParameterizedType.new(nominal, 
-            parameters.map { |p| p.replace_parameters(type_vars) },
-                                dynamic)
-        end
-
         def has_method?(method)
           @nominal.has_method?(method)
         end
@@ -840,14 +840,10 @@ module Rtc::Types
               replacement_map[t_param.symbol] = TypeVariable.new(t_param.symbol, self, parameters[type_index])
             }
             to_ret = @nominal.get_method(name, which).replace_parameters(replacement_map)
-            if to_ret.is_a?(IntersectionType)
-              to_ret.types.each {
-                  |inter_type|
-                  inter_type.type_variables += replacement_map.values
-               }
-            else
-              to_ret.type_variables += replacement_map.values
-            end
+            to_ret.map {
+              |type|
+              type.type_variables += replace_map.values
+            }
             to_ret
           else
             @nominal.type_parameters.each_with_index {
@@ -893,23 +889,13 @@ module Rtc::Types
             @unwrap = meta['unwrap'].nil? ? [] : meta['unwrap']
             super()
         end
-        
-        def replace_parameters(type_vars)
-          ProceduralType.new(
-            parameters,
-            return_type.replace_parameters(type_vars),
-            arg_types.map { |p| p.replace_parameters(type_vars) },
-            block_type.nil? ? nil : block_type.replace_parameters(type_vars),
-            type_variables,
-            { "mutate" => mutate, "unwrap" =>  unwrap})
-        end
 
         def map
           ProceduralType.new(
                              parameters,
-                             yield return_type
-                             arg_types.map { |p| yield p }
-                             block_type.nil? ? nil : yield block_type
+                             (yield return_type),
+                             arg_types.map { |p| yield p },
+                             block_type.nil? ? nil : (yield block_type),
                              type_variables,
                              { "mutate" => mutate, "unwrap" => unwrap }
                              )
@@ -1134,9 +1120,6 @@ module Rtc::Types
             31 + type.hash
         end
         
-        def initialize(type_vars)
-          Vararg.new(type.replace_parameters(type_vars))
-        end
         
         def map
           Vararg.new(yield type)
@@ -1172,10 +1155,6 @@ module Rtc::Types
         def eql?(other)
             other.instance_of?(OptionalArg) and type.eql?(other.type)
         end
-        
-        def replace_parameters(type_vars)
-          OptionalArg.new(type.replace_parameters(type_vars))
-        end
 
         def hash
             23 + type.hash
@@ -1184,6 +1163,7 @@ module Rtc::Types
 
 
     class SymbolType < Type
+      include TerminalType
       attr_reader :symbol
       def initialize(sym)
         @symbol = sym
@@ -1197,13 +1177,9 @@ module Rtc::Types
       def eql?(other)
         other.instance_of?(SymbolType) and other.symbol == symbol
       end
-      
-      def replace_parameters(type_vars)
-        self
-      end
 
       def map
-        yield self
+        return self
       end
       
       def ==(other)
@@ -1357,10 +1333,6 @@ module Rtc::Types
             return types[0] if types.size == 1
             return UnionType.new(types)
         end
-        
-        def replace_parameters(type_vars)
-          UnionType.of(types.map{ |t| t.replace_parameters(type_vars) })
-        end
 
         def has_method?(method)
           @types.all? {|t| t.has_method?(method)}
@@ -1454,6 +1426,10 @@ module Rtc::Types
           self
         end
 
+        def _to_actual_type
+          self
+        end
+
         # Return true if self is a subtype of other.
         #--
         # TODO(rwsims): Refine this as use cases become clearer.
@@ -1462,7 +1438,7 @@ module Rtc::Types
         end
 
         def map
-          yield self
+          return self
         end
 
         def to_s
@@ -1475,16 +1451,13 @@ module Rtc::Types
     end
 
     class TopType < Type
+      include TerminalType
       def initialize()
         super()
       end
 
       def to_s
         "t"
-      end
-      
-      def replace_parameters(type_vars)
-        self
       end
       
       def self.instance
@@ -1496,7 +1469,7 @@ module Rtc::Types
       end
       
       def map
-        yield self
+        return self
       end
 
       def ==(other)
@@ -1519,6 +1492,7 @@ module Rtc::Types
     end
     
     class BottomType < Type
+      include TerminalType
       def hash
         13
       end
@@ -1528,11 +1502,7 @@ module Rtc::Types
       end
 
       def map
-        yield self
-      end
-
-      def replace_parameters(type_vars)
-        self
+        return self
       end
 
       def has_method?(m)
@@ -1578,11 +1548,15 @@ module Rtc::Types
         super()
       end
 
+      def replace_parameters(_t_vars)
+        self
+      end
+
       def map
         yield self
       end
       
-      def to_real_type
+      def _to_actual_type
         if @instantiated
           @type
         else
@@ -1606,10 +1580,6 @@ module Rtc::Types
         else
           @type = UnionType.of(@constraints)
         end
-      end
-      
-      def get_type
-        return @type
       end
       
       def solvable?

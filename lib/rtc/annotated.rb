@@ -147,6 +147,9 @@ class Object
       parser = Rtc::TypeAnnotationParser.new(self.class)
       annotated_type = parser.scan_str("##"+annotation_string)
     else
+      if annotation_string.is_a?(Rtc::Types::TypeVariable)
+        raise "fatal error, cannot annotate on type variables"
+      end
       annotated_type = annotation_string
     end
 
@@ -158,7 +161,7 @@ class Object
       r = Rtc::ProxyObject.new(@object, annotated_type)        
     else
       if not self.rtc_type <= annotated_type 
-        raise Rtc::AnnotateException, "object type " + self.rtc_type.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s        
+        raise Rtc::AnnotateException, "object type " + self.rtc_type.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s
       end
 
       r = Rtc::ProxyObject.new(self, annotated_type)        

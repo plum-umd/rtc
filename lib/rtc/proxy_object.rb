@@ -166,6 +166,9 @@ module Rtc
     alias :old_inspect :inspect
 
     def initialize(object, proxy_type)
+      if object.is_a?(Rtc::Types::Type)
+        raise "this should never happen"
+      end
       # type = WeakRef.new(type)      
       # FIXME:  weak ref caused problems with Rtc types
 
@@ -390,10 +393,10 @@ module Rtc
         $invokee_proxy.push(self)
         Rtc::MasterSwitch.turn_on
         r = @object.send method, *args, &block
-      rescue Rtc::TypeMismatchException => e
-        raise e, e.message + "\n" + e.backtrace.inspect
-      rescue Exception => e
-        raise e, e.message + "\n" + e.backtrace.inspect
+#      rescue Rtc::TypeMismatchException => e
+#        raise e, e.message + "\n" + e.backtrace.inspect
+#      rescue Exception => e
+#        raise e, e.message + "\n" + e.backtrace.inspect
       ensure
         $invokee_proxy.pop
       end
