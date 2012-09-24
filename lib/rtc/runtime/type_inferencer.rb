@@ -40,6 +40,10 @@ module Rtc
       
       private
       
+      def self.extract_types(param_type)
+        param_type.real_type.instance_of?(UnionType) ? wrapped_type.types.to_a : [wrapped_type]
+      end
+
       #FIXME(jtoman): see if we can lift this step into the gen_type step
       def self.unify_param_types(type_set)
         non_param_classes = []

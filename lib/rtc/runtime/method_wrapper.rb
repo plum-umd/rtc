@@ -88,7 +88,7 @@ module Rtc
               regular_args[i] = regular_args[i].object
             end
           else
-            regular_args[i] = regular_args[i].rtc_annotate(arg_type.is_a?(Rtc::Types::TypeVariable) ? arg_type.get_type : arg_type)
+            regular_args[i] = regular_args[i].rtc_annotate(arg_type.to_actual_type)
           end
         end
         
@@ -138,10 +138,8 @@ module Rtc
       if ret_value === false || ret_value === nil ||
           ret_value.is_a?(Rtc::Types::Type)
         ret_proxy = ret_value
-      elsif chosen_type.return_type.is_a?(Rtc::Types::TypeVariable)
-        ret_proxy = ret_value.rtc_annotate(chosen_type.return_type.get_type)
       else
-        ret_proxy = ret_value.rtc_annotate(chosen_type.return_type)
+        ret_proxy = ret_value.rtc_annotate(chosen_type.return_type.to_actual_type)
       end
 
       if ret_value.proxies and not from_proxy and mutate
@@ -247,7 +245,7 @@ module Rtc
       
       annotated_args = arg_type_pairs.map {
         |value, type|
-        value.rtc_annotate(type.real_type)
+        value.rtc_annotate(type.to_actual_type)
       }
 
       Rtc::MasterSwitch.turn_on
@@ -260,7 +258,7 @@ module Rtc
       if ret === false or ret === nil or ret.is_a?(Rtc::Types::Type)
         ret
       else
-        ret.rtc_annotate(block_type.return_type.real_type)
+        ret.rtc_annotate(block_type.return_type.to_actual_type)
       end
     end
     
