@@ -153,8 +153,19 @@ class Object
       old_equal?(other)
     end
   end
-end
 
+  def rtc_get_proxy
+    rtc_meta[:proxy_context][-1]
+  end
+
+  def rtc_push_proxy(p)
+    rtc_meta[:proxy_context].push(p)
+  end
+  
+  def rtc_pop_proxy()
+    rtc_meta[:proxy_context].pop
+  end
+end
 
 module Rtc
 
@@ -390,7 +401,8 @@ module Rtc
       #      return @object.send method, *args, &block
       
       begin
-        $invokee_proxy.push(self)
+        @object.rtc_push_proxy(self)
+#        $invokee_proxy.push(self)
         Rtc::MasterSwitch.turn_on
         r = @object.send method, *args, &block
 #      rescue Rtc::TypeMismatchException => e
@@ -398,7 +410,9 @@ module Rtc
 #      rescue Exception => e
 #        raise e, e.message + "\n" + e.backtrace.inspect
       ensure
-        $invokee_proxy.pop
+        Rtc::MasterSwitch.turn_off
+        @object.rtc_pop_proxy
+        Rtc::MasterSwitch.turn_off
       end
 
       return r

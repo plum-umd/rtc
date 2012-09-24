@@ -34,17 +34,20 @@ module Rtc
         regular_args.pop
         new_invokee = last_arg['self_proxy']
         from_proxy = true
+      elsif invokee.rtc_get_proxy
+        new_invokee = invokee.rtc_get_proxy
       else
-        last_arg = nil
-        new_invokee = invokee
-      end
-
-      if $invokee_proxy.empty? or not invokee.equal?($invokee_proxy[-1].object)
-        if blk == nil
-          return @original_method.bind(invokee).call(*regular_args)
+        # no type context, do not type check
+        if blk
+          Rtc::MasterSwitch::turn_on
+          to_ret = @original_method.bind(invokee).call(*regular_args, &blk)
+          Rtc::MasterSwitch::turn_off
         else
-          return @original_method.bind(invokee).call(*regular_args, &blk)
+          Rtc::MasterSwitch::turn_on
+          to_ret = @original_method.bind(invokee).call(*regular_args)
+          Rtc::MasterSwitch::turn_off
         end
+        return to_ret
       end
 
       method_type = new_invokee.rtc_type.get_method(@method_name.to_s)
@@ -56,7 +59,6 @@ module Rtc
       end
             
       chosen_type = Rtc::MethodCheck.check_args(method_types, @method_name, regular_args,  (not blk.nil?), @class_obj)
-      
       
       unwrap_arg_pos = chosen_type.unwrap
       mutate = chosen_type.mutate
@@ -144,10 +146,11 @@ module Rtc
 
       if ret_value.proxies and not from_proxy and mutate
         ret_type = ret_value.rtc_type 
-
         ret_value.proxies.each {|p|
-          unless ret_type <= p.proxy_type
-            raise Rtc::TypeMismatchException, "Return object run-time type #{ret_type.inspect} NOT <= one of the object\'s proxy list types #{p.proxy_type.inspect}  method=#{@method_name},  invokee=#{invokee.rtc_to_str},   args=#{regular_args.rtc_to_str},   ret=#{ret_value.inspect},    invokee_type=#{invokee.rtc_type.inspect}   #{chosen_type.inspect}"
+          
+          unless ret_type <= p.rtc_type
+            #p ret_value.proxies.map { |_p| _p.rtc_type }
+            raise Rtc::TypeMismatchException, "Return object run-time type #{ret_type.inspect} NOT <= one of the object\'s proxy list types (#{p.rtc_type.inspect})  method=#{@method_name},  invokee=#{invokee.rtc_to_str},   args=#{regular_args.rtc_to_str},   ret=#{ret_value.inspect},  invokee_type=#{invokee.rtc_type.inspect}, this methods type=#{chosen_type.inspect}"
           end
         }
       end

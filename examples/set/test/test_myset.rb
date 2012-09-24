@@ -178,7 +178,6 @@ class TC_MySet < Test::Unit::TestCase
     set = MySet[1,2]
 
     set = set.rtc_annotate("MySet<Fixnum or String>")
-
     ret = set.replace('a'..'c')
 
     assert_same(set, ret)

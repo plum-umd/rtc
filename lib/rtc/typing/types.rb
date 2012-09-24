@@ -28,7 +28,8 @@ class Object
         :annotated => false,
         :no_subtype => false,
         :iterators => {},
-        :_type => nil
+        :_type => nil,
+        :proxy_context => []
       }
       if frozen?
         Rtc::GlobalCache.cache[object_id] = to_return
@@ -840,10 +841,14 @@ module Rtc::Types
               replacement_map[t_param.symbol] = TypeVariable.new(t_param.symbol, self, parameters[type_index])
             }
             to_ret = @nominal.get_method(name, which).replace_parameters(replacement_map)
-            to_ret.map {
-              |type|
-              type.type_variables += replace_map.values
-            }
+            if to_ret.is_a?(IntersectionType)
+              to_ret.map {
+                |type|
+                type.type_variables += replacement_map.values
+              }
+            else
+              to_ret.type_variables += replacement_map.values
+            end
             to_ret
           else
             @nominal.type_parameters.each_with_index {
@@ -1554,6 +1559,10 @@ module Rtc::Types
 
       def map
         yield self
+      end
+      
+      def get_type
+        @type
       end
       
       def _to_actual_type
