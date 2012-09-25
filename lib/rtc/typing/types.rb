@@ -136,6 +136,10 @@ module Rtc::Types
     def _to_actual_type
       self
     end
+
+    def is(trait)
+      trait == :terminal
+    end
   end
     # Abstract base class for all types. Takes care of assigning unique ids to
     # each type instance and maintains sets of constraint edges. This class
@@ -152,6 +156,19 @@ module Rtc::Types
         def initialize()
             @id = @@next_id
             @@next_id += 1
+        end
+        
+        def is(trait)
+          self.class.traits.include? trait
+        end
+
+        def self.define_traits(*traits)
+          @traits = Set.new(traits)
+        end
+
+        def self.traits
+          return @traits if defined?(@traits)
+          Set.new
         end
 
         # Return true if +self+ is a subtype of +other+. Implemented in
@@ -786,26 +803,39 @@ module Rtc::Types
         end
         
         def <=(other)
-            case other
-            when ParameterizedType
-                return false unless (@nominal <= other.nominal and
-                                     other.nominal <= @nominal)
-                zipped = @parameters.zip(other.parameters)
-                return false unless zipped.all? do |t, u|
-                    t <= u
+          case other
+          when ParameterizedType
+            return false unless (@nominal <= other.nominal and
+                                 other.nominal <= @nominal)
+            zipped = @parameters.zip(other.parameters)
+            if not @dynamic
+              return false unless zipped.all? do |t, u|
+                # because type binding is done via the subtyping operationg
+                # we can't to t <= u, u <= t as uninstantiate type variables
+                # do not have a meaningful subtype rule
+                if u.is(:variable)
+                  t <= u
+                else
+                  t <= u and u <= t
                 end
-                true
-            when NominalType
-              if other.klass == Object
-                true
-              else
-                false 
               end
-            when TupleType
-                false
             else
-                super(other)
+              return false unless zipped.all? do |t, u|
+                t <= u
+              end
             end
+            true
+          when NominalType
+            if other.klass == Object
+              true
+            else
+              false 
+            end
+          when TupleType
+            false
+          else
+            super(other)
+          end
         end
 
         def hash
@@ -1214,7 +1244,7 @@ module Rtc::Types
     # of two types is the type that supports all of the operations of both
     # types.
     class IntersectionType < Type
-
+      define_traits :composite
         # Return a type representing the intersection of all the types in
         # +types+. Handles some special cases to simplify the resulting type:
         # 1. If +a+ and +b+ are both in +types+ and +a+ <= +b+, only +a+ will
@@ -1307,7 +1337,7 @@ module Rtc::Types
     # A type that is the union of a set of types. Values of a union type may be
     # of the type of any type in the set.
     class UnionType < Type
-
+      define_traits :composite
         # Returns a type representing the union of all the types in +types+.
         # Handles some special cases to simplify the resulting type:
         # 1. If +a+ and +b+ are both in +types+ and +a+ <= +b+, only +b+ will
@@ -1537,9 +1567,25 @@ module Rtc::Types
       
       @@instance = nil
     end
-    
-    class TypeVariable < Type
+
+    class ClosedType < Type
+      define_traits :wrapping
+      def initialize(type)
+        @type = type
+      end
       
+      def <=(other)
+        if other.is(:variable) and other.solving
+          other.add_closed_constraint(self)
+        elsif other.is(:wrapping)
+          other_type = other.get_actual_type
+        end
+        
+      end
+    end
+
+    class TypeVariable < Type
+      define_traits :wrapping, :variable
       attr_reader :solving
       attr_reader :instantiated
       attr_reader :name
@@ -1552,7 +1598,8 @@ module Rtc::Types
         @parent = parent
         super()
       end
-
+      alias solving? solving
+      alias instantiated? instantiated
       def replace_parameters(_t_vars)
         self
       end

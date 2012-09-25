@@ -396,23 +396,14 @@ module Rtc
         args.push({'__rtc_special' => true, 'self_proxy' => self})
       end
 
-#      Rtc::MasterSwitch.turn_on 
-      
-      #      return @object.send method, *args, &block
-      
       begin
         @object.rtc_push_proxy(self)
-#        $invokee_proxy.push(self)
         Rtc::MasterSwitch.turn_on
         r = @object.send method, *args, &block
-#      rescue Rtc::TypeMismatchException => e
-#        raise e, e.message + "\n" + e.backtrace.inspect
-#      rescue Exception => e
-#        raise e, e.message + "\n" + e.backtrace.inspect
       ensure
         Rtc::MasterSwitch.turn_off
         @object.rtc_pop_proxy
-        Rtc::MasterSwitch.turn_off
+        Rtc::MasterSwitch.turn_on
       end
 
       return r
