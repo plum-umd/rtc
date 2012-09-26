@@ -14,9 +14,9 @@ module Rtc::MethodCheck
       when Rtc::Types::ParameterizedType
         return type.nominal.klass == value.class
       when Rtc::Types::UnionType
-        type.any? {
+        type.types.any? {
           |t|
-          self.check_type(value, type)
+          self.check_type(value, t)
         }
       when Rtc::Types::TopType
         return true
