@@ -67,6 +67,13 @@ class Object
     end
   end
   
+  def rtc_is_complex?
+    if self.nil?
+      false
+    end
+    not Rtc::Types::NominalType.of(self.class).type_parameters.empty?
+  end
+  
   protected
   
   def rtc_get_type
@@ -135,6 +142,10 @@ module Rtc::Types
 
     def _to_actual_type
       self
+    end
+
+    def each
+      yield self
     end
 
     def is(trait)
@@ -229,6 +240,19 @@ module Rtc::Types
             t.replace_parameters(type_vars)
           }
         end
+        
+        def has_variables
+          self.each {
+            |t|
+            return true if t.is(:variable) and t.solving?
+            t.has_variables unless t.is(:terminal)
+          }
+          false
+        end
+        
+        def each
+          raise "you must implement this"
+        end
 
         def to_actual_type
           if not defined?(@actual_type)
@@ -283,6 +307,17 @@ module Rtc::Types
           @method_types.each_pair {
             |method_name, method_type|
             new_methods[method_name] = yield method_type
+          }
+        end
+
+        def each
+          @method_types.each_value {
+            |m|
+            yield m
+          }
+          @field_types.each_value {
+            |f|
+            yield f
           }
         end
 
@@ -411,6 +446,13 @@ module Rtc::Types
       
       def inspect
         "#{self.class.name}(#{@id}): #{@ordered_params.inspect}" 
+      end
+
+      def each
+        @ordered_params.each {
+          |p|
+          yield p
+        }
       end
 
       def <=(other)
@@ -789,6 +831,14 @@ module Rtc::Types
             super({},{})
         end
 
+        def each
+          yield @nominal
+          @parameters.each {
+            |p|
+            yield p
+          }
+        end
+
         def has_method?(method)
           @nominal.has_method?(method)
         end
@@ -872,7 +922,7 @@ module Rtc::Types
             }
             to_ret = @nominal.get_method(name, which).replace_parameters(replacement_map)
             if to_ret.is_a?(IntersectionType)
-              to_ret.map {
+              to_ret.each {
                 |type|
                 type.type_variables += replacement_map.values
               }
@@ -934,6 +984,12 @@ module Rtc::Types
                              type_variables,
                              { "mutate" => mutate, "unwrap" => unwrap }
                              )
+        end
+
+        def each
+          yield return_type
+          yield block_type if block_type
+          arg_types.each { |a| yield a }
         end
         
         def instantiate
@@ -1155,6 +1211,9 @@ module Rtc::Types
             31 + type.hash
         end
         
+        def each
+          yield type
+        end
         
         def map
           Vararg.new(yield type)
@@ -1174,6 +1233,10 @@ module Rtc::Types
     # be generated on the +type+ attribute.
     class OptionalArg
         attr_accessor :type
+
+      def each
+        yield type
+      end
 
         def initialize(type)
             @type = type
@@ -1225,6 +1288,10 @@ module Rtc::Types
         symbol.to_s.hash
       end
 
+      def each
+        yield self
+      end
+
       def to_s
         ":#{@symbol}"
       end
@@ -1273,6 +1340,13 @@ module Rtc::Types
             |t|
             yield t
           })
+        end
+
+        def each
+          types.each {
+            |t|
+            yield t
+          }
         end
 
         # The set of all the types intersected in this instance.
@@ -1367,6 +1441,13 @@ module Rtc::Types
             return t0 if types == []
             return types[0] if types.size == 1
             return UnionType.new(types)
+        end
+
+        def each
+          types.each {
+            |t|
+            yield t
+          }
         end
 
         def has_method?(method)
@@ -1465,6 +1546,10 @@ module Rtc::Types
           self
         end
 
+        def each
+          yield self
+        end
+
         # Return true if self is a subtype of other.
         #--
         # TODO(rwsims): Refine this as use cases become clearer.
@@ -1507,6 +1592,10 @@ module Rtc::Types
         return self
       end
 
+      def each
+        yield self
+      end
+
       def ==(other)
         eql?(other)
       end
@@ -1539,6 +1628,10 @@ module Rtc::Types
       def map
         return self
       end
+      
+      def each
+        yield self
+      end
 
       def has_method?(m)
         nil.respond_to?(m)
@@ -1568,22 +1661,6 @@ module Rtc::Types
       @@instance = nil
     end
 
-    class ClosedType < Type
-      define_traits :wrapping
-      def initialize(type)
-        @type = type
-      end
-      
-      def <=(other)
-        if other.is(:variable) and other.solving
-          other.add_closed_constraint(self)
-        elsif other.is(:wrapping)
-          other_type = other.get_actual_type
-        end
-        
-      end
-    end
-
     class TypeVariable < Type
       define_traits :wrapping, :variable
       attr_reader :solving
@@ -1608,6 +1685,10 @@ module Rtc::Types
         yield self
       end
       
+      def each
+        yield self
+      end
+
       def get_type
         @type
       end

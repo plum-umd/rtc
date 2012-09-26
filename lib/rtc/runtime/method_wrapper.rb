@@ -51,7 +51,10 @@ module Rtc
       end
 
       method_type = new_invokee.rtc_type.get_method(@method_name.to_s)
-      
+      #if @method_name == "each" and @class_obj == Array
+      #  puts method_type
+      #end
+
       if method_type.is_a?(Rtc::Types::ProceduralType)
         method_types = [method_type]
       else
@@ -97,11 +100,6 @@ module Rtc
         i += 1
       }
 
-      unless invokee.rtc_type.has_method?(@method_name)
-        raise NoMethodError, invokee.inspect + " has no method " + @method_name.to_s
-      end
-
-
       if blk
         block_proxy = BlockProxy.new(blk, chosen_type.block_type,@method_name,
           invokee, unsolved_type_variables)
@@ -130,8 +128,9 @@ module Rtc
         end
       }
 
-      unless ret_value.rtc_type <= chosen_type.return_type
-        # p ret_value.rtc_type, chosen_type.return_type, @method_name, invokee, chosen_type
+
+      unless Rtc::MethodCheck.check_type(ret_value, chosen_type.return_type)
+        p ret_value.rtc_type, chosen_type.return_type, @method_name, invokee, chosen_type
         
         raise TypeMismatchException, "invalid return type in " + @method_name.to_s
       end
@@ -142,23 +141,6 @@ module Rtc
         ret_proxy = ret_value
       else
         ret_proxy = ret_value.rtc_annotate(chosen_type.return_type.to_actual_type)
-      end
-
-      if ret_value.proxies and not from_proxy and mutate
-        ret_type = ret_value.rtc_type 
-        ret_value.proxies.each {|p|
-          
-          unless ret_type <= p.rtc_type
-            #p ret_value.proxies.map { |_p| _p.rtc_type }
-            raise Rtc::TypeMismatchException, "Return object run-time type #{ret_type.inspect} NOT <= one of the object\'s proxy list types (#{p.rtc_type.inspect})  method=#{@method_name},  invokee=#{invokee.rtc_to_str},   args=#{regular_args.rtc_to_str},   ret=#{ret_value.inspect},  invokee_type=#{invokee.rtc_type.inspect}, this methods type=#{chosen_type.inspect}"
-          end
-        }
-      end
-
-      if mutate
-        unless invokee.rtc_type <= chosen_type.return_type
-          raise Rtc::TypeMismatchException, "type mismatch on return value"
-        end
       end
 
       return ret_proxy
@@ -240,12 +222,15 @@ module Rtc
       arg_type_pairs = args.zip(block_type.arg_types)
       arg_type_pairs.each {
         |value, expected_type|
+        #puts "#{value.rtc_type} #{expected_type}"
         raise Rtc::TypeMismatchException, "block argument mismatch" unless
-          value.rtc_type <= expected_type
+          Rtc::MethodCheck.check_type(value,expected_type)
       }
       
       update_type_variables
       
+      debug = method_name == "each" and class_obj == Array
+
       annotated_args = arg_type_pairs.map {
         |value, type|
         value.rtc_annotate(type.to_actual_type)
@@ -255,7 +240,7 @@ module Rtc
       ret = @proc.call(*annotated_args)
       Rtc::MasterSwitch.turn_off
 
-      raise Rtc::TypeMismatchException, "Block return type mismatch" unless ret.rtc_type <= block_type.return_type
+      raise Rtc::TypeMismatchException, "Block return type mismatch" unless Rtc::MethodCheck.check_type(ret, block_type.return_type)
       
       update_type_variables
       if ret === false or ret === nil or ret.is_a?(Rtc::Types::Type)

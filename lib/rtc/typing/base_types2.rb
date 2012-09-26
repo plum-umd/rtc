@@ -32,6 +32,7 @@ class Array
   typesig("map<u>: () {(t) ->  u } -> Array<u>")
  # typesig("'+': (Array<t>) -> Array<t>")
   typesig("push: (t) -> Array<t>", {'mutate'=>true})
+  typesig("each: () { (t) -> .? } -> Array<t>")
 end
 
 #rtc_typesig("class Set<t>")

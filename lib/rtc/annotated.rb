@@ -116,9 +116,9 @@ class Object
     end
 
     if self.is_proxy_object?
-      if not self.object.rtc_type <= annotated_type
-        raise Rtc::AnnotateException, "object run-time type " + self.object.rtc_type.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s        
-      end
+      #if not self.object.rtc_type <= annotated_type
+      #  raise Rtc::AnnotateException, "object run-time type " + self.object.rtc_type.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s        
+      #end
 
       r = Rtc::ProxyObject.new(@object, annotated_type)        
     else
@@ -160,9 +160,9 @@ class Object
 
       r = Rtc::ProxyObject.new(@object, annotated_type)        
     else
-      if not self.rtc_type <= annotated_type 
-        raise Rtc::AnnotateException, "object type " + self.rtc_type.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s
-      end
+      #if not self.rtc_type <= annotated_type 
+      #  raise Rtc::AnnotateException, "object type " + self.rtc_type.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s
+      #end
 
       r = Rtc::ProxyObject.new(self, annotated_type)        
     end
