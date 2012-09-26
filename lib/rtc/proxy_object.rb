@@ -392,9 +392,9 @@ module Rtc
         raise NoMethodError, "#{self.rtc_to_str} has no method #{method}"
       end
 
-      if @object.class.get_typesig_info(method)
-        args.push({'__rtc_special' => true, 'self_proxy' => self})
-      end
+      #if @object.class.get_typesig_info(method)
+      #  args.push({'__rtc_special' => true, 'self_proxy' => self})
+      #end
 
       begin
         @object.rtc_push_proxy(self)

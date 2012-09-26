@@ -14,13 +14,126 @@ module Rtc
   class NoMethodException < StandardError; end
 
   class MethodWrapper
-    class NoArgument; end
+    @call_template = <<METHOD_TEMPLATE
+    alias __rtc_%{method_name} %{method_name}
+    def %{method_name}(*regular_args, &blk)
+      if status = Rtc::MasterSwitch.is_on? and 
+           new_invokee = self.rtc_get_proxy
+        Rtc::MasterSwitch.turn_off
+        begin
+          method_type = new_invokee.rtc_type.get_method("%{method_name}".to_s)
+          
+          if method_type.is_a?(Rtc::Types::ProceduralType)
+            method_types = [method_type]
+          else
+            method_types = method_type.types.to_a
+          end
+          
+          chosen_type = Rtc::MethodCheck.check_args(method_types, "%{method_name}", regular_args,  (not blk.nil?), self.class)
+          
+          unwrap_arg_pos = chosen_type.unwrap
+          mutate = chosen_type.mutate
+          unsolved_type_variables = []
+          chosen_type.type_variables.each {
+            |tvar|
+            if tvar.solvable?
+              tvar.solve
+            else
+              unsolved_type_variables << tvar
+            end
+          }
+          
+
+          i = 0
+          chosen_type.arg_types.each { |arg_type|
+            
+            if arg_type.instance_of?(Rtc::Types::ProceduralType)
+              regular_args[i] = Rtc::BlockProxy.new(regular_args[i], arg_type, "%{method_name}", self,
+                                               unsolved_type_variables)
+            else
+              if unwrap_arg_pos.include?(i)
+                if regular_args[i].is_proxy_object?
+                  regular_args[i] = regular_args[i].object
+                end
+              else
+                regular_args[i] = regular_args[i].rtc_annotate(arg_type.to_actual_type)
+              end
+            end
+            
+            i += 1
+          }
+
+          if blk
+            block_proxy = Rtc::BlockProxy.new(blk, chosen_type.block_type, "%{method_name}",
+                                         self, unsolved_type_variables)
+            wrapped_block = Rtc::MethodWrapper.wrap_block(block_proxy)
+            Rtc::MasterSwitch.turn_on
+            ret_value = __rtc_%{method_name}(*regular_args, &wrapped_block)
+            Rtc::MasterSwitch.turn_off
+          else
+            Rtc::MasterSwitch.turn_on
+            ret_value = __rtc_%{method_name}(*regular_args)
+            Rtc::MasterSwitch.turn_off
+          end
+          
+          trailing_tvar = nil
+          
+          unsolved_type_variables.each {
+            |tvar|
+            if tvar.solvable? 
+              tvar.solve
+              # this type variable was solved in a block
+            elsif tvar.instantiated
+              next
+            else
+              raise "Invalid tsig" unless trailing_tvar.nil?
+              trailing_tvar = tvar
+            end
+          }
+
+
+          unless Rtc::MethodCheck.check_type(ret_value, chosen_type.return_type)
+            p ret_value.rtc_type, chosen_type.return_type, "%{method_name}", self, chosen_type
+            
+            raise Rtc::TypeMismatchException, "invalid return type in %{method_name}"
+          end
+          
+          trailing_var.instantiate unless trailing_tvar.nil?
+          if ret_value === false || ret_value === nil ||
+              ret_value.is_a?(Rtc::Types::Type)
+            ret_proxy = ret_value
+          else
+            ret_proxy = ret_value.rtc_annotate(chosen_type.return_type.to_actual_type)
+          end
+          
+          return ret_proxy
+        ensure
+          Rtc::MasterSwitch.turn_off
+        end
+        
+      else
+        if blk
+          __rtc_%{method_name}(*regular_args, &blk)
+        else
+          __rtc_%{method_name}(*regular_args)
+        end
+      end
+    end
+METHOD_TEMPLATE
     def self.make_wrapper(class_obj, method_name)
       return nil if Rtc::Disabled
-      MethodWrapper.new(class_obj, method_name)
+      #      MethodWrapper.new(class_obj, method_name)
+      if method_name =~ /[-+!\/*%|&]|<<|>>|\[\]/
+        MethodWrapper.new(class_obj, method_name)
+      else
+        #puts @call_template % { :method_name => method_name.to_s }
+        class_obj.module_eval(@call_template % { :method_name => method_name.to_s },
+                              "method_wrapper.rb", 17)
+        return true
+      end
     end
 
-    def wrap_block(x)
+    def self.wrap_block(x)
       Proc.new {|v| x.call(v)}
     end
 
@@ -51,16 +164,13 @@ module Rtc
       end
 
       method_type = new_invokee.rtc_type.get_method(@method_name.to_s)
-      #if @method_name == "each" and @class_obj == Array
-      #  puts method_type
-      #end
 
       if method_type.is_a?(Rtc::Types::ProceduralType)
         method_types = [method_type]
       else
         method_types = method_type.types.to_a
       end
-            
+
       chosen_type = Rtc::MethodCheck.check_args(method_types, @method_name, regular_args,  (not blk.nil?), @class_obj)
       
       unwrap_arg_pos = chosen_type.unwrap
