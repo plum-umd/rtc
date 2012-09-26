@@ -829,6 +829,7 @@ module Rtc::Types
             @_method_cache = {}
             @dynamic = dynamic
             super({},{})
+          @method_cache = {}
         end
 
         def each
@@ -916,6 +917,7 @@ module Rtc::Types
         def get_method(name, which = nil)
           replacement_map = {}
           if dynamic
+            # no caching here folks
             @nominal.type_parameters.each_with_index {
               |t_param, type_index|
               replacement_map[t_param.symbol] = TypeVariable.new(t_param.symbol, self, parameters[type_index])
@@ -931,11 +933,27 @@ module Rtc::Types
             end
             to_ret
           else
+            if @method_cache[name]
+              return @method_cache[name]
+            end
             @nominal.type_parameters.each_with_index {
               |t_param, type_index|
               replacement_map[t_param.symbol] = parameters[type_index]
             }
-            @nominal.get_method(name, which).replace_parameters(replacement_map)
+            to_ret = @nominal.get_method(name, which).replace_parameters(replacement_map)
+            has_tvars = 
+              if to_ret.is(:composite)
+                to_ret.types.any? {
+                |type|
+                not type.type_variables.empty?
+              }
+              else
+                not to_ret.type_variables.empty?
+              end
+            if not has_tvars
+              @method_cache[name] = to_ret
+            end
+            return to_ret
           end
         end
         

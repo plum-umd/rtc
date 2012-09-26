@@ -32,27 +32,29 @@ module Rtc::MethodCheck
     method_types.each { |mt|
       mt.type_variables.each { |tv| tv.start_solve }
     }
-    
-    possible_types = Set.new(method_types)
-    debug = method_name == "each" and class_obj == Array
+    possible_types = []
     for m in method_types
       expected_arg_types = m.arg_types
-
       if expected_arg_types.size != args.size
-        possible_types.delete(m)
         next
       end
       #TODO(jtoman): rest and optional args
+      valid = true
       args.zip(expected_arg_types).each {|arg, expected_arg_type|
-        b = true
         next if expected_arg_type.instance_of?(Rtc::Types::ProceduralType)
-        possible_types.delete(m) unless self.check_type(arg,expected_arg_type)
+        if not self.check_type(arg,expected_arg_type)
+          valid = false
+          break
+        end
       }
+      if valid
+        possible_types.push m
+      end
     end
 
     if possible_types.size > 1
       possible_types2 = Set.new
-
+      
       if has_block
         possible_types.each {|t|
           possible_types2.add(t) if t.block_type 
@@ -62,7 +64,6 @@ module Rtc::MethodCheck
           possible_types2.add(t) if t.block_type == nil
         }
       end
-
       if possible_types2.size != 1
         raise Rtc::TypeMismatchException, "cannot infer type in intersecton type for method #{method_name}, whose types are #{method_types.inspect}"
       else
@@ -72,9 +73,11 @@ module Rtc::MethodCheck
       arg_types = args.map {|a|
         a.rtc_type 
       }
-
+      
       raise Rtc::TypeMismatchException, "In method #{method_name}, annotated types are #{method_types.inspect}, but actual arguments are #{args.rtc_to_str}, with argument types #{arg_types.inspect}" +
-          " for class #{class_obj}"
+        " for class #{class_obj}"
+    elsif possible_types.size == 1
+      correct_type = possible_types[0]
     end
 
     correct_type = possible_types.to_a[0]

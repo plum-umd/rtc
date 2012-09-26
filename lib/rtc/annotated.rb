@@ -68,17 +68,6 @@ class Object
     end
   end
 
-  def add_type2(t)
-    if @proxy_types
-      found = @proxy_types.any? {|pt| t <= pt and pt <= t}
-      @proxy_types.add(t) if found == false
-    else
-      @proxy_types = Set.new([t])
-    end
-
-    self
-  end
-
   def proxy_types_to_s
     if @proxy_types
       return @proxy_types.to_a.map {|i| i.to_s} 
@@ -128,13 +117,6 @@ class Object
 
       r = Rtc::ProxyObject.new(self, annotated_type)        
     end
-
-    if self.proxies == nil
-      self.proxies = Set.new([r])
-    else
-      self.proxies.add(r)
-    end
-
     Rtc::MasterSwitch.turn_on if status == true
     r
   end
@@ -166,14 +148,6 @@ class Object
 
       r = Rtc::ProxyObject.new(self, annotated_type)        
     end
-
-
-    if self.proxies == nil
-      self.proxies = Set.new([r])
-    else
-      self.proxies.add(r)
-    end
-
     Rtc::MasterSwitch.turn_on if status == true
     r
   end
