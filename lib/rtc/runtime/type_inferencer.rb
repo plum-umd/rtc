@@ -2,8 +2,6 @@
 module Rtc
   class TypeInferencer
     def self.infer_type(it)
-      puts "type inferencer called"
-      puts caller
         curr_type = Set.new
         has_parameterized_type = false
         it.each {
