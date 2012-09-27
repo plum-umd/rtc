@@ -18,7 +18,7 @@ module Rtc
     alias __rtc_%{method_name} %{method_name}
     def %{method_name}(*regular_args, &blk)
       if status = Rtc::MasterSwitch.is_on? and 
-           new_invokee = self.rtc_get_proxy
+          new_invokee = self.rtc_get_proxy
         Rtc::MasterSwitch.turn_off
         begin
           method_type = new_invokee.rtc_type.get_method("%{method_name}".to_s)
@@ -29,43 +29,18 @@ module Rtc
             method_types = method_type.types.to_a
           end
           
-          chosen_type = Rtc::MethodCheck.check_args(method_types, "%{method_name}", regular_args,  (not blk.nil?), self.class)
+          chosen_type, annotated_args, unsolved_tvars = Rtc::MethodCheck.check_args(method_types, "%{method_name}", regular_args,  (not blk.nil?), self.class)
           
           unwrap_arg_pos = chosen_type.unwrap
           mutate = chosen_type.mutate
-          unsolved_type_variables = []
-          chosen_type.type_variables.each {
-            |tvar|
-            if tvar.solvable?
-              tvar.solve
-            else
-              unsolved_type_variables << tvar
-            end
-          }
-          
 
-          i = 0
-          chosen_type.arg_types.each { |arg_type|
-            
-            if arg_type.instance_of?(Rtc::Types::ProceduralType)
-              regular_args[i] = Rtc::BlockProxy.new(regular_args[i], arg_type, "%{method_name}", self,
-                                               unsolved_type_variables)
-            else
-              if unwrap_arg_pos.include?(i)
-                if regular_args[i].is_proxy_object?
-                  regular_args[i] = regular_args[i].object
-                end
-              else
-                regular_args[i] = regular_args[i].rtc_annotate(arg_type.to_actual_type)
-              end
-            end
-            
-            i += 1
-          }
+          for i in unwrap_arg_pos
+            annotated_args[i] = (annotated_args[i].is_proxy_object?) ? annotated_args[i].object : annotated_args[i]
+          end
 
           if blk
             block_proxy = Rtc::BlockProxy.new(blk, chosen_type.block_type, "%{method_name}",
-                                         self, unsolved_type_variables)
+                                         self, unsolved_tvars)
             wrapped_block = Rtc::MethodWrapper.wrap_block(block_proxy)
             Rtc::MasterSwitch.turn_on
             ret_value = __rtc_%{method_name}(*regular_args, &wrapped_block)
@@ -76,29 +51,12 @@ module Rtc
             Rtc::MasterSwitch.turn_off
           end
           
-          trailing_tvar = nil
-          
-          unsolved_type_variables.each {
-            |tvar|
-            if tvar.solvable? 
-              tvar.solve
-              # this type variable was solved in a block
-            elsif tvar.instantiated
-              next
-            else
-              raise "Invalid tsig" unless trailing_tvar.nil?
-              trailing_tvar = tvar
-            end
-          }
-
-
-          unless Rtc::MethodCheck.check_type(ret_value, chosen_type.return_type)
+          unless Rtc::MethodCheck.check_return(ret_value, chosen_type.return_type)
             p ret_value.rtc_type, chosen_type.return_type, "%{method_name}", self, chosen_type
             
             raise Rtc::TypeMismatchException, "invalid return type in %{method_name}"
           end
           
-          trailing_var.instantiate unless trailing_tvar.nil?
           if ret_value === false || ret_value === nil ||
               ret_value.is_a?(Rtc::Types::Type)
             ret_proxy = ret_value
@@ -319,40 +277,26 @@ METHOD_TEMPLATE
       @method_name = method_name
       @class_obj = class_obj
       @unsolved_type_variables = unsolved_tvars
-      @needs_solving = true
     end
 
     def call(*args)
       Rtc::MasterSwitch.turn_off
-      #arg = args[0]
-
-      #TODO(jtoman): refactor
-      raise Rtc::TypeMismatchException, "Arg count different in block" unless 
-        args.length == block_type.arg_types.length
-      arg_type_pairs = args.zip(block_type.arg_types)
-      arg_type_pairs.each {
-        |value, expected_type|
-        #puts "#{value.rtc_type} #{expected_type}"
-        raise Rtc::TypeMismatchException, "block argument mismatch" unless
-          Rtc::MethodCheck.check_type(value,expected_type)
-      }
       
-      update_type_variables
-      
-      debug = method_name == "each" and class_obj == Array
-
-      annotated_args = arg_type_pairs.map {
-        |value, type|
-        value.rtc_annotate(type.to_actual_type)
-      }
+      #TODO(jtoman): arg number check 
+      check_result = Rtc::MethodCheck.check_args(@block_type, args,
+                              @unsolved_type_variables)
+      if not annotated_args
+        raise Rtc::TypeMismatchException "Block arg failed!"
+      end
+      annotated_args, @unsolved_type_variables = annotated_args
 
       Rtc::MasterSwitch.turn_on
       ret = @proc.call(*annotated_args)
       Rtc::MasterSwitch.turn_off
 
-      raise Rtc::TypeMismatchException, "Block return type mismatch" unless Rtc::MethodCheck.check_type(ret, block_type.return_type)
-      
-      update_type_variables
+      return_valid = Rtc::MethodCheck.check_return(@block_type, ret, @unsolved_type_variables)
+
+      raise Rtc::TypeMismatchException, "Block return type mismatch" unless return_valid
       if ret === false or ret === nil or ret.is_a?(Rtc::Types::Type)
         ret
       else
@@ -360,22 +304,5 @@ METHOD_TEMPLATE
       end
     end
     
-    private
-    
-    def update_type_variables
-      if @needs_solving
-        @needs_solving = false
-        new_unsolved = []
-        @unsolved_type_variables.each { |utv|
-          if utv.solvable?
-            utv.solve
-          else
-            @needs_solving = true
-            new_unsolved << utv
-          end
-        }
-        @unsolved_type_variables = new_unsolved
-      end
-    end
   end
 end
