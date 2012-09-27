@@ -16,6 +16,7 @@ class Array
   typesig("'[]' : (Range) -> Array<t>", {'unwrap'=>[0]})
   typesig("'[]' : (Fixnum, Fixnum) -> Array<t>")
   typesig("'[]' : (Fixnum) -> t", {'unwrap'=>[0]})
+  typesig("'[]' : (Float) -> t", {'unwrap'=>[0]})
 #  typesig("zip<u> : (Array<u>) -> Array<Array<u or t> >")
 
 
