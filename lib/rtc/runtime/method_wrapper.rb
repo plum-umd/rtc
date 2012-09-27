@@ -108,7 +108,7 @@ module Rtc
           
           return ret_proxy
         ensure
-          Rtc::MasterSwitch.turn_off
+          Rtc::MasterSwitch.turn_on
         end
         
       else
