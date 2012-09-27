@@ -105,9 +105,15 @@ class Object
           ], true)
       else
           #user defined parameterized classes
+        iterators = class_obj.klass.rtc_meta[:iterators]
         tv = class_obj.type_parameters.map {
           |param|
-          Rtc::TypeInferencer.infer_type(self.send(class_obj.klass.rtc_meta[:iterators][param.symbol]))
+          if iterators[param.symbol].is_a?(Proc)
+            enum = iterators[param.symbol][self]
+          else
+            enum = self.send(iterators[param.symbol])
+          end
+          Rtc::TypeInferencer.infer_type(enum)
         }
 
         Rtc::Types::ParameterizedType.new(class_obj, tv, true)
@@ -415,7 +421,7 @@ module Rtc::Types
             return false unless left.size == right.size
             left.each_pair do |sym, left_type|
                 return false unless right.has_key?(sym)
-                right_type = right[sym]
+                 right_type = right[sym]
                 return false unless right_type == left_type
             end
         end
@@ -470,33 +476,8 @@ module Rtc::Types
             end
 
             true
-          when ParameterizedType
-            return false if other.nominal.klass != Array
-
-            other_parameters = other.parameters[0].wrapped_type
-
-            self.ordered_params.all? do |s|
-              s <= other_parameters
-            end
-          when UnionType
-            other.types.any? do |a|
-              self <= a
-            end
-          when IntersectionType
-            other.types.any? do |a|
-              self <= a
-            end
-          when TypeVariable
-            if other.dynamic
-              true
-            else
-              typ = other.wrapped_type
-              self <= typ
-            end
-          when TopType
-            true
-          else
-            false
+        else
+          super
         end
       end
 
@@ -609,25 +590,6 @@ module Rtc::Types
               super(other)
             else
               super(other)
-            end
-        end
-
-        def le_poly(other, h)
-            case other
-            when ParameterizedType
-              false
-            when NominalType
-                return true if other.klass.name == @klass.name
-                other_class = other.klass
-                it = InheritanceChainIterator.new(@klass)
-                #TODO(jtoman): memoize this lookup for fast access?
-
-                while (it_class = it.next)
-                  return true if other_class == it_class 
-                end
-                return false
-            else
-              super(other, h)
             end
         end
 
@@ -1473,32 +1435,6 @@ module Rtc::Types
         def has_method?(method)
           @types.all? {|t| t.has_method?(method)}
         end
-        
-        def le_poly(other, h)
-          if other.has_parameterized
-            if other.instance_of?(TypeParameter)
-              if h.keys.include?(other.symbol)
-                if h[other.symbol].instance_of?(UnionType)
-                  h[other.symbol] = UnionType.of(h[other.symbol].types.to_a + [self])
-                else
-                  h[other.symbol] = UnionType.of([h[other.symbol], self])
-                end
-              else
-                h[other.symbol] = self
-              end
-
-              return true
-            elsif other.instance_of?(UnionType)
-              @types.all? do |t|
-                t.le_poly(other, h)
-              end
-            else
-              raise Exception, "NOT IMPLEMENTED 2"
-            end
-          else
-            self.le_poly(other, h) 
-          end
-        end
 
         def map
           UnionType.of(types.map { |t| yield t })
@@ -1667,10 +1603,6 @@ module Rtc::Types
 
       def <=(other)
         # eql?(other)
-        true
-      end
-
-      def le_poly(other, h)
         true
       end
 
