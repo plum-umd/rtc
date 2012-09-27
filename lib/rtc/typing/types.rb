@@ -116,6 +116,12 @@ class Object
   end
 end
 
+class Module
+  def rtc_get_type
+    return Rtc::Types::NominalType.of(class << self; self; end)
+  end
+end
+
 class Class
   def rtc_instance_typeof(name, include_super = true)
     my_type = Rtc::Types::NominalType.of(self)
@@ -125,10 +131,6 @@ class Class
     else
       my_type.get_method(name, include_super ? nil : self)
     end
-  end
-  
-  def rtc_get_type
-    return Rtc::Types::NominalType.of(class << self; self; end)
   end
 end
 

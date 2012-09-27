@@ -25,47 +25,8 @@ class Object
   attr_reader :proxies
   attr_writer :proxies
 
-  @@class_info = {}
-
   def rtc_to_str
     self.to_s
-  end
-
-  def self.add_to_typesigs(id, type, mutate, unwrap)
-    if not @@class_info.keys.include?(self)
-      @@class_info[self] = {}
-      @@class_info[self]['typesigs'] = {}
-    end
-
-    ts = TypeSigInfo.new(type, mutate, unwrap)
-
-    if @@class_info[self]['typesigs'].keys.include?(id)
-      @@class_info[self]['typesigs'][id].push(ts)
-    else
-      @@class_info[self]['typesigs'][id] = [ts]
-    end
-  end
-
-  def self.get_typesig_info(id)
-    id = id.to_s
-    return nil if not @@class_info.keys.include?(self)
-    return nil if not @@class_info[self]['typesigs'].include?(id)
-    @@class_info[self]['typesigs'][id]
-  end
-
-  def self.get_class_parameters
-    params = Rtc::ClassModifier.get_class_parameters
-    params[self]
-  end
-
-  def add_annotated_method(id, type)
-    if @annotated_methods
-      # FIXME: should this be intersection type
-      @annotated_methods[m] = Rtc::Types::ProceduralType.new(ret_type, arg_types, blk_type)
-    else
-      @annotated_methods = {}
-      @annotated_methods[m] = Rtc::Types::ProceduralType.new(ret_type, arg_types, blk_type)
-    end
   end
 
   def proxy_types_to_s
@@ -142,7 +103,7 @@ class Object
 
       r = Rtc::ProxyObject.new(@object, annotated_type)        
     else
-      #if not self.rtc_type <= annotated_type 
+      #if $RTC_STRICT and not self.rtc_type <= annotated_type 
       #  raise Rtc::AnnotateException, "object type " + self.rtc_type.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s
       #end
 
@@ -175,11 +136,9 @@ module Rtc::Annotated
         else
           unwrap = []
         end
-
+ 
         signatures = @annot_parser.scan_str(string_signature)
         return unless signatures
-
-        signatures.each {|s| self.add_to_typesigs(s.id.to_s, s.type, mutate, unwrap)}
 
         signatures.each {
           |s|
@@ -311,6 +270,14 @@ module Rtc::Annotated
       Rtc::Types::NominalType.of(self).type_parameters = t_parameters
       define_iterators(iterators)
     end
+
+    def rtc_typed
+      if defined? @class_proxy
+        @class_proxy
+      end
+      @class_proxy = Rtc::ProxyObject.new(self, self.rtc_type);
+    end
+      
 
     def self.extended(extendee)
       if Rtc::ClassModifier.deferred?(extendee)
