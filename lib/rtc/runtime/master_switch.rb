@@ -20,6 +20,11 @@ module Rtc
         def self.turn_on(); @@master_switch = true end
         def self.turn_off(); @@master_switch = false end
         def self.set_to(state); @@master_switch = state end
+        def self.off_if_on(); 
+          return false if not @@master_switch
+          @@master_switch = false
+          true
+        end
     end
 
     def self.turn_switch_on(); MasterSwitch.turn_on() end
