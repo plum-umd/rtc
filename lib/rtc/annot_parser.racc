@@ -32,6 +32,8 @@ token T_LESS T_GREATER T_COMMA
 token T_LBRACKET T_RBRACKET
 token T_LBRACE T_RBRACE
 
+token T_TRUE T_BOOL T_FALSE
+
 token T_SUBTYPE
 
 token T_STRING
@@ -223,6 +225,18 @@ rule
     | T_BOTTOM { 
     	result = Rtc::Types::BottomType.instance
       }
+    | T_TRUE {
+        result = Rtc::Types::NominalType.of(TrueClass)
+      }
+    | T_FALSE {
+        result = Rtc::Types::NominalType.of(FalseClass)
+      }
+    | T_BOOL {
+        result = Rtc::Types::UnionType.of([
+          Rtc::Types::NominalType.of(FalseClass),
+          Rtc::Types::NominalType.of(TrueClass)
+        ])
+      } 
     | T_DOT T_QUESTION { 
         result = Rtc::Types::TopType.instance
       }
