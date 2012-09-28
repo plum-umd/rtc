@@ -206,6 +206,10 @@ module Rtc::Types
           false
         end
 
+        def is_tuple
+          false
+        end
+
         def ==(other)  # :nodoc:
             eql?(other)
         end
@@ -435,6 +439,17 @@ module Rtc::Types
         @ordered_params = arr
         @size = arr.size
         super()
+      end
+
+      def map
+        TupleType.new(ordered_params.map {
+                        |p|
+                        yield p
+                      })
+      end
+
+      def is_tuple
+        true
       end
 
       def to_s
@@ -1684,6 +1699,11 @@ module Rtc::Types
         else
           name
         end
+      end
+
+      def is_tuple
+        return @type.is_tuple if instantiated?
+        false
       end
       
       def <=(other)

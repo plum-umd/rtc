@@ -411,4 +411,72 @@ module Rtc
       return r
     end
   end
+
+  class TupleProxy < ProxyObject
+    def initialize(object, proxy_type)
+      raise "Error, type must be a tuple type!" unless proxy_type.is_a?(Rtc::Types::TupleType)
+      super(object, proxy_type)
+    end
+    
+    def [](*args)
+      if args.length == 2
+        arg = args[0]..args[1]
+      elsif args.length == 1
+        arg = args[0]
+      end
+      if arg.is_a?(Numeric)
+        type = proxy_type.ordered_params[arg]
+        return nil unless type
+        return object[arg].rtc_annotate(type)
+      elsif arg.is_a?(Range)
+        types = proxy_type.ordered_params[arg]
+        return nil unless types
+        return [] if types.empty?
+        values = object[arg]
+        return values.rtc_annotate(Rtc::Types::TupleType.new(types))
+      else
+        raise "snake! you can't do that! you'll create a type paradox!"
+      end
+    end
+
+    def []=(*args)
+      if args.length == 2 and args[0].is_a?(Numeric)
+        index = args[0]
+        type = proxy_type.ordered_params[index]
+        raise "bad index!" unless type
+        raise Rtc::TypeMismatchException, "bad tuple value" unless Rtc::MethodCheck.check_type(args[1], type)
+        object[index] = args[1]
+      else
+        if args[0].is_a?(Range)
+          range = args[0]
+          element_index = 1
+        else
+          range = args[0]..args[1]
+          element_index = 2
+        end
+        types = proxy_type.ordered_params[range]
+        raise "bad index!" if types.nil? or types.empty?
+        elements = args[element_index]
+        unless elements.is_a?(Array)
+          elements = [elements]
+        end
+        raise "cannot delete elements from a tuple" unless elements.size == types.size
+        i = 0
+        len = elements.length
+        while i < len
+          raise Rtc::TypeMismatchException, "tuple type mismatch" unless Rtc::MethodCheck.check_type(elements[i], types[i])
+          i += 1
+        end
+        object[range] = elements
+        args[element_index]
+      end
+    end
+    def to_ary
+      object.zip(proxy_type.ordered_params).map {
+        |t,v|
+        t.rtc_annotate(v)
+      }
+    end
+  end
 end
+

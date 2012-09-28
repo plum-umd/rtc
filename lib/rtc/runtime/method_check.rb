@@ -3,14 +3,22 @@ require 'rtc/runtime/master_switch.rb'
 require 'rtc/options'
 
 module Rtc::MethodCheck
-  
   def self.check_type(value, type, check_variables = true)
-    if $RTC_STRICT
-      return value.rtc_type <= type
-    end
     if value.is_proxy_object?
       value.rtc_type <= type
-    elsif value.rtc_is_complex?
+    elsif type.is_tuple
+      return false unless value.is_a?(Array) and value.size == type.ordered_params.size
+      i = 0
+      len = value.size
+      ordered_params = type.ordered_params
+      while i < len
+        return false unless self.check_type(value[i], ordered_params[i], check_variables)
+        i += 1
+      end
+      return true
+    elsif $RTC_STRICT or (not value.rtc_is_complex?)
+        return value.rtc_type <= type
+    else
       if type.has_variables and check_variables
         return value.rtc_type <= type
       end
@@ -27,8 +35,6 @@ module Rtc::MethodCheck
       else
         return false
       end
-    else
-      return value.rtc_type <= type
     end
   end
   

@@ -68,17 +68,23 @@ class Object
     end
 
     if self.is_proxy_object?
-      if $RTC_STRICT and not self.object.rtc_type <= annotated_type
+      unless Rtc::MethodCheck.check_type(self.object, annotated_type)
         raise Rtc::AnnotateException, "object run-time type " + self.object.rtc_type.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s        
       end
-
-      r = Rtc::ProxyObject.new(@object, annotated_type)        
+      if annotated_type.is_tuple
+        r = Rtc::TupleProxy.new(@object, annotated_type)
+      else
+        r = Rtc::ProxyObject.new(@object, annotated_type)
+      end
     else
       unless Rtc::MethodCheck.check_type(self, annotated_type)
         raise Rtc::AnnotateException, "object type " + self.rtc_type.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s        
       end
-
-      r = Rtc::ProxyObject.new(self, annotated_type)        
+      if annotated_type.is_tuple
+        r = Rtc::TupleProxy.new(self, annotated_type)
+      else
+        r = Rtc::ProxyObject.new(self, annotated_type)        
+      end
     end
     Rtc::MasterSwitch.turn_on if status == true
     r
@@ -104,14 +110,20 @@ class Object
       if not self.proxy_type <= annotated_type
         raise Rtc::AnnotateException, "object proxy type " + self.proxy_type.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s        
       end
-
-      r = Rtc::ProxyObject.new(@object, annotated_type)        
+      if annotated_type.is_tuple
+        r = Rtc::ProxyObject.new(@object, annotated_type)
+      else
+        r = Rtc::ProxyObject.new(@object, annotated_type)        
+      end
     else
       unless Rtc::MethodCheck.check_type(self, annotated_type)
         raise Rtc::AnnotateException, "object type " + self.rtc_type.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s
       end
-      
-      r = Rtc::ProxyObject.new(self, annotated_type)        
+      if annotated_type.is_tuple
+        r = Rtc::TupleProxy.new(self, annotated_type)
+      else
+        r = Rtc::ProxyObject.new(self, annotated_type)
+      end
     end
     Rtc::MasterSwitch.turn_on if status == true
     r

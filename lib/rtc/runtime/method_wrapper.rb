@@ -30,6 +30,7 @@ module Rtc
           end
         end
         begin
+          $CHECK_COUNT+=1
           #puts "%{method_name}"
           #flag = false
           #debug = "%{method_name}" == "zip"
@@ -192,6 +193,7 @@ METHOD_TEMPLATE
     end
 
     def call(*args)
+      $CHECK_COUNT+=1
       args = Rtc::NativeArray.new(args)
       Rtc::MasterSwitch.turn_off
       check_result = Rtc::MethodCheck.check_args(@block_type, args,

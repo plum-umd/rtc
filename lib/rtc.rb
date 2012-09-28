@@ -13,6 +13,7 @@ require 'rtc/options'
 require 'rtc/runtime/class_modifier'
 
 $RTC_STRICT = false
+$CHECK_COUNT = 0
 
 def rtc_annotated(*t_params)
   extend Rtc::Annotated
