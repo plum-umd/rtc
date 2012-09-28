@@ -4,6 +4,9 @@ require 'rtc/options'
 module Rtc::MethodCheck
   
   def self.check_type(value, type, check_variables = true)
+    if $RTC_STRICT
+      return value.rtc_type <= type
+    end
     if value.is_proxy_object?
       value.rtc_type <= type
     elsif value.rtc_is_complex?
