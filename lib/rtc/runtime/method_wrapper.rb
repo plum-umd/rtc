@@ -69,7 +69,12 @@ module Rtc
             ret_value = %{mangled_name}(*annotated_args)
             Rtc::MasterSwitch.turn_off
           end
-          #puts "DEBUG: got out of native" if debug
+          
+          unsolved_tvars.each {
+            |t|
+            t.to_actual_type
+          }
+          
           unless Rtc::MethodCheck.check_return(chosen_type, ret_value, unsolved_tvars)
             p ret_value.rtc_type, chosen_type.return_type, "%{method_name}", self, chosen_type
             

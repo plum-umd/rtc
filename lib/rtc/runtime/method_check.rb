@@ -26,10 +26,21 @@ module Rtc::MethodCheck
       when Rtc::Types::ParameterizedType
         return type.nominal.klass == value.class
       when Rtc::Types::UnionType
-        type.types.any? {
-          |t|
-          self.check_type(value, t, check_variables)
-        }
+        if type.has_variables
+          solution_found = false
+          for t in type.types
+            if self.check_type(value, t, check_variables)
+              raise Rtc::AmbiguousUnionException, "Ambiguous union detected" if solution_found
+              solution_found
+            end
+          end
+          solution_found
+        else
+          type.types.any? {
+            |t|
+            self.check_type(value, t, check_variables)
+          }
+        end
       when Rtc::Types::TopType
         return true
       else

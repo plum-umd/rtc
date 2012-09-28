@@ -180,14 +180,24 @@ module Rtc::Types
         def <=(other)
             case other
             when UnionType
-              #TODO(jtoman): handle ambiguous unions
-              other.types.any? do |a|
+              if other.has_variables
+                solution_found = false
+                for i in other.types
+                  if self <= i
+                    raise Rtc::AmbiguousUnionException, "Ambiguous union detected" if solution_found
+                    solution_found = true
+                  end
+                end
+                solution_found
+              else
+                other.types.any? do |a|
                 self <= a
+              end
               end
             when IntersectionType
               others.types.any? do |a|
-                self <= a
-              end
+              self <= a
+            end
             when TypeVariable
               return self <= other.get_type if other.instantiated
               return false unless other.solving             
@@ -469,22 +479,22 @@ module Rtc::Types
 
       def <=(other)
         case other
-          when TupleType
-            return false unless self.size == other.size
-
-            i = 0
-
-            for t in self.ordered_params
-              return false if not t <= other.ordered_params[i]
-              i += 1
-            end
-
-            true
+        when TupleType
+          return false unless self.size == other.size
+          
+          i = 0
+          
+          for t in self.ordered_params
+            return false if not t <= other.ordered_params[i]
+            i += 1
+          end
+          
+          true
         else
           super
         end
       end
-
+      
       def hash
         builder = Rtc::HashBuilder.new(107, 157)
         builder.include("tuple")
@@ -1662,8 +1672,12 @@ module Rtc::Types
       def _to_actual_type
         if @instantiated
           @type
+        elsif @solving
+          @instantiated = true
+          @solving = false
+          @type = BottomType.instance
         else
-          raise "Attempt to coerce a type variable to a real type during typing. This is an error"
+          raise "attempt to coerce and unsolved type variable to a real type. this is an error"
         end
       end
 
