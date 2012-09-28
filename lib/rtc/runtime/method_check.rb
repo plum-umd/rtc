@@ -117,25 +117,43 @@ module Rtc::MethodCheck
     param_layout = method_type.parameter_layout
     num_args = args.length
     i = 0
+    unwrap_positions = method_type.unwrap
     while i < param_layout[:required][0]
-      annot_vector[i] = args[i].rtc_annotate(arg_types[i].to_actual_type)
+      if unwrap_positions.include?(i)
+        annot_vector[i] = args[i]
+      else
+        annot_vector[i] = args[i].rtc_annotate(arg_types[i].to_actual_type)
+      end
       i = i + 1
     end
     i = num_args - param_layout[:required][1]
     while i < num_args
-      annot_vector[i] = args[i].rtc_annotate(arg_types[i].to_actual_type)
+      if unwrap_positions.include?(i)
+        annot_vector[i] = args[i]
+      else
+        annot_vector[i] = args[i].rtc_annotate(arg_types[i].to_actual_type)
+      end
       i = i + 1
     end
     i = param_layout[:required][0]
     while i < (param_layout[:required][0] + param_layout[:opt]) and
         i < (num_args - param_layout[:required][1])
-      annot_vector[i] = args[i].rtc_annotate(arg_types[i].type.to_actual_type)
+      if unwrap_positions.include?(i)
+        annot_vector[i] = args[i]
+      else
+        annot_vector[i] = args[i].rtc_annotate(arg_types[i].type.to_actual_type)
+      end
       i = i + 1
     end
     i = param_layout[:required][0] + param_layout[:opt]
     rest_index = i
+    no_annotate_rest = unwrap_positions.include?(rest_index)
     while i < num_args - param_layout[:required][1]
-      annot_vector[i] = args[i].rtc_annotate(arg_types[rest_index].type.to_actual_type)
+      if no_annotate_rest
+        annot_vector[i] = args[i]
+      else
+        annot_vector[i] = args[i].rtc_annotate(arg_types[rest_index].type.to_actual_type)
+      end
       i = i + 1
     end
     return annot_vector
@@ -156,6 +174,7 @@ module Rtc::MethodCheck
                          arg_layout[:required][0] + arg_layout[:opt] + (arg_layout[:rest]?1 : 0)
                         ]
                        ]
+    unwrap_positions = m_type.unwrap
     for arg_range in required_indices 
       # while loops are faster...
       start_offset, end_index, type_offset = arg_range
@@ -172,7 +191,13 @@ module Rtc::MethodCheck
             valid = false
             break
           end
-          annot_vector[value_index] = args[value_index].rtc_annotate(expected_arg_types[type_index].to_actual_type) if annotate_now
+          if annotate_now
+            if unwrap_positions.include?(type_index)
+              annot_vector[value_index] = args[value_index]
+            else
+              annot_vector[value_index] = args[value_index].rtc_annotate(expected_arg_types[type_index].to_actual_type)
+            end
+          end
         end
         i = i.__rtc_rtc_op_plus(1)
       end
@@ -203,7 +228,13 @@ module Rtc::MethodCheck
           valid = false
           break
         end
-        annot_vector[i] = args[i].rtc_annotate(expected_arg_types[i].type.to_actual_type) if annotate_now
+        if annotate_now
+          if unwrap_positions.include?(i)
+            annot_vector[i] = arg[i]
+          else
+            annot_vector[i] = args[i].rtc_annotate(expected_arg_types[i].type.to_actual_type)
+          end
+        end
       end
       i = i + 1
     end
@@ -213,13 +244,13 @@ module Rtc::MethodCheck
     if not arg_layout[:rest]
       return true
     end
-    
-    rest_type = expected_arg_types[arg_layout[:required][0] + arg_layout[:opt]].type.to_actual_type
+    rest_index = arg_layout[:required][0] + arg_layout[:opt]
+    rest_type = expected_arg_types[rest_index].type
     i = arg_layout[:required][0] + arg_layout[:opt]
     if rest_type.instance_of?(Rtc::Types::ProceduralType)
       if annotate_now
         while i < post_req_start
-          annot_vector[i] = Rtc::BlockProxy.new(args[i], rest_type, method_name, class_obj, [])
+          annot_vector[i] = Rtc::BlockProxy.new(args[i], rest_type.to_actual_type, method_name, class_obj, [])
         end
       end
     else
@@ -228,7 +259,13 @@ module Rtc::MethodCheck
           valid = false
           break
         end
-        annot_vector[i] = args[i].rtc_annotate(rest_type) if annotate_now
+        if annotate_now
+          if unwrap_positions.include?(rest_index)
+            annot_vector[i] = args[i]
+          else
+            annot_vector[i] = args[i].rtc_annotate(rest_type)
+          end
+        end
         i = i + 1
       end
     end

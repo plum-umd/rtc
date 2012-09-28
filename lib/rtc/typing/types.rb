@@ -1167,11 +1167,12 @@ module Rtc::Types
     # An object used to represent a variable number of arguments of a single type.
     # This doesn't represent a node in the constraint graph; constraints
     # should be generated on the +type+ attribute.
-    class Vararg
+    class Vararg < Type
         attr_accessor :type
 
         def initialize(type)
             @type = type
+          super()
         end
 
         def to_s
@@ -1206,7 +1207,7 @@ module Rtc::Types
     # An object used to wrap a type for an optional argument to a procedure.
     # This does not represent a node in the constraint graph; constraints should
     # be generated on the +type+ attribute.
-    class OptionalArg
+    class OptionalArg < Type
         attr_accessor :type
 
       def each
@@ -1215,6 +1216,7 @@ module Rtc::Types
 
         def initialize(type)
             @type = type
+          super()
         end
         
         def map
@@ -1626,7 +1628,10 @@ module Rtc::Types
       def replace_parameters(_t_vars)
         self
       end
-
+      def has_variables
+        return @type.has_variables if instantiated?
+        return false
+      end
       def map
         yield self
       end

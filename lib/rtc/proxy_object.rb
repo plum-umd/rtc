@@ -393,15 +393,21 @@ module Rtc
       #end
 
       begin
+        #puts "about to push proxy for #{method}"
         @object.rtc_push_proxy(self)
+        #puts "done pushing proxy for #{method}"
         Rtc::MasterSwitch.turn_on
         r = @object.send method, *args, &block
       ensure
         Rtc::MasterSwitch.turn_off
+        #puts "about to call pop proxy for #{method}"
         @object.rtc_pop_proxy
+        #puts "done popping proxy #{method}"
         Rtc::MasterSwitch.turn_on
+        #puts "master switch is on in #{method}"
+        #puts "call depth #{caller.length}"
       end
-
+      #puts "returning from #{method}"
       return r
     end
   end
