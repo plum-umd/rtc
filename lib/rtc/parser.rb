@@ -63,7 +63,6 @@ module Rtc
         # constructs a method type (mono or poly) and coalesces type parameters
         # appearing in the method type (including the constraints)
         def handle_mtype(meth_id, parameters, msig)
-          parameters = Rtc::NativeHash.new(parameters)
             # expect msig to be result from construct_msig
             domain = msig[:domain]
             block  = msig[:block]

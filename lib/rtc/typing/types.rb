@@ -85,7 +85,7 @@ class Object
       if class_obj.type_parameters.size == 0
         class_obj
       elsif class_obj.klass == Array
-          Rtc::Types::ParameterizedType.new(class_obj, NativeArray[Rtc::TypeInferencer.infer_type(self.each)], true)
+          Rtc::Types::ParameterizedType.new(class_obj, Rtc::NativeArray[Rtc::TypeInferencer.infer_type(self.each)], true)
       # elsif class_obj.klass == MySet 
           # begin
             # self.flatten
@@ -1482,6 +1482,10 @@ module Rtc::Types
             super()
         end
         
+        def is_terminal
+          true
+        end
+
         def replace_parameters(type_vars)
           if type_vars.has_key? symbol
             return type_vars[symbol]
