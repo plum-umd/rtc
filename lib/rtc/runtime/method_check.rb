@@ -37,12 +37,12 @@ module Rtc::MethodCheck
     for m in method_types
       next if num_actual_args < m.min_args
       next if m.max_args != -1 and num_actual_args > m.max_args
-      next if m.block_type.nil? != has_block
+      next if (not m.block_type.nil?) != has_block
 
       annotate_now = m.type_variables.empty?
       annot_vector = Array.new(args.length)
       if self.check_arg_impl(m, args,  annotate_now, annot_vector)
-        possible_types.push(m, annotate_now ? annot_vector : false)
+        possible_types.push([m, annotate_now ? annot_vector : false])
       end
     end
     
@@ -66,7 +66,7 @@ module Rtc::MethodCheck
       unsolved_variables = []
     end
 
-    return correct_type, annotations, unsolved_variables
+    return chosen_type, annotations, unsolved_variables
   end
 
   def self.check_return(m_type, return_value, unsolved_variables)
@@ -143,6 +143,7 @@ module Rtc::MethodCheck
     arg_layout = m_type.parameter_layout
     i = 0
     valid = true
+    num_actual_args = args.length
     required_indices = [
                         [0,arg_layout[:required][0]],
                         [num_actual_args - arg_layout[:required][1], num_actual_args]

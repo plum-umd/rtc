@@ -15,11 +15,19 @@ module Rtc
 
   class MethodWrapper
     @call_template = <<METHOD_TEMPLATE
-    alias __rtc_%{method_name} %{method_name}
+    alias %{mangled_name} %{method_name}
     def %{method_name}(*regular_args, &blk)
-      if status = Rtc::MasterSwitch.is_on? and 
-          new_invokee = self.rtc_get_proxy
+      if Rtc::MasterSwitch.is_on?
         Rtc::MasterSwitch.turn_off
+        new_invokee = self.rtc_get_proxy
+        if not new_invokee
+          Rtc::MasterSwitch.turn_on
+          if blk
+            return %{mangled_name}(*regular_args, &blk)
+          else
+            return %{mangled_name}(*regular_args, &blk)
+          end
+        end
         begin
           method_type = new_invokee.rtc_type.get_method("%{method_name}".to_s)
           
@@ -28,8 +36,8 @@ module Rtc
           else
             method_types = method_type.types.to_a
           end
-          
-          chosen_type, annotated_args, unsolved_tvars = Rtc::MethodCheck.check_args(method_types, "%{method_name}", regular_args,  (not blk.nil?), self.class)
+
+          chosen_type, annotated_args, unsolved_tvars = Rtc::MethodCheck.select_and_check_args(method_types, "%{method_name}", regular_args,  (not blk.nil?), self.class)
           
           unwrap_arg_pos = chosen_type.unwrap
           mutate = chosen_type.mutate
@@ -37,21 +45,27 @@ module Rtc
           for i in unwrap_arg_pos
             annotated_args[i] = (annotated_args[i].is_proxy_object?) ? annotated_args[i].object : annotated_args[i]
           end
+          
+          #annotated_args.each {
+          #  |t|
+          #  puts t.is_proxy_object?
+          #  puts t
+          #}
 
           if blk
             block_proxy = Rtc::BlockProxy.new(blk, chosen_type.block_type, "%{method_name}",
                                          self, unsolved_tvars)
             wrapped_block = Rtc::MethodWrapper.wrap_block(block_proxy)
             Rtc::MasterSwitch.turn_on
-            ret_value = __rtc_%{method_name}(*regular_args, &wrapped_block)
+            ret_value = %{mangled_name}(*annotated_args, &wrapped_block)
             Rtc::MasterSwitch.turn_off
           else
             Rtc::MasterSwitch.turn_on
-            ret_value = __rtc_%{method_name}(*regular_args)
+            ret_value = %{mangled_name}(*annotated_args)
             Rtc::MasterSwitch.turn_off
           end
           
-          unless Rtc::MethodCheck.check_return(ret_value, chosen_type.return_type)
+          unless Rtc::MethodCheck.check_return(chosen_type, ret_value, unsolved_tvars)
             p ret_value.rtc_type, chosen_type.return_type, "%{method_name}", self, chosen_type
             
             raise Rtc::TypeMismatchException, "invalid return type in %{method_name}"
@@ -71,24 +85,54 @@ module Rtc
         
       else
         if blk
-          __rtc_%{method_name}(*regular_args, &blk)
+          %{mangled_name}(*regular_args, &blk)
         else
-          __rtc_%{method_name}(*regular_args)
+          %{mangled_name}(*regular_args)
         end
       end
     end
 METHOD_TEMPLATE
+    @mangled = {
+      "+" => "__rtc_rtc_op_plus",
+      "[]=" => "__rtc_rtc_op_elem_set",
+      "[]" => "__rtc_rtc_op_elem_get",
+      "**" => "__rtc_rtc_op_exp",
+      "!" => "__rtc_rtc_op_not",
+      "!" => "__rtc_rtc_op_complement",
+      "+@" => "__rtc_rtc_op_un_plus",
+      "-@" => "__rtc_rtc_op_un_minus",
+      "*" => "__rtc_rtc_op_mult",
+      "/" => "__rtc_rtc_op_div",
+      "%" => "__rtc_rtc_op_mod",
+      "+" => "__rtc_rtc_op_plus",
+      "-" => "__rtc_rtc_op_minus",
+      ("<" + "<") => "__rtc_rtc_op_ls",
+      ">>"=> "__rtc_rtc_op_rs",
+      "^" => "__rtc_rtc_op_bitxor",
+      "|" => "__rtc_rtc_op_bitor",
+      "<=" => "__rtc_rtc_op_lte",
+      "<" => "__rtc_rtc_op_lt",
+      ">" => "__rtc_rtc_op_gt",
+      ">=" => "__rtc_rtc_op_gte",
+      "<=>" => "__rtc_rtc_op_3comp",
+      "==" => "__rtc_rtc_op_eq",
+      "===" => "__rtc_rtc_op_strict_eq",
+      '&' => "__rtc_rtc_op_bitand",
+    }
     def self.make_wrapper(class_obj, method_name)
       return nil if Rtc::Disabled
-      #      MethodWrapper.new(class_obj, method_name)
-      if method_name =~ /[-+!\/*%|&]|<<|>>|\[\]/
-        MethodWrapper.new(class_obj, method_name)
+      if @mangled.has_key?(method_name.to_s)
+        mangled_name = @mangled[method_name.to_s]
+      elsif method_name.to_s =~ /^(.+)=$/
+        mangled_name = "__rtc_rtc_set_" + $1
       else
-        #puts @call_template % { :method_name => method_name.to_s }
-        class_obj.module_eval(@call_template % { :method_name => method_name.to_s },
-                              "method_wrapper.rb", 17)
-        return true
+        mangled_name = "__rtc_" + method_name.to_s
       end
+      #puts @call_template % { :method_name => method_name.to_s }
+      class_obj.module_eval(@call_template % { :method_name => method_name.to_s,
+                              :mangled_name => mangled_name},
+                            "method_wrapper.rb", 17)
+      return true
     end
 
     def self.wrap_block(x)
@@ -285,10 +329,10 @@ METHOD_TEMPLATE
       #TODO(jtoman): arg number check 
       check_result = Rtc::MethodCheck.check_args(@block_type, args,
                               @unsolved_type_variables)
-      if not annotated_args
+      if not check_result
         raise Rtc::TypeMismatchException "Block arg failed!"
       end
-      annotated_args, @unsolved_type_variables = annotated_args
+      annotated_args, @unsolved_type_variables = check_result
 
       Rtc::MasterSwitch.turn_on
       ret = @proc.call(*annotated_args)
