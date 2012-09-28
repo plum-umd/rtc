@@ -199,6 +199,12 @@ rule
           result = list[0]
         end
       }
+    | T_QUESTION type_expr { 
+        result = Rtc::Types::OptionalArg.new(val[1])
+      }
+    | T_STAR type_expr { 
+        result = Rtc::Types::Vararg.new(val[1])
+      }
 
   or_type_list:
       single_type_expr { result = {:or_list => [val[0]]} }
@@ -239,12 +245,6 @@ rule
       } 
     | T_DOT T_QUESTION { 
         result = Rtc::Types::TopType.instance
-      }
-    | T_QUESTION single_type_expr { 
-        result = Rtc::Types::OptionalArg.new(val[1])
-      }
-    | T_STAR single_type_expr { 
-        result = Rtc::Types::Vararg.new(val[1])
       }
     | T_LBRACKET field_or_method_list T_RBRACKET {
         result = handle_structural_type(val[1])
