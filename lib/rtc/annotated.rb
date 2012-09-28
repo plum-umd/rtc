@@ -235,7 +235,7 @@ module Rtc::Annotated
       end
       if @deferred_class_methods.include?(method_name.to_s)
         @deferred_class_methods.delete(method_name.to_s)
-        @class_method_wrappers[method_name.to_s] = Rtc::MethodWrapper.make_wrapper(class << self; self; end, method_name.to_s) 
+        @class_method_wrappers[method_name.to_s] = Rtc::MethodWrapper.make_wrapper(class << self; self; end, method_name.to_s, true) 
       end
     end
 

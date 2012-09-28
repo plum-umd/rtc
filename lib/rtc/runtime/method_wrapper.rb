@@ -20,7 +20,7 @@ module Rtc
     def %{method_name}(*regular_args, &blk)
       if Rtc::MasterSwitch.is_on?
         Rtc::MasterSwitch.turn_off
-        new_invokee = self.rtc_get_proxy
+        %{invokee_fetch}
         if not new_invokee
           Rtc::MasterSwitch.turn_on
           if blk
@@ -112,7 +112,7 @@ METHOD_TEMPLATE
       "===" => "__rtc_rtc_op_strict_eq",
       '&' => "__rtc_rtc_op_bitand",
     }
-    def self.make_wrapper(class_obj, method_name)
+    def self.make_wrapper(class_obj, method_name, is_class = false)
       return nil if Rtc::Disabled
       if @mangled.has_key?(method_name.to_s)
         mangled_name = @mangled[method_name.to_s]
@@ -121,10 +121,15 @@ METHOD_TEMPLATE
       else
         mangled_name = "__rtc_" + method_name.to_s
       end
-      #puts @call_template % { :method_name => method_name.to_s }
+      if is_class
+        invokee_fetch = "new_invokee = self"
+      else
+        invokee_fetch = "new_invokee = self.rtc_get_proxy"
+      end
       class_obj.module_eval(@call_template % { :method_name => method_name.to_s,
-                              :mangled_name => mangled_name},
-                            "method_wrapper.rb", 17)
+                              :mangled_name => mangled_name,
+                              :invokee_fetch => invokee_fetch
+                            }, "method_wrapper.rb", 17)
       return true
     end
 
