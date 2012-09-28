@@ -156,9 +156,7 @@ module Rtc::Types
       yield self
     end
 
-    def is(trait)
-      trait == :terminal
-    end
+    def is_terminal; true; end
   end
     # Abstract base class for all types. Takes care of assigning unique ids to
     # each type instance and maintains sets of constraint edges. This class
@@ -175,19 +173,6 @@ module Rtc::Types
         def initialize()
             @id = @@next_id
             @@next_id += 1
-        end
-        
-        def is(trait)
-          self.class.traits.include? trait
-        end
-
-        def self.define_traits(*traits)
-          @traits = Set.new(traits)
-        end
-
-        def self.traits
-          return @traits if defined?(@traits)
-          Set.new
         end
 
         # Return true if +self+ is a subtype of +other+. Implemented in
@@ -253,11 +238,15 @@ module Rtc::Types
           self.each {
             |t|
             return true if t.is_a?(TypeVariable) and t.solving?
-            t.has_variables unless t.is(:terminal)
+            t.has_variables unless t.is_terminal
           }
           false
         end
         
+        def is_terminal
+          false
+        end
+
         def each
           raise "you must implement this"
         end
@@ -790,10 +779,9 @@ module Rtc::Types
 
             @nominal = nominal
             @parameters = parameters
-            @_method_cache = Rtc::NativeHash.new
+            @method_cache = Rtc::NativeHash.new
             @dynamic = dynamic
           super({},{})
-          @method_cache = Rtc::NativeHash.new
         end
 
         def each
@@ -810,9 +798,10 @@ module Rtc::Types
         
         def map
           new_nominal = yield @nominal
-          new_params = parameters.map {
+          new_params = Rtc::NativeArray.new
+          parameters.each {
             |p|
-            yield p
+            new_params << (yield p)
           }
           ParameterizedType.new(new_nominal, new_params, dynamic)
         end
@@ -828,7 +817,7 @@ module Rtc::Types
                 # because type binding is done via the subtyping operationg
                 # we can't to t <= u, u <= t as uninstantiate type variables
                 # do not have a meaningful subtype rule
-                if u.is(:variable)
+                if u.instance_of?(TypeVariable)
                   t <= u
                 else
                   t <= u and u <= t
@@ -906,7 +895,7 @@ module Rtc::Types
             }
             to_ret = @nominal.get_method(name, which).replace_parameters(replacement_map)
             has_tvars = 
-              if to_ret.is(:composite)
+              if to_ret.is_a?(IntersectionType)
                 to_ret.types.any? {
                 |type|
                 not type.type_variables.empty?
@@ -958,10 +947,15 @@ module Rtc::Types
         end
 
         def map
+          new_arg_types = Rtc::NativeArray.new
+          arg_types.each {
+            |p|
+            new_arg_types << (yield p)
+          }
           ProceduralType.new(
                              parameters,
                              (yield return_type),
-                             arg_types.map { |p| yield p },
+                             new_arg_types,
                              block_type.nil? ? nil : (yield block_type),
                              type_variables,
                              { "mutate" => mutate, "unwrap" => unwrap }
@@ -978,7 +972,7 @@ module Rtc::Types
           if not parameterized?
             return self
           end
-          type_vars = {}
+          type_vars = Rtc::NativeHash.new
           parameters.map {
             |t_param|
             type_vars[t_param.symbol] = TypeVariable.new(t_param.symbol, self)
@@ -1292,7 +1286,6 @@ module Rtc::Types
     # of two types is the type that supports all of the operations of both
     # types.
     class IntersectionType < Type
-      define_traits :composite
         # Return a type representing the intersection of all the types in
         # +types+. Handles some special cases to simplify the resulting type:
         # 1. If +a+ and +b+ are both in +types+ and +a+ <= +b+, only +a+ will
@@ -1392,7 +1385,6 @@ module Rtc::Types
     # A type that is the union of a set of types. Values of a union type may be
     # of the type of any type in the set.
     class UnionType < Type
-      define_traits :composite
         # Returns a type representing the union of all the types in +types+.
         # Handles some special cases to simplify the resulting type:
         # 1. If +a+ and +b+ are both in +types+ and +a+ <= +b+, only +b+ will
@@ -1613,7 +1605,6 @@ module Rtc::Types
     end
 
     class TypeVariable < Type
-      define_traits :wrapping, :variable
       attr_reader :solving
       attr_reader :instantiated
       attr_reader :name
