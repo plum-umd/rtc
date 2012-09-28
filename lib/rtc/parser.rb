@@ -5,6 +5,7 @@ require 'rtc/position'
 require 'rtc/typing/types'
 require 'rtc/typing/type_signatures'
 require 'rtc/runtime/class_loader'
+require 'rtc/runtime/native'
 module Rtc
     class TypeAnnotationParser < Racc::Parser
         @logger = Logging.get_logger('TypeAnnotationParser')
@@ -25,7 +26,7 @@ module Rtc
         # makes up a hash that contains a method type information for convenience
         # in later use
         def construct_msig(domain, block, range)
-            domain = domain ? (domain.kind_of?(Array) ? domain : [domain]) : []
+            domain = domain ? (domain.kind_of?(Array) ? Rtc::NativeArray.new(domain) : Rtc::NativeArray[domain]) : Rtc::NativeArray.new
             return {:domain => domain, :block => block, :range => range}
         end
 
