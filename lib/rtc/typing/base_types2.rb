@@ -36,6 +36,17 @@ class Array
   typesig("each: () { (t) -> .? } -> Array<t>")
 end
 
+Array.new.__rtc_map {
+  |a|
+}
+
+class Rtc::NativeArray < Array
+  alias :push :__rtc_push
+  alias :each :__rtc_each
+  alias :map :__rtc_map
+  alias :[] :__rtc_rtc_op_elem_get
+end
+
 #rtc_typesig("class Set<t>")
 #class Set
 #  rtc_annotated
@@ -53,4 +64,9 @@ class Hash
   typesig("'[]=' : (k, v) -> v", {'unwrap'=>[0]})
 #  typesig("'[]=' : (k, v) -> v")
 
+end
+
+class Rtc::NativeHash
+  alias :[] :__rtc_rtc_op_elem_get
+  alias :[]= :__rtc_rtc_op_elem_set
 end

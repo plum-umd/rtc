@@ -353,10 +353,6 @@ module Rtc
     end
 
     def rtc_type
-      @object.rtc_type
-    end
-    
-    def rtc_type
       @proxy_type
     end
     
