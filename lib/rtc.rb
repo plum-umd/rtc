@@ -12,8 +12,7 @@ require 'rtc/annotated'
 require 'rtc/options'
 require 'rtc/runtime/class_modifier'
 
-$method_stack = {}
-$invokee_proxy = []
+$RTC_STRICT = false
 
 def rtc_annotated(*t_params)
   extend Rtc::Annotated
