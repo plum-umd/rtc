@@ -4,13 +4,14 @@
 
 require 'set'
 require 'singleton'
+require 'rtc/runtime/native'
 
 require 'rtc/tools/hash-builder.rb'
 require 'rtc/runtime/class_loader'
 require 'rtc/runtime/type_inferencer'
 
 class Rtc::GlobalCache
-  @@cache = {}
+  @@cache = Rtc::NativeHash.new
   def self.cache
     @@cache
   end
@@ -24,13 +25,12 @@ class Object
       if frozen? and Rtc::GlobalCache.cache[object_id] 
         return Rtc::GlobalCache.cache[object_id]
       end
-      to_return = {
-        :annotated => false,
-        :no_subtype => false,
-        :iterators => {},
-        :_type => nil,
-        :proxy_context => []
-      }
+      to_return = Rtc::NativeHash.new;
+      to_return[:annotated] = false
+      to_return[:no_subtype] = false
+      to_return[:iterators] = Rtc::NativeHash.new
+      to_return[:_type] = nil
+      to_return[:proxy_context] = Rtc::NativeArray.new
       if frozen?
         Rtc::GlobalCache.cache[object_id] = to_return
       else
@@ -83,9 +83,9 @@ class Object
       class_obj = Rtc::Types::NominalType.of(self.class)
 
       if class_obj.type_parameters.size == 0
-          class_obj
+        class_obj
       elsif class_obj.klass == Array
-          Rtc::Types::ParameterizedType.new(class_obj, [Rtc::TypeInferencer.infer_type(self.each)], true)
+          Rtc::Types::ParameterizedType.new(class_obj, NativeArray[Rtc::TypeInferencer.infer_type(self.each)], true)
       # elsif class_obj.klass == MySet 
           # begin
             # self.flatten
@@ -99,7 +99,7 @@ class Object
       elsif class_obj.klass == Hash
           #Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each_key),
           #  Rtc::Types::TypeVariable.create(self.each_value)])
-          Rtc::Types::ParameterizedType.new(class_obj, [
+          Rtc::Types::ParameterizedType.new(class_obj, Rtc::NativeArray[
             Rtc::TypeInferencer.infer_type(self.each_key),
             Rtc::TypeInferencer.infer_type(self.each_value)
           ], true)
@@ -252,7 +252,7 @@ module Rtc::Types
         def has_variables
           self.each {
             |t|
-            return true if t.is(:variable) and t.solving?
+            return true if t.is_a?(TypeVariable) and t.solving?
             t.has_variables unless t.is(:terminal)
           }
           false
@@ -514,7 +514,7 @@ module Rtc::Types
         end
       
         # A cache of NominalType instances, keyed by Class constants.
-        @@cache = Hash.new
+        @@cache = Rtc::NativeHash.new
 
         # The constant Class instance for this type.
         attr_reader :klass
@@ -685,7 +685,7 @@ module Rtc::Types
         # [+klass+] The constant Class instance of this type, i.e. Fixnum,
         #           String, etc.
         def initialize(klass)
-            super({},{})
+            super(Rtc::NativeHash.new,Rtc::NativeHash.new)
             @klass = klass
             @type_parameters = []
             @name = klass.name
@@ -790,10 +790,10 @@ module Rtc::Types
 
             @nominal = nominal
             @parameters = parameters
-            @_method_cache = {}
+            @_method_cache = Rtc::NativeHash.new
             @dynamic = dynamic
-            super({},{})
-          @method_cache = {}
+          super({},{})
+          @method_cache = Rtc::NativeHash.new
         end
 
         def each
@@ -879,7 +879,7 @@ module Rtc::Types
         end
         
         def get_method(name, which = nil)
-          replacement_map = {}
+          replacement_map = Rtc::NativeHash.new
           if dynamic
             # no caching here folks
             @nominal.type_parameters.each_with_index {
@@ -1086,11 +1086,10 @@ module Rtc::Types
         def parameter_layout
           return @param_layout_cache if defined? @param_layout_cache
           a_list = arg_types + [nil]
-          to_return = {
-            :required => [0,0],
-            :rest => false,
-            :opt => 0
-          }
+          to_return = Rtc::NativeHash.new()
+          to_return[:required] = Rtc::NativeArray[0,0]
+          to_return[:rest] =  false
+          to_return[:opt] = 0
           def param_type(arg_type)
             case arg_type
             when NilClass

@@ -1,3 +1,4 @@
+require 'rtc/runtime/native'
 require 'rtc/runtime/master_switch.rb'
 require 'rtc/options'
 
@@ -35,7 +36,7 @@ module Rtc::MethodCheck
     method_types.each { |mt|
       mt.type_variables.each { |tv| tv.start_solve if not tv.instantiated? and not tv.solving? }
     }
-    possible_types = []
+    possible_types = Rtc::NativeArray.new
     num_actual_args = args.length
     for m in method_types
       next if num_actual_args < m.min_args
@@ -43,7 +44,7 @@ module Rtc::MethodCheck
       next if (not m.block_type.nil?) != has_block
 
       annotate_now = m.type_variables.empty?
-      annot_vector = Array.new(args.length)
+      annot_vector = Rtc::NativeArray.new(args.length)
       if self.check_arg_impl(m, args,  annotate_now, annot_vector)
         possible_types.push([m, annotate_now ? annot_vector : false])
       end
@@ -81,7 +82,7 @@ module Rtc::MethodCheck
 
   def self.check_args(m_type, args, unsolved_variables)
     if unsolved_variables.empty?
-      annot_vector = Array.new(args.length)
+      annot_vector = Rtc::NativeArray.new(args.length)
       return self.check_arg_impl(m_type, args, true, annot_vector) ? 
       [annot_vector,[]] : false
     else
@@ -94,7 +95,7 @@ module Rtc::MethodCheck
 
   def self.update_variables(t_vars)
     return unless t_vars
-    unsolved_type_variables = []
+    unsolved_type_variables = Rtc::NativeArray.new
     t_vars.each {
       |tvar|
       if tvar.solvable?
@@ -110,7 +111,7 @@ module Rtc::MethodCheck
 
 
   def self.annotate_args(method_type, args)
-    annot_vector = Array.new(args.length)
+    annot_vector = Rtc::NativeArray.new(args.length)
     arg_types = method_type.arg_types
     # cached, not so bad
     param_layout = method_type.parameter_layout
@@ -159,13 +160,13 @@ module Rtc::MethodCheck
       # while loops are faster...
       start_offset, end_index, type_offset = arg_range
       i = 0
-      limit = arg_range[1]
-      while start_offset + i  < end_index
-        type_index = type_offset + i
-        value_index = start_offset + i
+      while start_offset.__rtc_rtc_op_plus(i)  < end_index
+        type_index = type_offset.__rtc_rtc_op_plus(i)
+        value_index = start_offset.__rtc_rtc_op_plus(i)
         if expected_arg_types[type_index].instance_of?(Rtc::Types::ProceduralType)
-          annot_vector[value_index] = Rtc::BlockProxy.new(args[value_index], expected_arg_types[type_index].to_actual_type, 
-                                                method_name, class_obj, []) if annotate_now
+          annot_vector[value_index] = Rtc::BlockProxy.new(args[value_index], 
+                                                          expected_arg_types[type_index].to_actual_type, 
+                                                          method_name, class_obj, []) if annotate_now
         else
           unless self.check_type(args[value_index], expected_arg_types[type_index])
             valid = false
@@ -173,7 +174,7 @@ module Rtc::MethodCheck
           end
           annot_vector[value_index] = args[value_index].rtc_annotate(expected_arg_types[type_index].to_actual_type) if annotate_now
         end
-        i = i + 1
+        i = i.__rtc_rtc_op_plus(1)
       end
       break if not valid
     end

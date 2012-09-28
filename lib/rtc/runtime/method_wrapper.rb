@@ -1,3 +1,4 @@
+require 'rtc/runtime/native'
 require 'rtc/runtime/master_switch.rb'
 require 'rtc/options'
 
@@ -31,11 +32,11 @@ module Rtc
         begin
           method_type = new_invokee.rtc_type.get_method("%{method_name}".to_s)
           if method_type.is_a?(Rtc::Types::ProceduralType)
-            method_types = [method_type]
+            method_types = NativeArray[method_type]
           else
-            method_types = method_type.types.to_a
+            method_types = NativeArray.new(method_type.types.to_a)
           end
-
+          #regulars_args = Rtc::NativeArray.new(regular_args)
           chosen_type, annotated_args, unsolved_tvars = Rtc::MethodCheck.select_and_check_args(method_types, "%{method_name}", regular_args,  (not blk.nil?), self.class)
           
           unwrap_arg_pos = chosen_type.unwrap
@@ -316,6 +317,7 @@ METHOD_TEMPLATE
     end
 
     def call(*args)
+      args = Rtc::NativeArray.new(args)
       Rtc::MasterSwitch.turn_off
       check_result = Rtc::MethodCheck.check_args(@block_type, args,
                               @unsolved_type_variables)
