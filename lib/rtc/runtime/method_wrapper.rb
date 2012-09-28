@@ -30,7 +30,6 @@ module Rtc
         end
         begin
           method_type = new_invokee.rtc_type.get_method("%{method_name}".to_s)
-          
           if method_type.is_a?(Rtc::Types::ProceduralType)
             method_types = [method_type]
           else
@@ -45,12 +44,6 @@ module Rtc
           for i in unwrap_arg_pos
             annotated_args[i] = (annotated_args[i].is_proxy_object?) ? annotated_args[i].object : annotated_args[i]
           end
-          
-          #annotated_args.each {
-          #  |t|
-          #  puts t.is_proxy_object?
-          #  puts t
-          #}
 
           if blk
             block_proxy = Rtc::BlockProxy.new(blk, chosen_type.block_type, "%{method_name}",
@@ -70,7 +63,7 @@ module Rtc
             
             raise Rtc::TypeMismatchException, "invalid return type in %{method_name}"
           end
-          
+
           if ret_value === false || ret_value === nil ||
               ret_value.is_a?(Rtc::Types::Type)
             ret_proxy = ret_value
@@ -82,7 +75,6 @@ module Rtc
         ensure
           Rtc::MasterSwitch.turn_on
         end
-        
       else
         if blk
           %{mangled_name}(*regular_args, &blk)
@@ -136,7 +128,7 @@ METHOD_TEMPLATE
     end
 
     def self.wrap_block(x)
-      Proc.new {|v| x.call(v)}
+      Proc.new {|*v| x.call(*v)}
     end
 
     def invoke(invokee, arg_vector)
@@ -325,26 +317,25 @@ METHOD_TEMPLATE
 
     def call(*args)
       Rtc::MasterSwitch.turn_off
-      
-      #TODO(jtoman): arg number check 
       check_result = Rtc::MethodCheck.check_args(@block_type, args,
                               @unsolved_type_variables)
       if not check_result
         raise Rtc::TypeMismatchException "Block arg failed!"
       end
       annotated_args, @unsolved_type_variables = check_result
-
       Rtc::MasterSwitch.turn_on
       ret = @proc.call(*annotated_args)
       Rtc::MasterSwitch.turn_off
-
       return_valid = Rtc::MethodCheck.check_return(@block_type, ret, @unsolved_type_variables)
-
       raise Rtc::TypeMismatchException, "Block return type mismatch" unless return_valid
-      if ret === false or ret === nil or ret.is_a?(Rtc::Types::Type)
-        ret
-      else
-        ret.rtc_annotate(block_type.return_type.to_actual_type)
+      begin
+        if ret === false or ret === nil or ret.is_a?(Rtc::Types::Type)
+          ret
+        else
+          ret.rtc_annotate(block_type.return_type.to_actual_type)
+        end
+      ensure
+        Rtc::MasterSwitch.turn_on
       end
     end
     

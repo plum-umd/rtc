@@ -112,6 +112,7 @@ module Rtc::MethodCheck
     # cached, not so bad
     param_layout = method_type.parameter_layout
     num_args = args.length
+    i = 0
     while i < param_layout[:required][0]
       annot_vector[i] = args[i].rtc_annotate(arg_types[i].to_actual_type)
       i = i + 1
@@ -145,22 +146,29 @@ module Rtc::MethodCheck
     valid = true
     num_actual_args = args.length
     required_indices = [
-                        [0,arg_layout[:required][0]],
-                        [num_actual_args - arg_layout[:required][1], num_actual_args]
+                        # start offset, end index, type offset
+                        [0,arg_layout[:required][0], 0],
+                        [num_actual_args - arg_layout[:required][1], num_actual_args, 
+                         arg_layout[:required][0] + arg_layout[:opt] + (arg_layout[:rest]?1 : 0)
+                        ]
                        ]
     for arg_range in required_indices 
       # while loops are faster...
-      i = arg_range[0]
+      start_offset, end_index, type_offset = arg_range
+      i = 0
       limit = arg_range[1]
-      while i  < limit
-        if expected_arg_types[i].instance_of?(Rtc::Types::ProceduralType)
-          annot_vector[i] = Rtc::BlockProxy.new(args[i], expected_arg_types[i].to_actual_type, method_name, class_obj, []) if annotate_now
+      while start_offset + i  < end_index
+        type_index = type_offset + i
+        value_index = start_offset + i
+        if expected_arg_types[type_index].instance_of?(Rtc::Types::ProceduralType)
+          annot_vector[value_index] = Rtc::BlockProxy.new(args[value_index], expected_arg_types[type_index].to_actual_type, 
+                                                method_name, class_obj, []) if annotate_now
         else
-          unless self.check_type(args[i], expected_arg_types[i].to_actual_type)
+          unless self.check_type(args[value_index], expected_arg_types[type_index])
             valid = false
             break
           end
-          annot_vector[i] = args[i].rtc_annotate(expected_arg_types[i].to_actual_type) if annotate_now
+          annot_vector[value_index] = args[value_index].rtc_annotate(expected_arg_types[type_index].to_actual_type) if annotate_now
         end
         i = i + 1
       end
@@ -191,7 +199,7 @@ module Rtc::MethodCheck
           valid = false
           break
         end
-        annot_vector = args[i].rtc_annotate(expected_arg_types[i].type.to_Actual_type) if annotate_now
+        annot_vector[i] = args[i].rtc_annotate(expected_arg_types[i].type.to_actual_type) if annotate_now
       end
       i = i + 1
     end
