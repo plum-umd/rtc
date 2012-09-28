@@ -1,11 +1,3 @@
-class Fixnum
-  rtc_annotated
-
-  typesig("'+': (Fixnum) -> Fixnum", {'unwrap'=>[0]})
-  typesig("'*': (Fixnum) -> Fixnum", {'unwrap'=>[0]})
-  typesig("'to_s': () -> String")
-end
-
 class Array
   rtc_annotated [:t, :each]
 
@@ -150,22 +142,12 @@ class Rtc::NativeArray < Array
   }
 end
 
-#rtc_typesig("class Set<t>")
-#class Set
-#  rtc_annotated
-#  define_iterators :t => :each
-#  typesig("to_a: () -> Array<t>")
-#  typesig("'includes?': (t) -> TrueClass or FalseClass")
-#end
-
-#rtc_typesig("class Hash<k, v>")
 class Hash
   rtc_annotated [:k, :each_key], [:v, :each_value]
 
   typesig("'[]' : (k) -> v", {'unwrap'=>[0]})
-#  typesig("'[]' : (k) -> v")
   typesig("'[]=' : (k, v) -> v", {'unwrap'=>[0]})
-#  typesig("'[]=' : (k, v) -> v")
+  typesig("store: (k,v) -> v", {'unwrap' => [0]})
 
 end
 

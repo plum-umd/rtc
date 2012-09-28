@@ -55,6 +55,8 @@ class Object
   end  
 
   def rtc_cast(annotation_string)
+    return self if self === false || self === nil ||
+      self.is_a?(Rtc::Types::Type)
     status = Rtc::MasterSwitch.is_on?
     Rtc::MasterSwitch.turn_off if status == true
 
@@ -72,7 +74,7 @@ class Object
 
       r = Rtc::ProxyObject.new(@object, annotated_type)        
     else
-      if $RTC_STRICT and not self.rtc_type <= annotated_type 
+      unless Rtc::MethodCheck.check_type(self, annotated_type)
         raise Rtc::AnnotateException, "object type " + self.rtc_type.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s        
       end
 
@@ -83,6 +85,8 @@ class Object
   end
 
   def rtc_annotate(annotation_string)
+    return self if self === false || self === nil ||
+      self.is_a?(Rtc::Types::Type)
     status = Rtc::MasterSwitch.is_on?
     Rtc::MasterSwitch.turn_off if status == true
 
@@ -103,10 +107,10 @@ class Object
 
       r = Rtc::ProxyObject.new(@object, annotated_type)        
     else
-      if $RTC_STRICT and not self.rtc_type <= annotated_type 
+      unless Rtc::MethodCheck.check_type(self, annotated_type)
         raise Rtc::AnnotateException, "object type " + self.rtc_type.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s
       end
-
+      
       r = Rtc::ProxyObject.new(self, annotated_type)        
     end
     Rtc::MasterSwitch.turn_on if status == true

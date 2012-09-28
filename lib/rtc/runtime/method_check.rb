@@ -179,9 +179,9 @@ module Rtc::MethodCheck
       # while loops are faster...
       start_offset, end_index, type_offset = arg_range
       i = 0
-      while start_offset.__rtc_rtc_op_plus(i)  < end_index
-        type_index = type_offset.__rtc_rtc_op_plus(i)
-        value_index = start_offset.__rtc_rtc_op_plus(i)
+      while start_offset + i  < end_index
+        type_index = type_offset + i
+        value_index = start_offset + i
         if expected_arg_types[type_index].instance_of?(Rtc::Types::ProceduralType)
           annot_vector[value_index] = Rtc::BlockProxy.new(args[value_index], 
                                                           expected_arg_types[type_index].to_actual_type, 
@@ -199,7 +199,7 @@ module Rtc::MethodCheck
             end
           end
         end
-        i = i.__rtc_rtc_op_plus(1)
+        i = i + 1
       end
       break if not valid
     end
