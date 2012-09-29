@@ -121,7 +121,7 @@ class Array
   typesig("take: (Fixnum) -> Array<t>")
   typesig("take_while: () { (t) ->%bool } -> Array<t>")
   typesig("take_while: () -> Enumerator")
-  typesig("to_a: () -> Array<t>")
+  typesig("to_a: () -> Array<t>", {'unwrap' => [-1]})
   typesig("to_ary: () -> Array<t>", {'unwrap' => [-1]})
   typesig("transponse: () -> Array<t>")
   typesig("uniq: () -> Array<t>")

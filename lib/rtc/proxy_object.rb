@@ -477,6 +477,12 @@ module Rtc
         t.rtc_annotate(v)
       }
     end
+    def to_a
+      object.zip(proxy_type.ordered_params).map {
+        |t,v|
+        t.rtc_annotate(v)
+      }
+    end
   end
 end
 
