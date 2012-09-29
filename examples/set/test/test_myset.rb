@@ -172,20 +172,6 @@ class TC_MySet < Test::Unit::TestCase
     Rtc::MasterSwitch.turn_on
   end
 
-  def test_replace
-    Rtc::MasterSwitch.turn_on
-
-    set = MySet[1,2]
-
-    set = set.rtc_annotate("MySet<Fixnum or String>")
-    ret = set.replace('a'..'c')
-
-    assert_same(set, ret)
-    assert_equal(MySet['a','b','c'], set)
-    
-    Rtc::MasterSwitch.turn_off
-  end
-
   def test_to_a
     Rtc::MasterSwitch.turn_on
 
@@ -194,84 +180,6 @@ class TC_MySet < Test::Unit::TestCase
     ary = set.to_a
 
     assert_equal([1,2,3], ary.sort)
-
-    Rtc::MasterSwitch.turn_off
-  end
-
-  def test_flatten
-    Rtc::MasterSwitch.turn_on
-
-    # test1
-    set1 = MySet[
-      1,
-      MySet[
-        5,
-        MySet[7,
-          MySet[0]
-        ],
-        MySet[6,2],
-        1
-      ],
-      3,
-      MySet[3,4]
-    ]
-
-    set1 = set1.rtc_annotate("MySet<Fixnum or MySet<Fixnum or MySet<Fixnum or MySet<Fixnum>>>>")
-    set2 = set1.flatten  
-exit
-    set3 = MySet.new(0..7)
-
-    assert_not_same(set2, set1)
-    assert_equal(set3, set2)
-
-    # test2; destructive
-    orig_set1 = set1
-    set1.flatten!
-
-    assert_same(orig_set1, set1)
-    assert_equal(set3, set1)
-
-    # test3; multiple occurrences of a set in an set
-    set1 = MySet[1, 2]
-    set1 = set1.rtc_annotate("MySet<Fixnum>")
-    set2 = MySet[set1, MySet[set1, 4], 3]
-
-    set2 = set2.rtc_annotate("MySet<Fixnum or MySet<MySet<Fixnum> or Fixnum>>")
-
-    assert_nothing_raised {
-      set2.flatten!
-    }
-
-    assert_equal(MySet.new(1..4), set2)
-
-    # test4; recursion
-    set2 = MySet[]
-    set1 = MySet[1, set2]
-    set2.add(set1)
-
-    assert_raises(ArgumentError) {
-      set1.flatten!
-    }
-
-    # test5; miscellaneous
-    empty = MySet[]
-    set =  MySet[MySet[empty, "a"],MySet[empty, "b"]]
-
-    set = set.rtc_annotate("MySet<MySet<String> or String>")
-
-    assert_nothing_raised {
-      set.flatten
-    }
-
-    empty = empty.rtc_annotate("MySet<MySet<String> or String>")
-    set1 = empty.merge(MySet["no_more", set])
-
-    assert_nil(MySet.new(0..31).flatten!)
-
-    x = MySet[MySet[],MySet[1,2]].flatten!
-    y = MySet[1,2]
-
-    assert_equal(x, y)
 
     Rtc::MasterSwitch.turn_off
   end
@@ -300,21 +208,21 @@ exit
     Rtc::MasterSwitch.turn_off
   end
 
-  def ttest_superset?
+  def test_superset?
     Rtc::MasterSwitch.turn_on
 
     set = MySet[1,2,3]
     set = set.rtc_annotate("MySet<Fixnum>")
 
-    assert_raises(ArgumentError) {
+    assert_raises(ArgumentError, Rtc::TypeMismatchException) {
       set.superset?()
     }
 
-    assert_raises(ArgumentError) {
+    assert_raises(ArgumentError, Rtc::TypeMismatchException) {
       set.superset?(2)
     }
 
-    assert_raises(ArgumentError) {
+    assert_raises(ArgumentError, Rtc::TypeMismatchException) {
       set.superset?([2])
     }
 
@@ -335,15 +243,15 @@ exit
     set = MySet[1,2,3]
     set = set.rtc_annotate("MySet<Fixnum>")
 
-    assert_raises(ArgumentError) {
+    assert_raises(ArgumentError, Rtc::TypeMismatchException) {
       set.proper_superset?()
     }
 
-    assert_raises(ArgumentError) {
+    assert_raises(ArgumentError, Rtc::TypeMismatchException) {
       set.proper_superset?(2)
     }
 
-    assert_raises(ArgumentError) {
+    assert_raises(ArgumentError, Rtc::TypeMismatchException) {
       set.proper_superset?([2])
     }
 
@@ -358,22 +266,22 @@ exit
     Rtc::MasterSwitch.turn_off
   end
 
-  def ttest_subset?
+  def test_subset?
     Rtc::MasterSwitch.turn_on
 
     set = MySet[1,2,3]
 
     set = set.rtc_annotate("MySet<Fixnum>")
 
-    assert_raises(ArgumentError) {
+    assert_raises(ArgumentError, Rtc::TypeMismatchException) {
       set.subset?()
     }
 
-    assert_raises(ArgumentError) {
+    assert_raises(ArgumentError, Rtc::TypeMismatchException) {
       set.subset?(2)
     }
 
-    assert_raises(ArgumentError) {
+    assert_raises(ArgumentError, Rtc::TypeMismatchException) {
       set.subset?([2])
     }
 
@@ -388,21 +296,21 @@ exit
     Rtc::MasterSwitch.turn_off
   end
 
-  def ttest_proper_subset?
+  def test_proper_subset?
     Rtc::MasterSwitch.turn_on
     
     set = MySet[1,2,3]
     set = set.rtc_annotate("MySet<Fixnum>")
 
-    assert_raises(ArgumentError) {
+    assert_raises(ArgumentError,Rtc::TypeMismatchException) {
       set.proper_subset?()
     }
 
-    assert_raises(ArgumentError) {
+    assert_raises(ArgumentError,Rtc::TypeMismatchException) {
       set.proper_subset?(2)
     }
 
-    assert_raises(ArgumentError) {
+    assert_raises(ArgumentError,Rtc::TypeMismatchException) {
       set.proper_subset?([2])
     }
 
@@ -416,11 +324,10 @@ exit
     Rtc::MasterSwitch.turn_off
   end
 
-  def ttest_each
+  def test_each
     Rtc::MasterSwitch.turn_on
 
     ary = [1,3,5,7,10,20]
-    ary = ary.rtc_annotate("MySet<Fixnum>")
     set = MySet.new(ary)
 
     ret = set.each { |o| }
@@ -440,14 +347,13 @@ exit
     Rtc::MasterSwitch.turn_off
   end
 
-  def ttest_add
+  def test_add
     Rtc::MasterSwitch.turn_on
 
-    set = MySet[1,2,3]
-    set = MySet[1,2,3].rtc_annotate("MySet<Fixnum>")
+    set = (MySet[1,2,3]).rtc_annotate("MySet<Fixnum>")
 
     ret = set.add(2)
-    assert_same(set, ret)
+    assert_same(set, ret.object)
     assert_equal(MySet[1,2,3], set)
 
     ret = set.add?(2)
@@ -455,24 +361,23 @@ exit
     assert_equal(MySet[1,2,3], set)
 
     ret = set.add(4)
-    assert_same(set, ret)
+    assert_same(set, ret.object)
     assert_equal(MySet[1,2,3,4], set)
 
     ret = set.add?(5)
-    assert_same(set, ret)
+    assert_same(set, ret.object)
     assert_equal(MySet[1,2,3,4,5], set)
 
     Rtc::MasterSwitch.turn_off
   end
 
-  def ttest_delete
+  def test_delete
     Rtc::MasterSwitch.turn_on
 
     set = MySet[1,2,3]
     set = set.rtc_annotate("MySet<Fixnum>")
 
     ret = set.delete(4)
-    assert_same(set, ret)
     assert_equal(MySet[1,2,3], set)
 
     ret = set.delete?(4)
@@ -490,48 +395,26 @@ exit
     Rtc::MasterSwitch.turn_off
   end
 
-  def ttest_delete_if
+  def test_delete_if
     Rtc::MasterSwitch.turn_on
 
     set = MySet.new(1..10)
     set = set.rtc_annotate("MySet<Fixnum>")
     ret = set.delete_if { |i| i > 10 }
-    assert_same(set, ret)
+    assert_same(set, ret.object)
     assert_equal(MySet.new(1..10), set)
 
     set = MySet.new(1..10)
     set = set.rtc_annotate("MySet<Fixnum>")
     ret = set.delete_if { |i| i % 3 == 0 }
-    assert_same(set, ret)
+    assert_same(set, ret.object)
     assert_equal(MySet[1,2,4,5,7,8,10], set)
 
     Rtc::MasterSwitch.turn_off
   end
 
-  def ttest_collect!
+  def test_reject!
     Rtc::MasterSwitch.turn_on
-
-    set = MySet[1,2,3,'a','b','c',-1..1,2..4]
-
-    ret = set.collect! { |i|
-      case i
-      when Numeric
-        i * 2
-      when String
-        i.upcase
-      else
-        nil
-      end
-    }
-
-    assert_same(set, ret)
-    assert_equal(MySet[2,4,6,'A','B','C',nil], set)
-
-    Rtc::MasterSwitch.turn_off
-  end
-
-  def ttest_reject!
-    Rtc::MasterSwitch.turn_off
 
     set = MySet.new(1..10)
     set = set.rtc_annotate("MySet<Fixnum>")
@@ -541,91 +424,14 @@ exit
     assert_equal(MySet.new(1..10), set)
 
     ret = set.reject! { |i| i % 3 == 0 }
-    assert_same(set, ret)
+    assert_same(set, ret.object)
     assert_equal(MySet[1,2,4,5,7,8,10], set)
 
     Rtc::MasterSwitch.turn_off
   end
 
-  def ttest_merge
-    Rtc::MasterSwitch.turn_on
-    set = MySet[1,2,3]
 
-    set = set.rtc_annotate("MySet<Fixnum>")
-
-    ret = set.merge([2,4,6])
-    assert_same(set, ret)
-    assert_equal(MySet[1,2,3,4,6], set)
-
-    Rtc::MasterSwitch.turn_off
-  end
-
-  def ttest_subtract
-    Rtc::MasterSwitch.turn_on
-
-    set = MySet[1,2,3]
-
-    set = set.rtc_annotate("MySet<Fixnum>")
-
-    ret = set.subtract([2,4,6])
-    assert_same(set, ret)
-    assert_equal(MySet[1,3], set)
-
-    Rtc::MasterSwitch.turn_off
-  end
-
-  def ttest_plus
-    Rtc::MasterSwitch.turn_on
-
-    set = MySet[1,2,3]
-    set = set.rtc_annotate("MySet<Fixnum>")
-
-    ret = set + [2,4,6]
-    assert_not_same(set, ret)
-    assert_equal(MySet[1,2,3,4,6], ret)
-
-    Rtc::MasterSwitch.turn_off
-  end
-
-  def ttest_minus
-    Rtc::MasterSwitch.turn_on
-
-    set = MySet[1,2,3]
-
-    set = set.rtc_annotate("MySet<Fixnum>")
-
-    ret = set - [2,4,6]
-    assert_not_same(set, ret)
-    assert_equal(MySet[1,3], ret)
-
-    Rtc::MasterSwitch.turn_off
-  end
-
-  def ttest_and
-    Rtc::MasterSwitch.turn_on
-    set = MySet[1,2,3,4]
-
-    set = set.rtc_anntate("MySet<Fixnum>")
-
-    ret = set & [2,4,6]
-    assert_not_same(set, ret)
-    assert_equal(MySet[2,4], ret)
-
-    Rtc::MasterSwitch.turn_off
-  end
-
-  def ttest_xor
-    Rtc::MasterSwitch.turn_on
-    set = MySet[1,2,3,4]
-    set = set.rtc_annotate("MySet<Fixnum>")
-    ret = set ^ [2,4,5,5]
-    assert_not_same(set, ret)
-    assert_equal(MySet[1,3,5], ret)
-
-    Rtc::MasterSwitch.turn_off
-  end
-
-  def ttest_eq
+  def test_eq
     Rtc::MasterSwitch.turn_on
 
     set1 = MySet[2,3,1]
@@ -655,7 +461,7 @@ exit
   # def test_eql?
   # end
 
-  def ttest_classify
+  def test_classify
     Rtc::MasterSwitch.turn_on
 
     set = MySet.new(1..10)
@@ -712,7 +518,7 @@ exit
     Rtc::MasterSwitch.turn_off
   end
 
-  def ttest_inspect
+  def test_inspect
     Rtc::MasterSwitch.turn_on
 
     set1 = MySet[1]
@@ -721,96 +527,14 @@ exit
     assert_equal('#<MySet: {1}>', set1.inspect)
 
     set2 = MySet[MySet[0], 1, 2, set1]
-    set = set.rtc_annotate("MySet<Fixnum> or Fixnum")
+    set2 = set2.rtc_annotate("MySet<MySet<Fixnum> or Fixnum>")
 
     assert_equal(false, set2.inspect.include?('#<MySet: {...}>'))
-
+    set1 = set1.rtc_cast("MySet<Fixnum or MySet<MySet<Fixnum> or Fixnum>>")
     set1.add(set2)
     assert_equal(true, set1.inspect.include?('#<MySet: {...}>'))
 
     Rtc::MasterSwitch.turn_off
   end
 
-  # def test_pretty_print
-  # end
-
-  # def test_pretty_print_cycle
-  # end
-end
-
-class TC_SortedMySet < Test::Unit::TestCase
-  def ttest_sortedset
-    Rtc::MasterSwitch.turn_on
-
-    s = SortedMySet[4,5,3,1,2]
-
-    s = s.rtc_annotate("SortedMySet<Fixnum>")
-
-    assert_equal([1,2,3,4,5], s.to_a)
-
-    prev = nil
-    s.each { |o| assert(prev < o) if prev; prev = o }
-    assert_not_nil(prev)
-
-    s.map! { |o| -2 * o }
-
-    assert_equal([-10,-8,-6,-4,-2], s.to_a)
-
-    prev = nil
-    ret = s.each { |o| assert(prev < o) if prev; prev = o }
-    assert_not_nil(prev)
-    assert_same(s, ret)
-
-    s = SortedMySet.new([2,1,3]) { |o| o * -2 }
-    assert_equal([-6,-4,-2], s.to_a)
-
-    s = SortedMySet.new(['one', 'two', 'three', 'four'])
-    a = []
-    ret = s.delete_if { |o| a << o; o.start_with?('t') }
-    assert_same(s, ret)
-    assert_equal(['four', 'one'], s.to_a)
-    assert_equal(['four', 'one', 'three', 'two'], a)
-
-    s = SortedMySet.new(['one', 'two', 'three', 'four'])
-    a = []
-    ret = s.reject! { |o| a << o; o.start_with?('t') }
-    assert_same(s, ret)
-    assert_equal(['four', 'one'], s.to_a)
-    assert_equal(['four', 'one', 'three', 'two'], a)
-
-    s = SortedMySet.new(['one', 'two', 'three', 'four'])
-    a = []
-    ret = s.reject! { |o| a << o; false }
-    assert_same(nil, ret)
-    assert_equal(['four', 'one', 'three', 'two'], s.to_a)
-    assert_equal(['four', 'one', 'three', 'two'], a)
-
-    Rtc::MasterSwitch.turn_off
-  end
-end
-
-class TC_Enumerable < Test::Unit::TestCase
-  def ttest_to_set
-    Rtc::MasterSwitch.turn_on
-
-    ary = [2,5,4,3,2,1,3]
-
-    set = ary.to_set
-    assert_instance_of(MySet, set)
-    assert_equal([1,2,3,4,5], set.sort)
-
-    set = ary.to_set { |o| o * -2 }
-    assert_instance_of(MySet, set)
-    assert_equal([-10,-8,-6,-4,-2], set.sort)
-
-    set = ary.to_set(SortedMySet)
-    assert_instance_of(SortedMySet, set)
-    assert_equal([1,2,3,4,5], set.to_a)
-
-    set = ary.to_set(SortedMySet) { |o| o * -2 }
-    assert_instance_of(SortedMySet, set)
-    assert_equal([-10,-8,-6,-4,-2], set.sort)
-
-    Rtc::MasterSwitch.turn_off
-  end
 end

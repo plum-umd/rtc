@@ -134,13 +134,13 @@ class MySet
   alias length size
 
   # Returns true if the set contains no elements.
-  typesig("'empty?': () -> TrueClass or FalseClass")
+  typesig("'empty?': () -> %bool")
   def empty?
     @hash.empty?
   end
 
   # Removes all elements and returns self.
-  typesig("clear: () -> MySet<a>", {"mutate" => true})
+  typesig("clear: () -> MySet<a>")
   def clear
     @hash.clear
     self
@@ -202,14 +202,14 @@ class MySet
   end
 
   # Returns true if the set contains the given object.
-  typesig("'include?': (a) -> TrueClass or FalseClass")
+  typesig("'include?': (a) -> %bool")
   def include?(o)
     @hash.include?(o)
   end
   alias member? include?
 
   # Returns true if the set is a superset of the given set.
-  typesig("'superset?': (MySet<a>) -> TrueClass or FalseClass")
+  typesig("'superset?'<u>: (MySet<u>) -> %bool")
   def superset?(set)
     set.is_a?(MySet) or raise ArgumentError, "value must be a set"
     return false if size < set.size
@@ -217,7 +217,7 @@ class MySet
   end
 
   # Returns true if the set is a proper superset of the given set.
-  typesig("'proper_superset?': (MySet<a>) -> TrueClass or FalseClass")
+  typesig("'proper_superset?'<u>: (MySet<u>) -> %bool")
   def proper_superset?(set)
     set.is_a?(MySet) or raise ArgumentError, "value must be a set"
     return false if size <= set.size
@@ -225,7 +225,7 @@ class MySet
   end
 
   # Returns true if the set is a subset of the given set.
-  typesig("'subset?': (MySet<a>) -> TrueClass or FalseClass")
+  typesig("'subset?'<u>: (MySet<u>) -> %bool")
   def subset?(set)
     set.is_a?(MySet) or raise ArgumentError, "value must be a set"
     return false if set.size < size
@@ -233,7 +233,7 @@ class MySet
   end
 
   # Returns true if the set is a proper subset of the given set.
-  typesig("'proper_subset?': (MySet<a>) -> TrueClass or FalseClass")
+  typesig("'proper_subset?'<u>: (MySet<u>) -> %bool")
   def proper_subset?(set)
     set.is_a?(MySet) or raise ArgumentError, "value must be a set"
     return false if set.size <= size
@@ -243,7 +243,7 @@ class MySet
   # Calls the given block once for each element in the set, passing
   # the element as parameter.  Returns an enumerator if no block is
   # given.
-  typesig("each: () {(a) -> .?} -> MySet<a>")
+  typesig("each: () {(a) -> %any } -> MySet<a>")
   typesig("each: () -> Enumerator")
   def each
     block_given? or return enum_for(__method__)
@@ -253,7 +253,7 @@ class MySet
 
   # Adds the given object to the set and returns self.  Use +merge+ to
   # add many elements at once.
-  typesig("add: (a) -> MySet<a>", {"mutate" => true})
+  typesig("add: (a) -> MySet<a>")
   def add(o)
     @hash[o] = true
     self
@@ -262,7 +262,7 @@ class MySet
 
   # Adds the given object to the set and returns self.  If the
   # object is already in the set, returns nil.
-  typesig("'add?': (a) -> MySet<a>", {"mutate" => true})
+  typesig("'add?': (a) -> MySet<a>")
   def add?(o)
     if include?(o)
       nil
@@ -273,7 +273,7 @@ class MySet
 
   # Deletes the given object from the set and returns self.  Use +subtract+ to
   # delete many items at once.
-  typesig("delete: (a) -> MySet<a>", {"mutate" => true})
+  typesig("delete<u>: (u) -> MySet<a>")
   def delete(o)
     @hash.delete(o)
     self
@@ -281,7 +281,7 @@ class MySet
 
   # Deletes the given object from the set and returns self.  If the
   # object is not in the set, returns nil.
-  typesig("'delete?': (a) -> MySet<a>", {"mutate" => true})
+  typesig("'delete?'<u>: (u) -> MySet<a>")
   def delete?(o)
     if include?(o)
       delete(o)
@@ -292,7 +292,7 @@ class MySet
 
   # Deletes every element of the set for which block evaluates to
   # true, and returns self.
-  typesig("delete_if: () {(a) -> .?} -> MySet<a>", {"mutate" => true})
+  typesig("delete_if: () {(a) -> %bool } -> MySet<a>")
   def delete_if
     block_given? or return enum_for(__method__)
     to_a.each { |o| @hash.delete(o) if yield(o) }
@@ -301,7 +301,7 @@ class MySet
 
   # Deletes every element of the set for which block evaluates to
   # false, and returns self.
-  typesig("keep_if: () {(a) -> .?} -> MySet<a>", {"mutate" => true})
+  typesig("keep_if: () {(a) -> %bool } -> MySet<a>")
   def keep_if
     block_given? or return enum_for(__method__)
     to_a.each { |o| @hash.delete(o) unless yield(o) }
@@ -309,7 +309,6 @@ class MySet
   end
 
   # Replaces the elements with ones returned by collect().
-  typesig("'collect!': () {(a) -> a} -> MySet<a>", {"mutate" => true})
   def collect!
     block_given? or return enum_for(__method__)
     set = self.class.new
@@ -320,7 +319,7 @@ class MySet
 
   # Equivalent to MySet#delete_if, but returns nil if no changes were
   # made.
-  typesig("'reject!' : () {(a) -> .?} -> MySet<a>", {"mutate" => true})
+  typesig("'reject!' : () {(a) -> %bool} -> MySet<a>")
   def reject!
     block_given? or return enum_for(__method__)
     n = size
@@ -330,7 +329,7 @@ class MySet
 
   # Equivalent to MySet#keep_if, but returns nil if no changes were
   # made.
-  typesig("'select!' : () {(a) -> .?} -> MySet<a>", {"mutate" => true})
+  typesig("'select!' : () {(a) -> %bool} -> MySet<a>")
   def select!
     block_given? or return enum_for(__method__)
     n = size
@@ -392,6 +391,7 @@ class MySet
 
   # Returns true if two sets are equal.  The equality of each couple
   # of elements is defined according to Object#eql?.
+  typesig("'==': (%any) -> %bool", {"unwrap" => [0]})
   def ==(other)
     if self.equal?(other)
       true
@@ -426,6 +426,8 @@ class MySet
   #   p hash    # => {2000=>#<MySet: {"a.rb", "b.rb"}>,
   #             #     2001=>#<MySet: {"c.rb", "d.rb", "e.rb"}>,
   #             #     2002=>#<MySet: {"f.rb"}>}
+  typesig("classify<t>: () { (a) -> t } -> Hash<t,MySet<a>>")
+  typesig("classify: () -> Enumerator")
   def classify # :yields: o
     block_given? or return enum_for(__method__)
 
@@ -489,6 +491,7 @@ class MySet
 
   # Returns a string containing a human-readable representation of the
   # set. ("#<MySet: {element1, element2, ...}>")
+  typesig("inspect: () -> String")
   def inspect
     ids = (Thread.current[InspectKey] ||= [])
 
@@ -516,149 +519,6 @@ class MySet
 
   def pretty_print_cycle(pp)    # :nodoc:
     pp.text sprintf('#<%s: {%s}>', self.class.name, empty? ? '' : '...')
-  end
-end
-
-#
-# SortedMySet implements a MySet that guarantees that it's element are
-# yielded in sorted order (according to the return values of their
-# #<=> methods) when iterating over them.
-#
-# All elements that are added to a SortedMySet must respond to the <=>
-# method for comparison.
-#
-# Also, all elements must be <em>mutually comparable</em>: <tt>el1 <=>
-# el2</tt> must not return <tt>nil</tt> for any elements <tt>el1</tt>
-# and <tt>el2</tt>, else an ArgumentError will be raised when
-# iterating over the SortedMySet.
-#
-# == Example
-#
-#   require "set"
-#
-#   set = SortedMySet.new([2, 1, 5, 6, 4, 5, 3, 3, 3])
-#   ary = []
-#
-#   set.each do |obj|
-#     ary << obj
-#   end
-#
-#   p ary # => [1, 2, 3, 4, 5, 6]
-#
-#   set2 = SortedMySet.new([1, 2, "3"])
-#   set2.each { |obj| } # => raises ArgumentError: comparison of Fixnum with String faile
-#
-
-rtc_typesig("class SortedMySet<a>")
-
-class SortedMySet < MySet
-  rtc_annotated
-  define_iterators :a => :each
-
-  @@setup = false
-
-  class << self
-    def [](*ary)        # :nodoc:
-      new(ary)
-    end
-
-    def setup   # :nodoc:
-      @@setup and return
-
-      module_eval {
-        # a hack to shut up warning
-        alias old_init initialize
-      }
-      begin
-        require 'rbtree'
-
-        module_eval %{
-          def initialize(*args, &block)
-            @hash = RBTree.new
-            super
-          end
-
-          def add(o)
-            o.respond_to?(:<=>) or raise ArgumentError, "value must respond to <=>"
-            super
-          end
-          alias << add
-        }
-      rescue LoadError
-        module_eval %{
-          def initialize(*args, &block)
-            @keys = nil
-            super
-          end
-
-          def clear
-            @keys = nil
-            super
-          end
-
-          def replace(enum)
-            @keys = nil
-            super
-          end
-
-          def add(o)
-            o.respond_to?(:<=>) or raise ArgumentError, "value must respond to <=>"
-            @keys = nil
-            super
-          end
-          alias << add
-
-          def delete(o)
-            @keys = nil
-            @hash.delete(o)
-            self
-          end
-
-          def delete_if
-            block_given? or return enum_for(__method__)
-            n = @hash.size
-            super
-            @keys = nil if @hash.size != n
-            self
-          end
-
-          def keep_if
-            block_given? or return enum_for(__method__)
-            n = @hash.size
-            super
-            @keys = nil if @hash.size != n
-            self
-          end
-
-          def merge(enum)
-            @keys = nil
-            super
-          end
-
-          def each
-            block_given? or return enum_for(__method__)
-            to_a.each { |o| yield(o) }
-            self
-          end
-
-          def to_a
-            (@keys = @hash.keys).sort! unless @keys
-            @keys
-          end
-        }
-      end
-      module_eval {
-        # a hack to shut up warning
-        remove_method :old_init
-      }
-
-      @@setup = true
-    end
-  end
-
-  def initialize(*args, &block) # :nodoc:
-    SortedMySet.setup
-    initialize(*args, &block)
   end
 end
 
