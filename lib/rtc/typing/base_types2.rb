@@ -185,7 +185,7 @@ class Hash
   typesig("key<t>: (t) -> k")
   typesig("keys: () -> Array<k>")
   typesig("length: () -> Fixnum")
-  typesig("size: () -> Enumerator")
+  typesig("size: () -> Fixnum")
   typesig("merge<a,b>: (Hash<a,b>) -> Hash<a or k, b or v>")
   typesig("merge<a,b>: (Hash<a,b>) { (k,v,b) -> v or b } -> Hash<a or k, b or v>")
   typesig("rassoc: (k) -> Tuple<k,v>")
