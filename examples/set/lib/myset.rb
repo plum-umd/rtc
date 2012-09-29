@@ -54,11 +54,10 @@
 require 'rtc_lib'
 
 Rtc::MasterSwitch.turn_off
-rtc_typesig("class MySet<a>")
-class MySet
-  rtc_annotated
 
-  define_iterators :a => :each
+class MySet
+  rtc_annotated [:a, :each]
+
 
 
   include Enumerable

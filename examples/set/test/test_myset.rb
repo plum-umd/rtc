@@ -237,7 +237,7 @@ class TC_MySet < Test::Unit::TestCase
     Rtc::MasterSwitch.turn_off
   end
 
-  def ttest_proper_superset?
+  def test_proper_superset?
     Rtc::MasterSwitch.turn_off
 
     set = MySet[1,2,3]
@@ -480,43 +480,6 @@ class TC_MySet < Test::Unit::TestCase
     Rtc::MasterSwitch.turn_off
   end
 
-  def ttest_divide
-    Rtc::MasterSwitch.turn_on
-    set = MySet.new(1..10)
-
-    set = set.rtc_annotate("MySet<Fixnum>")
-    ret = set.divide { |i| i % 3 }
-
-    assert_equal(3, ret.size)
-    n = 0
-    ret.each { |s| n += s.size }
-    assert_equal(set.size, n)
-    assert_equal(set, ret.flatten)
-
-    set = MySet[7,10,5,11,1,3,4,9,0]
-    set = set.rtc_annotate("MySet<Fixnum>")
-    ret = set.divide { |a,b| (a - b).abs == 1 }
-
-    assert_equal(4, ret.size)
-    n = 0
-    ret.each { |s| n += s.size }
-    assert_equal(set.size, n)
-    assert_equal(set, ret.flatten)
-    ret.each { |s|
-      if s.include?(0)
-        assert_equal(MySet[0,1], s)
-      elsif s.include?(3)
-        assert_equal(MySet[3,4,5], s)
-      elsif s.include?(7)
-        assert_equal(MySet[7], s)
-      elsif s.include?(9)
-        assert_equal(MySet[9,10,11], s)
-      else
-        raise "unexpected group: #{s.inspect}"
-      end
-    }
-    Rtc::MasterSwitch.turn_off
-  end
 
   def test_inspect
     Rtc::MasterSwitch.turn_on
