@@ -61,6 +61,35 @@ class Hash
   end
 end
 
+class Fixnum
+  alias :old_eq :==
+  alias :old_eql? :eql?
+  alias :old_equal? :equal?
+  def ==(other)
+    if other.is_proxy_object?
+      old_eq(other.object)
+    else
+      old_eq(other)
+    end
+  end
+
+  def eql?(other)
+    if other.is_proxy_object?
+      old_eql?(other.object)
+    else
+      old_eql?(other)
+    end
+  end
+
+  def equal?(other)
+    if other.is_proxy_object?
+      old_equal?(other.object)
+    else
+      old_equal?(other)
+    end
+  end  
+end
+
 class Symbol
   alias :old_eq :==
   alias :old_eql? :eql?
