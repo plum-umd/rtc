@@ -262,7 +262,7 @@ rule
 
   tuple:
       K_TUPLE T_LESS type_expr_comma_list T_GREATER {
-        result = Rtc::Types::TupleType.new(val[3])
+        result = Rtc::Types::TupleType.new(val[2])
       }
 
   type_expr_comma_list:

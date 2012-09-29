@@ -1035,7 +1035,7 @@ module_eval(<<'.,.,', 'annot_parser.racc', 259)
 
 module_eval(<<'.,.,', 'annot_parser.racc', 264)
   def _reduce_69(val, _values, result)
-            result = Rtc::Types::TupleType.new(val[3])
+            result = Rtc::Types::TupleType.new(val[2])
       
     result
   end
