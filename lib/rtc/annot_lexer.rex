@@ -65,12 +65,18 @@ rule
   {REQUIRE_RE}                               { [:K_REQUIRE, text] }
   {END_RE}                                   { [:K_END, text] }
   {TYPE_RE}                                  { [:K_TYPE, text] }
+  %none					     { [:T_BOTTOM, text] }
   {TYPEVAR_RE}                               { [:K_TYPEVAR, text] }
+  %any					     { [:T_TOP, text] }
+  %false                                     { [:T_FALSE, text] }
+  %true                                      { [:T_TRUE, text] }
+  %bool                                      { [:T_BOOL, text] }
 
 
 # keywords
   or                                   { [:K_OR, text] }
   self                                 { [:K_SELF, text] }
+  Tuple                                { [:K_TUPLE, text] }
   nil								   { [:K_NIL, text] }
 # {TYPE_ID_RE}                        { [:T_TYPE_ID, text] }
 # {TYPE_ID_RE}						   { [:T_TICKED_ID, text] }

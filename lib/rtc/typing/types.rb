@@ -4,12 +4,14 @@
 
 require 'set'
 require 'singleton'
+require 'rtc/runtime/native'
 
 require 'rtc/tools/hash-builder.rb'
 require 'rtc/runtime/class_loader'
+require 'rtc/runtime/type_inferencer'
 
 class Rtc::GlobalCache
-  @@cache = {}
+  @@cache = Rtc::NativeHash.new
   def self.cache
     @@cache
   end
@@ -23,12 +25,12 @@ class Object
       if frozen? and Rtc::GlobalCache.cache[object_id] 
         return Rtc::GlobalCache.cache[object_id]
       end
-      to_return = {
-        :annotated => false,
-        :no_subtype => false,
-        :iterators => {},
-        :_type => nil
-      }
+      to_return = Rtc::NativeHash.new;
+      to_return[:annotated] = false
+      to_return[:no_subtype] = false
+      to_return[:iterators] = Rtc::NativeHash.new
+      to_return[:_type] = nil
+      to_return[:proxy_context] = Rtc::NativeArray.new
       if frozen?
         Rtc::GlobalCache.cache[object_id] = to_return
       else
@@ -36,7 +38,7 @@ class Object
       end
     end
   end
-  
+
   def rtc_gc
     Rtc::GlobalCache.cache[object_id] = nil
   end
@@ -50,14 +52,10 @@ class Object
     end
     @@old_freeze_meth.bind(self).call()
   end
-  
+
   def rtc_type
-    meta_hash = rtc_meta
-    if meta_hash[:_type]
-      meta_hash[:_type]
-    else
-      meta_hash[:_type] = rtc_get_type
-     end
+    return Rtc::Types::BottomType.new if self == nil
+    return rtc_get_type
   end
   
   def rtc_typeof(name, which_class = nil)
@@ -69,6 +67,13 @@ class Object
     end
   end
   
+  def rtc_is_complex?
+    if self.nil?
+      false
+    end
+    not Rtc::Types::NominalType.of(self.class).type_parameters.empty?
+  end
+  
   protected
   
   def rtc_get_type
@@ -76,26 +81,52 @@ class Object
       Rtc::Types::SymbolType.new(self)
     else
       class_obj = Rtc::Types::NominalType.of(self.class)
+
       if class_obj.type_parameters.size == 0
-          class_obj
+        class_obj
       elsif class_obj.klass == Array
-          Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each)])
+          Rtc::Types::ParameterizedType.new(class_obj, Rtc::NativeArray[Rtc::TypeInferencer.infer_type(self.each)], true)
+      # elsif class_obj.klass == MySet 
+          # begin
+            # self.flatten
+          # rescue ArgumentError
+            # return Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create([Object.new].each)])
+          # end  
+# 
+          # Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each)])
+      elsif class_obj.klass == Set 
+          Rtc::Types::ParameterizedType.new(class_obj, [Rtc::TypeInferencer.infer_type(self.each)], true)
       elsif class_obj.klass == Hash
-          Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each_key),
-            Rtc::Types::TypeVariable.create(self.each_value)])
+          #Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each_key),
+          #  Rtc::Types::TypeVariable.create(self.each_value)])
+          Rtc::Types::ParameterizedType.new(class_obj, Rtc::NativeArray[
+            Rtc::TypeInferencer.infer_type(self.each_key),
+            Rtc::TypeInferencer.infer_type(self.each_value)
+          ], true)
       else
           #user defined parameterized classes
+        iterators = class_obj.klass.rtc_meta[:iterators]
         tv = class_obj.type_parameters.map {
           |param|
-          Rtc::Types::TypeVariable.create(self.send(class_obj.klass.rtc_meta[:iterators][param.symbol]))
+          if iterators[param.symbol].is_a?(Proc)
+            enum = iterators[param.symbol][self]
+          else
+            enum = self.send(iterators[param.symbol])
+          end
+          Rtc::TypeInferencer.infer_type(enum)
         }
-        Rtc::Types::ParameterizedType.new(class_obj, tv)
+
+        Rtc::Types::ParameterizedType.new(class_obj, tv, true)
       end
     end
   end
-  
 end
 
+class Module
+  def rtc_get_type
+    return Rtc::Types::NominalType.of(class << self; self; end)
+  end
+end
 
 class Class
   def rtc_instance_typeof(name, include_super = true)
@@ -107,16 +138,26 @@ class Class
       my_type.get_method(name, include_super ? nil : self)
     end
   end
-  
-  def rtc_get_type
-    return Rtc::Types::NominalType.of(class << self; self; end)
-  end
 end
 
 class Rtc::TypeNarrowingError < StandardError; end
 
 module Rtc::Types
+  module TerminalType
+    def replace_parameters(_t_vars)
+      self
+    end
 
+    def _to_actual_type
+      self
+    end
+
+    def each
+      yield self
+    end
+
+    def is_terminal; true; end
+  end
     # Abstract base class for all types. Takes care of assigning unique ids to
     # each type instance and maintains sets of constraint edges. This class
     # should never be instantiated directly.
@@ -139,26 +180,43 @@ module Rtc::Types
         def <=(other)
             case other
             when UnionType
-              other.types.any? do |a|
+              if other.has_variables
+                solution_found = false
+                for i in other.types
+                  if self <= i
+                    raise Rtc::AmbiguousUnionException, "Ambiguous union detected" if solution_found
+                    solution_found = true
+                  end
+                end
+                solution_found
+              else
+                other.types.any? do |a|
                 self <= a
+              end
               end
             when IntersectionType
               others.types.any? do |a|
-                self <= a
-              end
-            when OpenType
+              self <= a
+            end
+            when TypeVariable
+              return self <= other.get_type if other.instantiated
+              return false unless other.solving             
+              other.add_constraint(self)
               true
-            when ClosedType
-              typ = other.wrapped_type
-              self <= typ
             when TopType
               true
+            when TupleType
+              raise Exception, '<= TupleType NOT implemented'
             else
               false
             end
         end
-        
+
         def parameterized?
+          false
+        end
+
+        def is_tuple
           false
         end
 
@@ -181,6 +239,44 @@ module Rtc::Types
         
         def inspect()
           "#{self.class.name}(#{@id}): #{to_s}" 
+        end
+
+        def replace_parameters(type_vars)
+          map {
+            |t|
+            t.replace_parameters(type_vars)
+          }
+        end
+        
+        def has_variables
+          self.each {
+            |t|
+            return true if t.is_a?(TypeVariable) and t.solving?
+            t.has_variables unless t.is_terminal
+          }
+          false
+        end
+        
+        def is_terminal
+          false
+        end
+
+        def each
+          raise "you must implement this"
+        end
+
+        def to_actual_type
+          if not defined?(@actual_type)
+            @actual_type = _to_actual_type
+          end
+          @actual_type
+        end
+
+        def _to_actual_type
+          map {
+            |t|
+            t.to_actual_type
+          }
         end
 
         protected
@@ -212,12 +308,40 @@ module Rtc::Types
             super()
         end
 
+        def map
+          new_fields = {}
+          new_methods = {}
+          @field_types.each_pair {
+            |field_name,field_type|
+            new_fields[field_name] = yield field_type
+          }
+          @method_types.each_pair {
+            |method_name, method_type|
+            new_methods[method_name] = yield method_type
+          }
+        end
+
+        def each
+          @method_types.each_value {
+            |m|
+            yield m
+          }
+          @field_types.each_value {
+            |f|
+            yield f
+          }
+        end
+
         def field_names
           @field_types.keys
         end
         
         def method_names
           @method_types.keys
+        end
+        
+        def any?
+          yield self
         end
 
         # Return +true+ if +self+ is a subtype of +other+. This follows the
@@ -230,6 +354,8 @@ module Rtc::Types
         #    +self+ are subtypes of the types with the same key in +other+).
         def <=(other)
             case other
+            when TupleType
+                false
             when StructuralType
                 other.method_names.each do |m_name|
                   return false unless method_names.include?(m_name)
@@ -298,7 +424,7 @@ module Rtc::Types
             return false unless left.size == right.size
             left.each_pair do |sym, left_type|
                 return false unless right.has_key?(sym)
-                right_type = right[sym]
+                 right_type = right[sym]
                 return false unless right_type == left_type
             end
         end
@@ -315,14 +441,80 @@ module Rtc::Types
         end
     end
 
+    class TupleType < Type
+      attr_reader :ordered_params
+      attr_reader :size
+      
+      def initialize(arr)
+        @ordered_params = arr
+        @size = arr.size
+        super()
+      end
+
+      def map
+        TupleType.new(ordered_params.map {
+                        |p|
+                        yield p
+                      })
+      end
+
+      def is_tuple
+        true
+      end
+
+      def to_s
+        "Tuple<[#{ordered_params.join(", ")}]>"
+      end
+      
+      def inspect
+        "#{self.class.name}(#{@id}): #{@ordered_params.inspect}" 
+      end
+
+      def each
+        @ordered_params.each {
+          |p|
+          yield p
+        }
+      end
+
+      def <=(other)
+        case other
+        when TupleType
+          return false unless self.size == other.size
+          
+          i = 0
+          
+          for t in self.ordered_params
+            return false if not t <= other.ordered_params[i]
+            i += 1
+          end
+          
+          true
+        else
+          super
+        end
+      end
+      
+      def hash
+        builder = Rtc::HashBuilder.new(107, 157)
+        builder.include("tuple")
+        @ordered_params.each do |p|
+          builder.include(p)
+        end
+        builder.get_hash
+      end
+    end
+
     # The simplest kind of type, where the name is the same as the type, such as
     # Fixnum, String, Object, etc.
     class NominalType < StructuralType
+      include TerminalType
         class InheritanceChainIterator
           #TODO(jtoman): add support for Enumerators?
           def initialize(class_obj)
             @it_class = class_obj
           end
+
           def next
             return nil if @it_class.nil?
             to_return = @it_class
@@ -336,7 +528,7 @@ module Rtc::Types
         end
       
         # A cache of NominalType instances, keyed by Class constants.
-        @@cache = Hash.new
+        @@cache = Rtc::NativeHash.new
 
         # The constant Class instance for this type.
         attr_reader :klass
@@ -355,6 +547,15 @@ module Rtc::Types
             return t
         end
         
+        def map
+          return self
+        end
+
+        def has_method?(method)
+          method = method.to_sym
+          self.klass.method_defined?(method)
+        end
+        
         def type_parameters
           @type_parameters
         end
@@ -368,7 +569,7 @@ module Rtc::Types
         end
         
         def type_parameters=(t_params)
-          @type_parameters = t_params.each {
+          @type_parameters = t_params.map {
             |t_param|
             if t_param.instance_of?(Symbol)
               TypeParameter.new(t_param)
@@ -383,17 +584,24 @@ module Rtc::Types
         # Return +true+ if +self+ represents a subtype of +other+.
         def <=(other)
             case other
+            when NominalType
+              other_class = other.klass
+              return true if other_class.name == @name
+              it_class = @klass
+              while it_class
+                return true if it_class == other_class
+                it_class = it_class.rtc_meta[:no_subtype] ?
+                  nil : it_class.superclass
+              end
+              return false
             when ParameterizedType
               false
-            when NominalType
-                return true if other.klass.name == @klass.name
-                other_class = other.klass
-                it = InheritanceChainIterator.new(@klass)
-                #TODO(jtoman): memoize this lookup for fast access?
-                while (it_class = it.next)
-                  return true if other_class == it_class 
-                end
-                return false
+            when TupleType
+              false
+            when TopType
+              true
+            when StructuralType
+              super(other)
             else
               super(other)
             end
@@ -419,6 +627,10 @@ module Rtc::Types
             return @klass.name.hash
         end
         
+        def to_real
+          self
+        end
+
         def add_field(name,type)
           if extant_type = @field_types[name]
             if extant_type.instance_of?(UnionType)
@@ -441,11 +653,14 @@ module Rtc::Types
             end
             type = IntersectionType.of(type)
           end
+
           @method_types[name] = type
         end
         def get_method(name, which = nil)
           if @method_types[name] && (which.nil? or which == @klass)
-            @method_types[name]
+            @method_types[name].is_a?(IntersectionType) ?
+              @method_types[name].map { |it| it.instantiate } :
+              @method_types[name].instantiate
           else
             (sc = superclass) ? sc.get_method(name, which) : nil
           end
@@ -484,9 +699,10 @@ module Rtc::Types
         # [+klass+] The constant Class instance of this type, i.e. Fixnum,
         #           String, etc.
         def initialize(klass)
-            super({},{})
+            super(Rtc::NativeHash.new,Rtc::NativeHash.new)
             @klass = klass
             @type_parameters = []
+            @name = klass.name
         end
     end
     
@@ -577,42 +793,78 @@ module Rtc::Types
         attr_accessor :nominal
         # The list of type parameters, in order.
         attr_accessor :parameters
+        attr_accessor :dynamic
         
         # Creates a new ParameterizedType, parameterizing +nominal+ with
         # +parameters+. Note that +parameters+ must be listed in order.
-        def initialize(nominal, parameters)
+        def initialize(nominal, parameters, dynamic = false)
             if nominal.type_parameters.size > 0
               raise Exception.new("Type parameter mismatch") unless parameters.size == nominal.type_parameters.length
             end
 
             @nominal = nominal
-            @parameters = parameters.map {
-              |t_param|
-              t_param.instance_of?(TypeVariable) ? t_param : TypeVariable.create(t_param)
-            }
-            @_method_cache = {}
-            super({},{})
-        end
-        
-        def parameterized?
-          true
+            @parameters = parameters
+            @method_cache = Rtc::NativeHash.new
+            @dynamic = dynamic
+          super({},{})
         end
 
+        def each
+          yield @nominal
+          @parameters.each {
+            |p|
+            yield p
+          }
+        end
+
+        def has_method?(method)
+          @nominal.has_method?(method)
+        end
+        
+        def map
+          new_nominal = yield @nominal
+          new_params = Rtc::NativeArray.new
+          parameters.each {
+            |p|
+            new_params << (yield p)
+          }
+          ParameterizedType.new(new_nominal, new_params, dynamic)
+        end
+        
         def <=(other)
-            case other
-            when ParameterizedType
-                return false unless (@nominal <= other.nominal and
-                                     other.nominal <= @nominal)
-                zipped = @parameters.zip(other.parameters)
-                return false unless zipped.all? do |t, u|
-                    t.pointed_type <= u.pointed_type
+          case other
+          when ParameterizedType
+            return false unless (@nominal <= other.nominal and
+                                 other.nominal <= @nominal)
+            zipped = @parameters.zip(other.parameters)
+            if not @dynamic
+              return false unless zipped.all? do |t, u|
+                # because type binding is done via the subtyping operationg
+                # we can't to t <= u, u <= t as uninstantiate type variables
+                # do not have a meaningful subtype rule
+                if u.instance_of?(TypeVariable)
+                  t <= u
+                else
+                  t <= u and u <= t
                 end
-                true
-            when NominalType
-              false
+              end
             else
-                super(other)
+              return false unless zipped.all? do |t, u|
+                t <= u
+              end
             end
+            true
+          when NominalType
+            if other.klass == Object
+              true
+            else
+              false 
+            end
+          when TupleType
+            false
+          else
+            super(other)
+          end
         end
 
         def hash
@@ -637,74 +889,54 @@ module Rtc::Types
         end
 
         def get_field(name, which = nil)
-          return replace_type(@nominal.get_field(name, which), @parameters)
+          return replace_type(@nominal.get_field(name, which))
         end
         
         def get_method(name, which = nil)
-          #TODO(jtoman): get caching to work with which parameter
-          #return @_method_cache[name] if @_method_cache.has_key?(name)
-          #@_method_cache[name] = 
-          replace_type(@nominal.get_method(name, which),@parameters)
+          replacement_map = Rtc::NativeHash.new
+          if dynamic
+            # no caching here folks
+            @nominal.type_parameters.each_with_index {
+              |t_param, type_index|
+              replacement_map[t_param.symbol] = TypeVariable.new(t_param.symbol, self, parameters[type_index])
+            }
+            to_ret = @nominal.get_method(name, which).replace_parameters(replacement_map)
+            if to_ret.is_a?(IntersectionType)
+              to_ret.each {
+                |type|
+                type.type_variables += replacement_map.values
+              }
+            else
+              to_ret.type_variables += replacement_map.values
+            end
+            to_ret
+          else
+            if @method_cache[name]
+              return @method_cache[name]
+            end
+            @nominal.type_parameters.each_with_index {
+              |t_param, type_index|
+              replacement_map[t_param.symbol] = parameters[type_index]
+            }
+            to_ret = @nominal.get_method(name, which).replace_parameters(replacement_map)
+            has_tvars = 
+              if to_ret.is_a?(IntersectionType)
+                to_ret.types.any? {
+                |type|
+                not type.type_variables.empty?
+              }
+              else
+                not to_ret.type_variables.empty?
+              end
+            if not has_tvars
+              @method_cache[name] = to_ret
+            end
+            return to_ret
+          end
         end
         
         def to_s
-          "#{@nominal.klass.name}<#{parameters.join(", ")}>"
-        end
-        
-        private
-        # perform type replacement recursively
-        def replace_type(type, formal_type_parameters)
-          case type
-          when TypeParameter
-            t_ind = @nominal.type_parameters.index(type)
-            raise Exception.new("Unknown type id #{type}") if t_ind == nil
-            formal_type_parameters[t_ind].pointed_type
-          when OptionalArg
-            OptionalArg.new(replace_type(type.type,formal_type_parameters))
-          when Vararg
-            Vararg.new(replace_type(type.type, formal_type_parameters))
-          when ParameterizedType
-            ParameterizedType.new(
-              type.nominal,
-              type.parameters.map { |t_param|
-                replace_type(t_param.pointed_type, formal_type_parameters)
-              }
-            )
-          when StructuralType
-            #TODO(jtoman): implement me?
-            type
-          when NominalType
-            type
-          when ProceduralType
-            block = nil
-            if type.block_type != nil
-              block = replace_type(type.block_type, formal_type_parameters)
-            end
-            ProceduralType.new(
-              replace_type(type.return_type,formal_type_parameters),
-              (type.arg_types.map do |t|
-                replace_type(t,formal_type_parameters)
-              end),
-              block)
-          when SymbolType
-            type
-          when UnionType
-            UnionType.of(
-              type.types.map do |t|
-                replace_type(t,formal_type_parameters)
-              end
-            )
-          when IntersectionType
-            IntersectionType.of(
-              type.types.map do |t|
-                replace_type(t,formal_type_parameters)
-              end
-            )
-          when OpenType
-            replace_type(type.wrapped_type, formal_type_parameters)
-          when ClosedType
-            replace_type(type.wrapped_type, formal_type_parameters)
-          end
+            "#{@nominal.klass.name}<#{parameters.join(", ")}>"
         end
     end
 
@@ -715,18 +947,71 @@ module Rtc::Types
         attr_reader :return_type
         attr_reader :arg_types
         attr_reader :block_type
+        attr_reader :parameters
+        attr_accessor :mutate
+        attr_accessor :unwrap
 
+        attr_accessor :type_variables
         # Create a new ProceduralType.
         #
         # [+return_type+] The type that the procedure returns.
         # [+arg_types+] List of types of the arguments of the procedure.
         # [+block_type+] The type of the block passed to this method, if it
         #                takes one.
-        def initialize(return_type, arg_types=[], block_type=nil)
+        # [+tvars+] The list of instantiated type variables that exist in this for this
+        #                 method
+        def initialize(parameters, return_type, arg_types=[], block_type=nil, tvars = [], meta={})
+            @parameters = parameters.nil? ? [] : parameters
             @return_type = return_type
             @arg_types = arg_types
             @block_type = block_type
+            @type_variables = tvars
+            @mutate = meta['mutate'].nil? ? false : meta['mutate']
+            @unwrap = meta['unwrap'].nil? ? [] : meta['unwrap']
             super()
+        end
+
+        def map
+          new_arg_types = Rtc::NativeArray.new
+          arg_types.each {
+            |p|
+            new_arg_types << (yield p)
+          }
+          ProceduralType.new(
+                             parameters,
+                             (yield return_type),
+                             new_arg_types,
+                             block_type.nil? ? nil : (yield block_type),
+                             type_variables,
+                             { "mutate" => mutate, "unwrap" => unwrap }
+                             )
+        end
+
+        def each
+          yield return_type
+          yield block_type if block_type
+          arg_types.each { |a| yield a }
+        end
+        
+        def instantiate
+          if not parameterized?
+            return self
+          end
+          type_vars = Rtc::NativeHash.new
+          parameters.map {
+            |t_param|
+            type_vars[t_param.symbol] = TypeVariable.new(t_param.symbol, self)
+          }
+          to_return = self.map {
+            |t|
+            t.replace_parameters(type_vars)
+          };
+          to_return.type_variables = type_vars.values;
+          return to_return
+        end
+        
+        def parameterized?
+          not parameters.empty?
         end
 
         # Return true if +self+ is a subtype of +other+. This follows the usual
@@ -755,18 +1040,24 @@ module Rtc::Types
                     return false unless b <= a
                 end
                 return true
+            when TupleType
+                false
             else
                 super(other)
             end
         end
 
         def to_s  # :nodoc:
-            if @block_type
-                "[ (#{@arg_types.join(', ')}) " \
-                "{#{@block_type}} -> #{@return_type} ]"
+          if @block_type
+            "[ (#{@arg_types.join(', ')}) " \
+            "{#{@block_type}} -> #{@return_type} ]"
+          else
+            if @arg_types
+              "[ (#{@arg_types.join(', ')}) -> #{@return_type} ]"
             else
-                "[ (#{@arg_types.join(', ')}) -> #{@return_type} ]"
+              "[ () -> #{@return_type} ]"
             end
+          end
         end
 
         # Return true if all of the following are true:
@@ -814,11 +1105,10 @@ module Rtc::Types
         def parameter_layout
           return @param_layout_cache if defined? @param_layout_cache
           a_list = arg_types + [nil]
-          to_return = {
-            :required => [0,0],
-            :rest => false,
-            :opt => 0
-          }
+          to_return = Rtc::NativeHash.new()
+          to_return[:required] = Rtc::NativeArray[0,0]
+          to_return[:rest] =  false
+          to_return[:opt] = 0
           def param_type(arg_type)
             case arg_type
             when NilClass
@@ -902,11 +1192,12 @@ module Rtc::Types
     # An object used to represent a variable number of arguments of a single type.
     # This doesn't represent a node in the constraint graph; constraints
     # should be generated on the +type+ attribute.
-    class Vararg
+    class Vararg < Type
         attr_accessor :type
 
         def initialize(type)
             @type = type
+          super()
         end
 
         def to_s
@@ -921,6 +1212,14 @@ module Rtc::Types
             31 + type.hash
         end
         
+        def each
+          yield type
+        end
+        
+        def map
+          Vararg.new(yield type)
+        end
+
         def <=(other)
           if other.instance_of(Vararg)
             type <= other.type
@@ -933,11 +1232,20 @@ module Rtc::Types
     # An object used to wrap a type for an optional argument to a procedure.
     # This does not represent a node in the constraint graph; constraints should
     # be generated on the +type+ attribute.
-    class OptionalArg
+    class OptionalArg < Type
         attr_accessor :type
+
+      def each
+        yield type
+      end
 
         def initialize(type)
             @type = type
+          super()
+        end
+        
+        def map
+          OptionArg.new(yield type)
         end
 
         def to_s
@@ -955,14 +1263,23 @@ module Rtc::Types
 
 
     class SymbolType < Type
+      include TerminalType
       attr_reader :symbol
       def initialize(sym)
         @symbol = sym
         super()
       end
+
+      def has_method?(method)
+        Symbol.method_defined?(method)
+      end
       
       def eql?(other)
         other.instance_of?(SymbolType) and other.symbol == symbol
+      end
+
+      def map
+        return self
       end
       
       def ==(other)
@@ -972,7 +1289,11 @@ module Rtc::Types
       def hash
         symbol.to_s.hash
       end
-      
+
+      def each
+        yield self
+      end
+
       def to_s
         ":#{@symbol}"
       end
@@ -992,7 +1313,6 @@ module Rtc::Types
     # of two types is the type that supports all of the operations of both
     # types.
     class IntersectionType < Type
-
         # Return a type representing the intersection of all the types in
         # +types+. Handles some special cases to simplify the resulting type:
         # 1. If +a+ and +b+ are both in +types+ and +a+ <= +b+, only +a+ will
@@ -1014,6 +1334,20 @@ module Rtc::Types
             end
             return types[0] if types.size == 1
             return IntersectionType.new(types)
+        end
+
+        def map
+          IntersectionType.new(types.map {
+            |t|
+            yield t
+          })
+        end
+
+        def each
+          types.each {
+            |t|
+            yield t
+          }
         end
 
         # The set of all the types intersected in this instance.
@@ -1078,7 +1412,6 @@ module Rtc::Types
     # A type that is the union of a set of types. Values of a union type may be
     # of the type of any type in the set.
     class UnionType < Type
-
         # Returns a type representing the union of all the types in +types+.
         # Handles some special cases to simplify the resulting type:
         # 1. If +a+ and +b+ are both in +types+ and +a+ <= +b+, only +b+ will
@@ -1087,11 +1420,17 @@ module Rtc::Types
         # the list, it is returned directly.
         def self.of(types)
             return types[0] if types.size == 1
+
+            t0 = types[0]
+            types.each{|t| types.delete(t) if t.instance_of?(BottomType)}
             pairs = types.product(types)
+
             pairs.each do |t, u|
                 # pairs includes [t, t] and [u, u], and since t <= t, skip
                 # these.
-                next if t.equal?(u)
+                #  next if t.eql?(u) 
+                next if t <= u and u <= t
+
                 # pairs includes [t, u] and [u, t], so we don't do symmetric
                 # checks.
                 if t <= u
@@ -1099,8 +1438,24 @@ module Rtc::Types
                 end
             end
 
+            return t0 if types == []
             return types[0] if types.size == 1
             return UnionType.new(types)
+        end
+
+        def each
+          types.each {
+            |t|
+            yield t
+          }
+        end
+
+        def has_method?(method)
+          @types.all? {|t| t.has_method?(method)}
+        end
+
+        def map
+          UnionType.of(types.map { |t| yield t })
         end
 
         # The set of all types in the union.
@@ -1153,27 +1508,52 @@ module Rtc::Types
             @symbol = symbol
             super()
         end
+        
+        def is_terminal
+          true
+        end
+
+        def replace_parameters(type_vars)
+          if type_vars.has_key? symbol
+            return type_vars[symbol]
+          end
+          self
+        end
+
+        def _to_actual_type
+          self
+        end
+
+        def each
+          yield self
+        end
 
         # Return true if self is a subtype of other.
         #--
         # TODO(rwsims): Refine this as use cases become clearer.
         def <=(other)
-            return other.instance_of?(TopType)
+          return other.instance_of?(TopType)
         end
-        
+
+        def map
+          return self
+        end
+
         def to_s
           "TParam<#{symbol.to_s}>"
         end
         
         def eql?(other)
-          other.symbol.eql?(@symbol)
-        end
-        
+          other.is_a?(TypeParameter) and other.symbol.eql?(@symbol)
+        end        
     end
+
     class TopType < Type
+      include TerminalType
       def initialize()
         super()
       end
+
       def to_s
         "t"
       end
@@ -1186,6 +1566,14 @@ module Rtc::Types
         other.instance_of?(TopType)
       end
       
+      def map
+        return self
+      end
+
+      def each
+        yield self
+      end
+
       def ==(other)
         eql?(other)
       end
@@ -1195,204 +1583,152 @@ module Rtc::Types
       end
       
       def <=(other)
-        false
+        if other.instance_of?(TopType)
+          true
+        else
+          false
+        end
       end
 
       @@instance = nil
     end
     
     class BottomType < Type
+      include TerminalType
       def hash
         13
       end
+
       def initialize()
         super()
       end
+
+      def map
+        return self
+      end
+      
+      def each
+        yield self
+      end
+
+      def has_method?(m)
+        nil.respond_to?(m)
+      end
+
       def to_s
         "b"
       end
+
       def eql?(other)
         other.instance_of?(BottomType)
       end
+
       def <=(other)
-        eql?(other)
+        # eql?(other)
+        true
       end
+
       def self.instance
         return @@instance || (@@instance = BottomType.new)
       end
       
       @@instance = nil
     end
-    
+
     class TypeVariable < Type
-      def self.create(type_param)
-        if !type_param.instance_of?(Enumerator) && !type_param.kind_of?(Type)
-          raise(Exception, "Type Parameter must be an enumerator (for dynamic types) or a type class (for annotated types)")
-        end 
-        TypeVariable.new(type_param)
-      end
-      
-      def ==(other)
-        eql?(other)
-      end
-      
-      def eql?(other)
-        other.instance_of?(TypeVariable) && other.id == id
-      end
-      
-      def constrain_to(type)
-        type = ClosedType.new(type) if !type.instance_of?(ClosedType)
-        raise Rtc::TypeNarrowingError, "Constrained #{type} is too narrow for type #{pointed_type}" unless
-          pointed_type <= type
-        @pointed_type = type
-      end
-      
-      def pointed_type
-        if @pointed_type
-          @pointed_type
-        else
-          gen_type
-        end
-      end
-      
-      def to_s
-        pointed_type.to_s
-      end
-      
-      def inspect
-        "TVar(#{dynamic}): #{pointed_type.inspect}"
-      end
-      
-      #this should not be called externally
-      def initialize(type, is_hint = false)
-        if type.instance_of?(Enumerator)
-          @pointed_type = nil # maybe the bottom type?
-          @it = type
-          @dirty = true
-          @type_cache = nil
-        elsif type.kind_of?(Type)
-          constructor = is_hint ? OpenType : ClosedType
-          @pointed_type = constructor.new(type)
-        end
-      end
-      
-      private 
-      
-      def gen_type
-        curr_type = Set.new
-        has_parameterized_type = false
-        @it.each {
-          |elem|
-          elem_type = elem.rtc_type
-          super_count = 0
-          if curr_type.size == 0 
-            curr_type << elem_type
-            next
-          end
-          was_subtype = curr_type.any? {
-            |seen_type|
-            if elem_type <= seen_type
-              true
-            elsif seen_type <= elem_type
-              super_count = super_count + 1
-              false
-            end
-          }
-          if was_subtype
-            next
-          elsif super_count == curr_type.size
-            curr_type = Set.new([elem_type])
-          else
-            curr_type << elem_type
-          end
-        }
-        if curr_type.size == 0
-          curr_type = BottomType.instance
-        elsif curr_type.size == 1
-          curr_type = curr_type.to_a[0]
-        else
-          curr_type = UnionType.of(unify_param_types(curr_type))
-        end
-        @dirty = true
-        @type_cache = OpenType.new(curr_type)
-      end
-      
-      #FIXME(jtoman): see if we can lift this step into the gen_type step
-      def unify_param_types(type_set)
-        non_param_classes = []
-        parameterized_classes = {}
-        type_set.each {
-          |member_type|
-          if member_type.parameterized?
-            nominal_type = member_type.nominal
-            tparam_set = parameterized_classes.fetch(nominal_type) {
-              |n_type|
-              [].fill([], 0, n_type.type_parameters.size)
-            }
-            ((0..(nominal_type.type_parameters.size - 1)).map {
-              |tparam_index|
-              extract_types(member_type.type_of_param(tparam_index))
-            }).each_with_index {
-              |type_parameter,index|
-              tparam_set[index]+=type_parameter
-            }
-            parameterized_classes[nominal_type] = tparam_set
-          else
-            non_param_classes << member_type
-          end
-        }
-        parameterized_classes.each {
-          |nominal,type_set|
-          non_param_classes << ParameterizedType.new(nominal,
-          type_set.map {
-            |unioned_type_parameter|
-            TypeVariable.new(UnionType.of(unify_param_types(unioned_type_parameter)),true)
-          })
-        }
-        non_param_classes
-      end
-      
-      def extract_types(param_type)
-        wrapped_type = param_type.wrapped_type
-        wrapped_type.instance_of?(UnionType) ? wrapped_type.types.to_a : [wrapped_type]
-      end
-      
-    end
-    
-    class ProxyType < Type
-      attr_reader :wrapped_type
-      def initialize(wrapped_type)
-        @wrapped_type = wrapped_type
+      attr_reader :solving
+      attr_reader :instantiated
+      attr_reader :name
+      attr_reader :parent
+      def initialize(param_name, parent, initial_type = nil)
+        @instantiated = false
+        @solving = false
+        @constraints = initial_type ? [initial_type] :  []
+        @name = param_name 
+        @parent = parent
         super()
       end
+      alias solving? solving
+      alias instantiated? instantiated
+      def replace_parameters(_t_vars)
+        self
+      end
+      def has_variables
+        return @type.has_variables if instantiated?
+        return false
+      end
+      def map
+        yield self
+      end
       
+      def each
+        yield self
+      end
+
+      def get_type
+        @type
+      end
+      
+      def _to_actual_type
+        if @instantiated
+          @type
+        elsif @solving
+          @instantiated = true
+          @solving = false
+          @type = BottomType.instance
+        else
+          raise "attempt to coerce and unsolved type variable to a real type. this is an error"
+        end
+      end
+
+      def add_constraint(type) 
+        @constraints.push(type)
+      end
+      
+      def start_solve
+        @solving = true
+      end
+      
+      def solve
+        @instantiated = true
+        @solving = false
+        if @constraints.empty?
+          raise "Error, could not infer the types #{id}"
+        else
+          @type = UnionType.of(@constraints)
+        end
+      end
+      
+      def solvable?
+        return false if @instatianted
+        return false unless @solving 
+        not @constraints.empty?
+      end
+
       def to_s
-        wrapped_type.to_s
+        if @instantiated
+          @type.to_s
+        elsif @solving
+          "[#{name} = #{@constraints}]"
+        else
+          name
+        end
       end
-    end
-    
-    class OpenType < ProxyType
-      def initialize(wrapped_type)
-        super
-      end
-      
-      def <=(other)
-        return false unless other.is_a?(ProxyType)
-        other_type = other.wrapped_type
-        return @wrapped_type <= other_type
-      end
-      
-    end
-    
-    class ClosedType < ProxyType
-      def initialize(wrapped_type)
-        super
+
+      def is_tuple
+        return @type.is_tuple if instantiated?
+        false
       end
       
       def <=(other)
-         return false unless other.is_a?(ProxyType)
-         other_type = other.wrapped_type
-         return @wrapped_type <= other_type && other_type <= @wrapped_type
+        if @instantiated
+          return @type <= other
+        end
+        if self.instance_of?(TypeVariable) and other.instance_of?(TypeVariable) and other.parent.object_id  == self.parent.object_id
+          return true
+        end
+        #TODO(jtoman): refine this later, what to do during solving, etc
+        false
       end
     end
     

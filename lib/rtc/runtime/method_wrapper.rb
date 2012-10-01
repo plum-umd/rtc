@@ -1,112 +1,162 @@
+require 'rtc/runtime/native'
 require 'rtc/runtime/master_switch.rb'
 require 'rtc/options'
+
 module Rtc
   
   class TypeMismatchException < StandardError; end
-  
-  class MethodWrapper
-    class NoArgument; end
-    def self.make_wrapper(class_obj, method_name)
-      if Rtc::Disabled
-        return nil
-      end
-      MethodWrapper.new(class_obj, method_name)
-    end
 
-    def check_args(passed_arguments, method_type)
-      return false unless method_type.min_args <= passed_arguments.size
-      return false unless passed_arguments.size <= method_type.max_args or method_type.max_args == -1
-      #check the first set of required arguments
-      i = 0
-      parameter_layout = method_type.parameter_layout
-      while i < parameter_layout[:required][0]
-        return false unless passed_arguments[i].rtc_type <= method_type.arg_types[i]
-        i+=1
+  class AnnotateException < StandardError; end
+
+  class CastException < StandardError; end
+
+  class AmbiguousUnionException < StandardError; end
+
+  class NoMethodException < StandardError; end
+
+  class MethodWrapper
+    @call_template = <<METHOD_TEMPLATE
+    alias %{mangled_name} %{method_name}
+    def %{method_name}(*regular_args, &blk)
+      if Rtc::MasterSwitch.is_on?
+        Rtc::MasterSwitch.turn_off
+        %{invokee_fetch}
+        if not new_invokee
+          Rtc::MasterSwitch.turn_on
+          if blk
+            return %{mangled_name}(*regular_args, &blk)
+          else
+            return %{mangled_name}(*regular_args, &blk)
+          end
+        end
+        begin
+          $CHECK_COUNT+=1
+          #puts "%{method_name}"
+          #flag = false
+          #debug = "%{method_name}" == "zip"
+          method_type = new_invokee.rtc_type.get_method("%{method_name}".to_s)
+          if method_type.is_a?(Rtc::Types::ProceduralType)
+            method_types = NativeArray[method_type]
+          else
+            method_types = NativeArray.new(method_type.types.to_a)
+          end
+          #regulars_args = Rtc::NativeArray.new(regular_args)
+          #puts "DEBUG: about to select arguments" if debug
+          chosen_type, annotated_args, unsolved_tvars = Rtc::MethodCheck.select_and_check_args(method_types, "%{method_name}", regular_args,  (not blk.nil?), self.class)
+          
+          unwrap_arg_pos = chosen_type.unwrap
+          mutate = chosen_type.mutate
+
+          # if debug
+          #   puts "PROXY DEBUG:"
+          #   annotated_args.each {
+          #     |a|
+          #     puts a.is_proxy_object?
+          #   }
+          # end
+
+          #puts "DEBUG: about to call native" if debug
+
+          if blk
+            block_proxy = Rtc::BlockProxy.new(blk, chosen_type.block_type, "%{method_name}",
+                                         self, unsolved_tvars)
+            wrapped_block = Rtc::MethodWrapper.wrap_block(block_proxy)
+            Rtc::MasterSwitch.turn_on
+            ret_value = %{mangled_name}(*annotated_args, &wrapped_block)
+            Rtc::MasterSwitch.turn_off
+          else
+            Rtc::MasterSwitch.turn_on
+            ret_value = %{mangled_name}(*annotated_args)
+            Rtc::MasterSwitch.turn_off
+          end
+          
+          unsolved_tvars.each {
+            |t|
+            t.to_actual_type
+          }
+          
+          unless Rtc::MethodCheck.check_return(chosen_type, ret_value, unsolved_tvars)
+            p ret_value.rtc_type, chosen_type.return_type, "%{method_name}", self, chosen_type
+            
+            raise Rtc::TypeMismatchException, "invalid return type in %{method_name}"
+          end
+          #puts "DEBUG: got out of return checking" if debug
+          if ret_value === false || ret_value === nil ||
+              ret_value.is_a?(Rtc::Types::Type) || unwrap_arg_pos.include?(-1)
+            ret_proxy = ret_value
+          else
+            ret_proxy = ret_value.rtc_annotate(chosen_type.return_type.to_actual_type)
+          end
+          #flag = true
+          #puts "leaving wrapper for %{method_name}"
+          return ret_proxy
+        ensure
+          #puts "leaving wrapper for  %{method_name} due to exception" if not flag
+          Rtc::MasterSwitch.turn_on
+        end
+      else
+        if blk
+          %{mangled_name}(*regular_args, &blk)
+        else
+          %{mangled_name}(*regular_args)
+        end
       end
-      
-      #check the second set of required arguments
-      i = 1
-      while i <= parameter_layout[:required][1]
-        return false unless passed_arguments[-i].rtc_type <= method_type.arg_types[-i]
-        i += 1
+    end
+METHOD_TEMPLATE
+    @mangled = {
+      "+" => "__rtc_rtc_op_plus",
+      "[]=" => "__rtc_rtc_op_elem_set",
+      "[]" => "__rtc_rtc_op_elem_get",
+      "**" => "__rtc_rtc_op_exp",
+      "!" => "__rtc_rtc_op_not",
+      "!" => "__rtc_rtc_op_complement",
+      "+@" => "__rtc_rtc_op_un_plus",
+      "-@" => "__rtc_rtc_op_un_minus",
+      "*" => "__rtc_rtc_op_mult",
+      "/" => "__rtc_rtc_op_div",
+      "%" => "__rtc_rtc_op_mod",
+      "+" => "__rtc_rtc_op_plus",
+      "-" => "__rtc_rtc_op_minus",
+      ("<" + "<") => "__rtc_rtc_op_ls",
+      ">>"=> "__rtc_rtc_op_rs",
+      "^" => "__rtc_rtc_op_bitxor",
+      "|" => "__rtc_rtc_op_bitor",
+      "<=" => "__rtc_rtc_op_lte",
+      "<" => "__rtc_rtc_op_lt",
+      ">" => "__rtc_rtc_op_gt",
+      ">=" => "__rtc_rtc_op_gte",
+      "<=>" => "__rtc_rtc_op_3comp",
+      "==" => "__rtc_rtc_op_eq",
+      "===" => "__rtc_rtc_op_strict_eq",
+      '&' => "__rtc_rtc_op_bitand",
+    }
+    def self.mangle_name(method_name)
+      if @mangled.has_key?(method_name.to_s)
+        @mangled[method_name.to_s]
+      elsif method_name.to_s =~ /^(.+)=$/
+        "__rtc_rtc_set_" + $1
+      else
+        "__rtc_" + method_name.to_s
       end
-      
-      #check the optional arguments
-      opt_offset = parameter_layout[:required][0]
-      iter_end = passed_arguments.size - parameter_layout[:required][1]
-      i = 0
-      while i < parameter_layout[:opt] and opt_offset + i < iter_end
-        return false unless passed_arguments[opt_offset + i].rtc_type <= method_type.arg_types[opt_offset + i].type
-        i += 1
+    end
+    
+    def self.make_wrapper(class_obj, method_name, is_class = false)
+      return nil if Rtc::Disabled
+      mangled_name = self.mangle_name(method_name)
+      if is_class
+        invokee_fetch = "new_invokee = self"
+      else
+        invokee_fetch = "new_invokee = self.rtc_get_proxy"
       end
-      
-      #we still have some left for the rest argument (which must come after the optional arguments)
-      #so check that
-      if i + opt_offset < iter_end
-        rest_args = passed_arguments.slice(i+opt_offset, iter_end - (i+opt_offset))
-        return false unless
-          rest_args.rtc_type.type_of_param(0).wrapped_type <= method_type.arg_types[parameter_layout[:required][0] + parameter_layout[:opt]].type
-      end
+      class_obj.module_eval(@call_template % { :method_name => method_name.to_s,
+                              :mangled_name => mangled_name,
+                              :invokee_fetch => invokee_fetch
+                            }, "method_wrapper.rb", 17)
       return true
     end
 
-    def invoke(invokee, arg_vector)
-      regular_args = arg_vector[:args]
-      
-      method_type = invokee.rtc_typeof(@method_name, @class_obj)
-      candidate_types = []
-      
-      if method_type.instance_of?(Rtc::Types::IntersectionType)
-        possible_method_types = method_type.types
-      else
-        possible_method_types = [method_type]
-      end
-
-      for mt in possible_method_types
-        if check_args(regular_args, mt)
-          candidate_types.push(mt)
-        end
-      end
-      
-      if candidate_types.empty?
-        #arg_types = []
-        #arg_values = []
-        #puts "Function " + @method_name.to_s + " argument type mismatch:"
-        #puts "   Expected function type: " + method_type.to_s
-        message = "Function #{@class_obj.name.to_s}##{@method_name.to_s}  argument type mismatch:" +
-          "   Expected function type: " + method_type.to_s
-        #for a in arg_list
-        #  arg_types.push(a.rtc_type)
-        #  arg_values.push(a)
-        #end
-
-        #puts "   Actual argument types: " + arg_types.to_s
-        #puts "   Actual argument values: " + arg_values.to_s
-        on_error(message)
-      end
-
-      blk = arg_vector[:block]
-
-      Rtc::MasterSwitch.turn_on
-      if blk
-        ret_value = @original_method.bind(invokee).call(*regular_args, &blk)
-      else
-        ret_value = @original_method.bind(invokee).call(*regular_args)
-      end
-      Rtc::MasterSwitch.turn_off
-
-      return_valid = candidate_types.any? {
-        |ct|
-        ret_value.rtc_type <= ct.return_type 
-      }
-      
-      if not return_valid
-        message = "Function #{@class_obj.name.to_s}##{@method_name.to_s} return type mismatch: " + "   Expected function type: " + method_type.to_s + 
-          ", actual return type #{ret_value.rtc_type.to_s}"
-        on_error(message)
-      end
-
-      ret_value
+    def self.wrap_block(x)
+      Proc.new {|*v| x.call(*v)}
     end
 
     private
@@ -127,29 +177,51 @@ module Rtc
     end
     
     def initialize(class_obj,method_name)
+      raise "We should never be here"
+    end
+  end
+
+  class BlockProxy
+    attr_reader :proc
+    attr_accessor :block_type
+    attr_reader :method_type
+    attr_reader :method_name
+    attr_reader :class_obj
+
+    def initialize(proc, type, method_name, class_obj,
+        unsolved_tvars)
+      @proc = proc
+      @block_type = type
       @method_name = method_name
       @class_obj = class_obj
-      this_obj = self
-      original_method = @original_method = class_obj.instance_method(method_name)
-      wrapper_lambda = lambda {
-        |*__rtc_args, &__rtc_block|
-        if Rtc::MasterSwitch.is_on?
-          Rtc::MasterSwitch.turn_off 
-          args = {:args => __rtc_args, :block => __rtc_block }
-          begin
-            this_obj.invoke(self, args)
-          ensure
-            Rtc::MasterSwitch.turn_on
-          end
-        else
-          if __rtc_block.nil?
-            return original_method.bind(self).call(*__rtc_args)
-          else
-            return original_method.bind(self).call(*__rtc_args, &__rtc_block)
-          end
-        end
-      }
-      class_obj.send(:define_method, method_name, wrapper_lambda)
+      @unsolved_type_variables = unsolved_tvars
     end
+
+    def call(*args)
+      $CHECK_COUNT+=1
+      args = Rtc::NativeArray.new(args)
+      Rtc::MasterSwitch.turn_off
+      check_result = Rtc::MethodCheck.check_args(@block_type, args,
+                              @unsolved_type_variables)
+      if not check_result
+        raise Rtc::TypeMismatchException "Block arg failed!"
+      end
+      annotated_args, @unsolved_type_variables = check_result
+      Rtc::MasterSwitch.turn_on
+      ret = @proc.call(*annotated_args)
+      Rtc::MasterSwitch.turn_off
+      return_valid = Rtc::MethodCheck.check_return(@block_type, ret, @unsolved_type_variables)
+      raise Rtc::TypeMismatchException, "Block return type mismatch" unless return_valid
+      begin
+        if ret === false or ret === nil or ret.is_a?(Rtc::Types::Type)
+          ret
+        else
+          ret.rtc_annotate(block_type.return_type.to_actual_type)
+        end
+      ensure
+        Rtc::MasterSwitch.turn_on
+      end
+    end
+    
   end
 end

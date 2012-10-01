@@ -5,6 +5,7 @@ require 'rtc/position'
 require 'rtc/typing/types'
 require 'rtc/typing/type_signatures'
 require 'rtc/runtime/class_loader'
+require 'rtc/runtime/native'
 module Rtc
     class TypeAnnotationParser < Racc::Parser
         @logger = Logging.get_logger('TypeAnnotationParser')
@@ -25,7 +26,7 @@ module Rtc
         # makes up a hash that contains a method type information for convenience
         # in later use
         def construct_msig(domain, block, range)
-            domain = domain ? (domain.kind_of?(Array) ? domain : [domain]) : []
+            domain = domain ? (domain.kind_of?(Array) ? Rtc::NativeArray.new(domain) : Rtc::NativeArray[domain]) : Rtc::NativeArray.new
             return {:domain => domain, :block => block, :range => range}
         end
 
@@ -53,6 +54,7 @@ module Rtc
           else
             qualified_name = (@proxy.instance_of?(Object)? "" : (@proxy.name + "::")) + ident[:name_list].join("::")
           end
+
           return ClassAnnotation.new(qualified_name, ids)
         end
 
@@ -66,18 +68,21 @@ module Rtc
             block  = msig[:block]
             range  = msig[:range]
             if block
-                block = Rtc::Types::ProceduralType.new(block[:range],
+                block = Rtc::Types::ProceduralType.new(parameters, block[:range],
                                                                block[:domain],
                                                                nil)
             end
-            if parameters
-                mtype = Types::ParameterizedProceduralType.new(range,
-                                                               domain,
-                                                               block,
-                                                               parameters)
-            else
-                mtype = Types::ProceduralType.new(range, domain, block)
-            end
+
+
+            mtype = Types::ProceduralType.new(parameters, range, domain, block)
+#            if parameters 
+#                mtype = Types::ParameterizedProceduralType.new(range,
+#                                                               domain,
+#                                                               block,
+#                                                               parameters)
+#            else
+#                mtype = Types::ProceduralType.new(range, domain, block)
+#            end
             type_klass = meth_id.instance_of?(Rtc::ClassMethodIdentifier) ? ClassMethodTypeSignature : MethodTypeSignature 
             return type_klass.new(pos, meth_id, mtype)
         end

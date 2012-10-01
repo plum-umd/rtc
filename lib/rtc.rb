@@ -12,8 +12,12 @@ require 'rtc/annotated'
 require 'rtc/options'
 require 'rtc/runtime/class_modifier'
 
-def rtc_annotated
+$RTC_STRICT = false
+$CHECK_COUNT = 0
+
+def rtc_annotated(*t_params)
   extend Rtc::Annotated
+  add_type_parameters(t_params)
 end
 
 #FIXME(jtoman): needs a catchier and better name
@@ -28,4 +32,6 @@ def rtc_typesig(my_sig)
   Rtc::ClassModifier.handle_class_annot(class_annot)
 end
 
-require 'rtc/typing/base_types.rb'
+#Rtc::MasterSwitch.turn_off
+#require 'rtc/typing/base_types2.rb'
+#Rtc::MasterSwitch.turn_on

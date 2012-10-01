@@ -1,0 +1,1609 @@
+Thread ID: 70115307772640
+Total Time: 494.41113900000005
+Sort by: total_time
+
+  %total   %self     total      self      wait     child            calls    Name
+--------------------------------------------------------------------------------
+ 100.00%   0.00%    494.41      0.00      0.00    494.41                1      Global#[No method]
+                    494.07      0.00      0.00    494.07         2/322570      Rtc::ProxyObject#method_missing
+                      0.34      0.00      0.00      0.34         1/514276      Class#new
+                      0.00      0.00      0.00      0.00          1/64746      Object#rtc_annotate
+                      0.00      0.00      0.00      0.00         1/219973      <Class::Rtc::MasterSwitch>#turn_on
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00         2/534242      SudokuSolver#print_grid
+                      0.00      0.00      0.00      0.00    103835/534242      Array#each
+                      0.00      0.00      0.00      0.00        29/534242      Method#call
+                      0.00      0.00      0.00      0.00     48928/534242      Rtc::Types::ProceduralType#hash
+                      0.00      0.00      0.00      0.00      1321/534242      SudokuSolver#eliminate
+                      0.00      0.00      0.00      0.00      9925/534242      Rtc::Types::ParameterizedType#hash
+                      0.00      0.00      0.00      0.00       604/534242      SudokuSolver#assign
+                      0.00      0.00      0.00      0.00        52/534242      <Module::Rtc::ClassLoader>#find_type_ident
+                      0.00      0.00      0.00      0.00     43965/534242      Enumerable#each_with_index
+                      0.00      0.00      0.00      0.00     19531/534242      Enumerable#all?
+                      0.00      0.00      0.00      0.00        28/534242      SudokuSolver#cross
+                      0.00      0.00      0.00      0.00     97856/534242      <Module::Rtc::MethodCheck>#check_args
+                      0.00      0.00      0.00      0.00    146669/534242      Rtc::MethodWrapper#invoke
+                      0.00      0.00      0.00      0.00     61443/534242      Enumerable#each_entry
+                      0.34      0.00      0.00      0.34         5/534242      SudokuSolver#initialize
+                    170.23      0.00      0.00    170.23         2/534242      SudokuSolver#parse_grid
+                    323.80      0.00      0.00    323.80        47/534242      SudokuSolver#search
+  99.99%   0.00%    494.37      0.00      0.00    494.37           534242     *Array#each
+                      9.62      0.16      0.00      9.46     61443/403654      Set#add
+                      6.32      0.21      0.00      6.10      15976/64746      Object#rtc_annotate
+                      2.14      0.12      0.00      2.02    36708/3937642      Object#rtc_type
+                      1.77      0.19      0.00      1.58     79790/336139      Rtc::HashBuilder#include
+                      1.69      0.54      0.00      1.15    94078/7283370      Rtc::Types::NominalType#<=
+                      0.43      0.03      0.00      0.40       4936/38811      Rtc::Types::ParameterizedType#<=
+                      0.15      0.09      0.00      0.06      51115/51167      BasicObject#!=
+                      0.13      0.13      0.00      0.00    119880/233623      Kernel#instance_of?
+                      0.11      0.06      0.00      0.05   20807/15127430      String#==
+                      0.09      0.09      0.00      0.00      48928/68460      Array#zip
+                      0.07      0.06      0.00      0.00     59940/177242      Array#include?
+                      0.04      0.04      0.00      0.00   30508/15534994      Object#is_proxy_object?
+                      0.04      0.04      0.00      0.00      29432/29432      Array#[]=
+                      0.04      0.04      0.00      0.00    23261/3416524      Rtc::ProxyObject#rtc_type
+                      0.02      0.02      0.00      0.00     13457/121977      Rtc::ProxyObject#is_proxy_object?
+                      0.02      0.02      0.00      0.00     15976/317343      Kernel#is_a?
+                      0.02      0.01      0.00      0.01      3382/514276      Class#new
+                      0.01      0.00      0.00      0.01          849/881      Rtc::ProxyObject#==
+                      0.01      0.01      0.00      0.00    6655/11522705      Fixnum#==
+                      0.00      0.00      0.00      0.00            17/44      Rtc::Types::UnionType#<=
+                      0.00      0.00      0.00      0.00          515/554      String#+
+                      0.00      0.00      0.00      0.00            19/25      Rtc::ProxyObject#clone
+                      0.00      0.00      0.00      0.00        21/157074      Object#==
+                      0.00      0.00      0.00      0.00            52/52      Module#const_defined?
+                      0.00      0.00      0.00      0.00           18/670      String#split
+                      0.00      0.00      0.00      0.00            52/52      Module#const_get
+                      0.00      0.00      0.00      0.00            81/81      Kernel#kind_of?
+                      0.00      0.00      0.00      0.00        29/219973      <Class::Rtc::MasterSwitch>#turn_off
+                      0.00      0.00      0.00      0.00        25/219973      <Class::Rtc::MasterSwitch>#turn_on
+                      0.00      0.00      0.00      0.00       29/6243739      NilClass#nil?
+                      0.00      0.00      0.00      0.00          28/9942      Kernel#===
+                      0.00      0.00      0.00      0.00          2/93068      Rtc::ProxyObject#===
+                      0.00      0.00      0.00      0.00          1/52339      Rtc::ProxyObject#is_a?
+                      0.00      0.00      0.00      0.00         1/161270      Array#pop
+                      0.00      0.00      0.00      0.00     64949/322570      Rtc::ProxyObject#method_missing
+                      0.00      0.00      0.00      0.00    175860/219825      Rtc::Types::ParameterizedType#get_method
+                      0.00      0.00      0.00      0.00          388/972      SudokuSolver#assign
+                      0.00      0.00      0.00      0.00          260/261      SudokuSolver#parse_grid
+                      0.00      0.00      0.00      0.00       5047/10683      SudokuSolver#eliminate
+                      0.00      0.00      0.00      0.00            36/76      SudokuSolver#search
+                      0.00      0.00      0.00      0.00        2718/2720      SudokuSolver#initialize
+                      0.00      0.00      0.00      0.00    133337/487174      Rtc::MethodWrapper#invoke
+                      0.00      0.00      0.00      0.00    103835/534242      Array#each
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00         7/487174      SudokuSolver#print_grid
+                      0.00      0.00      0.00      0.00    300113/487174      Rtc::MethodWrapper#invoke
+                      0.00      0.00      0.00      0.00        50/487174      SudokuSolver#search
+                      0.00      0.00      0.00      0.00    133337/487174      Array#each
+                      0.00      0.00      0.00      0.00      6332/487174      SudokuSolver#eliminate
+                      0.00      0.00      0.00      0.00       388/487174      SudokuSolver#assign
+                      0.00      0.00      0.00      0.00       260/487174      SudokuSolver#parse_grid
+                      0.15      0.03      0.00      0.12      2719/487174      SudokuSolver#initialize
+                    494.07      0.00      0.00    494.07     43968/487174      Rtc::ProxyObject#method_missing
+  99.96%   0.01%    494.22      0.03      0.00    494.20           487174     *Rtc::MethodWrapper#invoke
+                    494.08      0.02      0.00    494.06   487174/6062543      Method#call
+                    431.75      0.19      0.00    431.56    56172/3937642      Object#rtc_type
+                     13.23      0.42      0.00     12.81      48928/97856      <Module::Rtc::MethodCheck>#check_args
+                     10.95      0.28      0.00     10.68     43965/219825      Rtc::Types::ParameterizedType#get_method
+                      9.02      0.63      0.00      8.38      48765/64746      Object#rtc_annotate
+                      0.79      0.26      0.00      0.53    44013/7283370      Rtc::Types::NominalType#<=
+                      0.75      0.75      0.00      0.00   487174/6062543      UnboundMethod#bind
+                      0.65      0.65      0.00      0.00   433450/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      0.59      0.02      0.00      0.57       4799/38811      Rtc::Types::ParameterizedType#<=
+                      0.56      0.56      0.00      0.00   531191/6243739      NilClass#nil?
+                      0.54      0.23      0.00      0.31      93058/93068      Rtc::ProxyObject#===
+                      0.37      0.09      0.00      0.28      43965/87930      Rtc::Types::ParameterizedType#has_method?
+                      0.26      0.03      0.00      0.23      4963/195712      Rtc::Types::NominalType#get_method
+                      0.26      0.14      0.00      0.11      45331/45331      Hash#equal?
+                      0.17      0.17      0.00      0.00    147848/317343      Kernel#is_a?
+                      0.17      0.11      0.00      0.06      52334/52339      Rtc::ProxyObject#is_a?
+                      0.14      0.14      0.00      0.00    90497/3416524      Rtc::ProxyObject#rtc_type
+                      0.08      0.08      0.00      0.00     48957/219973      <Class::Rtc::MasterSwitch>#turn_on
+                      0.08      0.08      0.00      0.00     48813/219973      <Class::Rtc::MasterSwitch>#turn_off
+                      0.06      0.06      0.00      0.00     53724/102652      Array#empty?
+                      0.06      0.06      0.00      0.00      48928/48928      String#to_s
+                      0.05      0.05      0.00      0.00     43968/161270      Array#pop
+                      0.03      0.02      0.00      0.02      4963/166230      Rtc::Types::NominalType#has_method?
+                      0.03      0.02      0.00      0.01       4967/57215      Object#equal?
+                      0.03      0.01      0.00      0.01      4819/157074      Object#==
+                      0.01      0.01      0.00      0.01       4470/87930      String#===
+                      0.00      0.00      0.00      0.00          707/707      Array#equal?
+                      0.00      0.00      0.00      0.00    146669/534242      Array#each
+                      0.00      0.00      0.00      0.00             1/44      Rtc::Types::UnionType#<=
+                      0.00      0.00      0.00      0.00          50/9942      Kernel#===
+                      0.00      0.00      0.00      0.00            2/881      Rtc::ProxyObject#==
+                      0.00      0.00      0.00      0.00             1/25      Rtc::ProxyObject#clone
+                      0.00      0.00      0.00      0.00        15/322570      Rtc::ProxyObject#method_missing
+                      0.00      0.00      0.00      0.00             3/76      SudokuSolver#search
+                      0.00      0.00      0.00      0.00    300113/487174      Rtc::MethodWrapper#invoke
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00       34/6062543      Rtc::TypeAnnotationParser#_reduce_63
+                      0.00      0.00      0.00      0.00   197496/6062543      Rtc::HashBuilder#include
+                      0.00      0.00      0.00      0.00    43965/6062543      Rtc::Types::ProceduralType#replace_parameters
+                      0.00      0.00      0.00      0.00    89072/6062543      Rtc::Types::TypeParameter#replace_parameters
+                      0.00      0.00      0.00      0.00   175860/6062543      Rtc::Types::ProceduralType#initialize
+                      0.00      0.00      0.00      0.00       34/6062543      Rtc::TypeAnnotationParser#_reduce_68
+                      0.00      0.00      0.00      0.00       17/6062543      Rtc::TypeAnnotationParser#_reduce_67
+                      0.00      0.00      0.00      0.00   175860/6062543      Rtc::Types::ParameterizedType#get_method
+                      0.00      0.00      0.00      0.00       18/6062543      Rtc::TypeAnnotationParser#_reduce_11
+                      0.00      0.00      0.00      0.00       18/6062543      Rtc::TypeAnnotationParser#_reduce_4
+                      0.00      0.00      0.00      0.00       52/6062543      Rtc::TypeAnnotationParser#_reduce_49
+                      0.00      0.00      0.00      0.00       52/6062543      Rtc::TypeAnnotationParser#_reduce_51
+                      0.00      0.00      0.00      0.00       35/6062543      Rtc::TypeAnnotationParser#_reduce_55
+                      0.00      0.00      0.00      0.00      104/6062543      <Module::Rtc::ClassLoader>#load_class
+                      0.00      0.00      0.00      0.00       52/6062543      Rtc::TypeAnnotationParser#_reduce_46
+                      0.00      0.00      0.00      0.00    88050/6062543      Rtc::Types::Type#initialize
+                      0.00      0.00      0.00      0.00    48928/6062543      <Module::Rtc::MethodCheck>#check_args
+                      0.00      0.00      0.00      0.00      156/6062543      Rtc::TypeAnnotationParser#_reduce_50
+                      0.00      0.00      0.00      0.00    88136/6062543      <Class::Rtc::TypeInferencer>#infer_type
+                      0.00      0.00      0.00      0.00   161285/6062543      Rtc::ProxyObject#method_missing
+                      0.00      0.00      0.00      0.00   146784/6062543      Rtc::Types::NominalType#get_method
+                      0.00      0.00      0.00      0.00   219840/6062543      <Class::Object>#get_typesig_info
+                      0.00      0.00      0.00      0.00  3937694/6062543      <Class::Rtc::Types::NominalType>#of
+                      0.00      0.00      0.00      0.00   201827/6062543      Set#add
+                    494.08      0.02      0.00    494.06   487174/6062543      Rtc::MethodWrapper#invoke
+  99.93%   0.00%    494.08      0.02      0.00    494.06          6062543     *Method#call
+                    486.14      0.00      0.00    486.14          584/972      SudokuSolver#assign
+                    485.49      0.00      0.00    485.49       4351/10683      SudokuSolver#eliminate
+                    323.82      0.00      0.00    323.82            33/76      SudokuSolver#search
+                    170.23      0.00      0.00    170.23            1/261      SudokuSolver#parse_grid
+                     14.07      0.61      0.00     13.46    291142/291142      Hash#[]=
+                     11.75      7.45      0.00      4.30  4811181/4811181      Hash#[]
+                      1.76      0.00      0.00      1.76              1/8      SudokuSolver#print_grid
+                      0.85      0.12      0.00      0.72      43965/43965      Array#map
+                      0.44      0.44      0.00      0.00    404240/404240      Array#[]
+                      0.27      0.27      0.00      0.00    138646/138646      Fixnum#*
+                      0.25      0.25      0.00      0.00    206844/206844      Fixnum#+
+                      0.18      0.18      0.00      0.00    161534/161534      Array#push
+                      0.00      0.00      0.00      0.00       28/3937642      Object#rtc_type
+                      0.00      0.00      0.00      0.00       28/7283370      Rtc::Types::NominalType#<=
+                      0.00      0.00      0.00      0.00            28/28      SudokuSolver#cross
+                      0.00      0.00      0.00      0.00          1/64746      Object#rtc_annotate
+                      0.00      0.00      0.00      0.00             1/44      Rtc::Types::UnionType#<=
+                      0.00      0.00      0.00      0.00        19/157074      Object#==
+                      0.00      0.00      0.00      0.00             3/25      Rtc::ProxyObject#clone
+                      0.00      0.00      0.00      0.00        32/219973      <Class::Rtc::MasterSwitch>#turn_on
+                      0.00      0.00      0.00      0.00        29/219973      <Class::Rtc::MasterSwitch>#turn_off
+                      0.00      0.00      0.00      0.00       29/6243739      NilClass#nil?
+                      0.00      0.00      0.00      0.00          28/9942      Kernel#===
+                      0.00      0.00      0.00      0.00          2/93068      Rtc::ProxyObject#===
+                      0.00      0.00      0.00      0.00            1/881      Rtc::ProxyObject#==
+                      0.00      0.00      0.00      0.00          1/52339      Rtc::ProxyObject#is_a?
+                      0.00      0.00      0.00      0.00        1/3416524      Rtc::ProxyObject#rtc_type
+                      0.00      0.00      0.00      0.00         1/317343      Kernel#is_a?
+                      0.00      0.00      0.00      0.00        29/534242      Array#each
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00        15/322570      Rtc::MethodWrapper#invoke
+                      0.00      0.00      0.00      0.00    205253/322570      Rtc::ProxyObject#method_missing
+                      0.00      0.00      0.00      0.00         1/322570      SudokuSolver#parse_grid
+                      0.00      0.00      0.00      0.00      1168/322570      SudokuSolver#assign
+                      0.00      0.00      0.00      0.00     16679/322570      SudokuSolver#eliminate
+                      0.00      0.00      0.00      0.00        30/322570      SudokuSolver#search
+                      0.00      0.00      0.00      0.00      1142/322570      String#sub
+                      0.00      0.00      0.00      0.00     64949/322570      Array#each
+                      0.00      0.00      0.00      0.00     33331/322570      String#include?
+                    494.07      0.00      0.00    494.07         2/322570      Global#[No method]
+  99.93%   0.00%    494.07      0.00      0.00    494.07           322570     *Rtc::ProxyObject#method_missing
+                    494.07      0.00      0.00    494.07     43968/487174      Rtc::MethodWrapper#invoke
+                      4.55      0.66      0.00      3.89    117302/337142      <Class::Object>#get_typesig_info
+                      1.77      0.10      0.00      1.67      33331/33331      String#include?
+                      0.49      0.49      0.00      0.00   322570/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      0.39      0.23      0.00      0.16     73337/166230      Rtc::Types::NominalType#has_method?
+                      0.33      0.09      0.00      0.24      43965/87930      Rtc::Types::ParameterizedType#has_method?
+                      0.25      0.25      0.00      0.00    161269/219973      <Class::Rtc::MasterSwitch>#turn_on
+                      0.25      0.25      0.00      0.00    161270/219973      <Class::Rtc::MasterSwitch>#turn_off
+                      0.25      0.25      0.00      0.00   161285/6062543      UnboundMethod#bind
+                      0.17      0.17      0.00      0.00   161285/6243739      NilClass#nil?
+                      0.13      0.13      0.00      0.00    117301/161270      Array#pop
+                      0.13      0.13      0.00      0.00   117302/8171094      Kernel#class
+                      0.08      0.02      0.00      0.06        1142/1142      String#sub
+                      0.04      0.04      0.00      0.00      34473/34473      String#to_str
+                      0.01      0.01      0.00      0.00          599/670      String#split
+                      0.00      0.00      0.00      0.00        3707/3707      String#length
+                      0.00      0.00      0.00      0.00            81/81      String#center
+                      0.00      0.00      0.00      0.00   161285/6062543      Method#call
+                      0.00      0.00      0.00      0.00              1/1      String#chomp
+                      0.00      0.00      0.00      0.00    205253/322570      Rtc::ProxyObject#method_missing
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00          388/972      Array#each
+                    486.14      0.00      0.00    486.14          584/972      Method#call
+  98.33%   0.00%    486.14      0.00      0.00    486.14              972     *SudokuSolver#assign
+                      0.00      0.00      0.00      0.00          1/64746      Object#rtc_annotate
+                      0.00      0.00      0.00      0.00       19/3937642      Object#rtc_type
+                      0.00      0.00      0.00      0.00       19/7283370      Rtc::Types::NominalType#<=
+                      0.00      0.00      0.00      0.00       364/219973      <Class::Rtc::MasterSwitch>#turn_on
+                      0.00      0.00      0.00      0.00       408/219973      <Class::Rtc::MasterSwitch>#turn_off
+                      0.00      0.00      0.00      0.00      388/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      0.00      0.00      0.00      0.00             1/44      Rtc::Types::UnionType#<=
+                      0.00      0.00      0.00      0.00        17/157074      Object#==
+                      0.00      0.00      0.00      0.00             2/25      Rtc::ProxyObject#clone
+                      0.00      0.00      0.00      0.00       20/6243739      NilClass#nil?
+                      0.00      0.00      0.00      0.00          19/9942      Kernel#===
+                      0.00      0.00      0.00      0.00          2/93068      Rtc::ProxyObject#===
+                      0.00      0.00      0.00      0.00          1/52339      Rtc::ProxyObject#is_a?
+                      0.00      0.00      0.00      0.00        1/3416524      Rtc::ProxyObject#rtc_type
+                      0.00      0.00      0.00      0.00         1/317343      Kernel#is_a?
+                      0.00      0.00      0.00      0.00       388/487174      Rtc::MethodWrapper#invoke
+                      0.00      0.00      0.00      0.00             4/76      SudokuSolver#search
+                      0.00      0.00      0.00      0.00       604/534242      Array#each
+                      0.00      0.00      0.00      0.00      1168/322570      Rtc::ProxyObject#method_missing
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00       5047/10683      Array#each
+                      0.00      0.00      0.00      0.00       1285/10683      SudokuSolver#eliminate
+                    485.49      0.00      0.00    485.49       4351/10683      Method#call
+  98.20%   0.00%    485.49      0.00      0.00    485.49            10683     *SudokuSolver#eliminate
+                      0.01      0.01      0.00      0.00      6291/219973      <Class::Rtc::MasterSwitch>#turn_on
+                      0.01      0.01      0.00      0.00      6369/219973      <Class::Rtc::MasterSwitch>#turn_off
+                      0.01      0.01      0.00      0.00     6332/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      0.00      0.00      0.00      0.00    2276/11522705      Fixnum#==
+                      0.00      0.00      0.00      0.00       35/7283370      Rtc::Types::NominalType#<=
+                      0.00      0.00      0.00      0.00       35/3937642      Object#rtc_type
+                      0.00      0.00      0.00      0.00          1/64746      Object#rtc_annotate
+                      0.00      0.00      0.00      0.00             1/44      Rtc::Types::UnionType#<=
+                      0.00      0.00      0.00      0.00        21/157074      Object#==
+                      0.00      0.00      0.00      0.00          35/9942      Kernel#===
+                      0.00      0.00      0.00      0.00       36/6243739      NilClass#nil?
+                      0.00      0.00      0.00      0.00          2/93068      Rtc::ProxyObject#===
+                      0.00      0.00      0.00      0.00            1/881      Rtc::ProxyObject#==
+                      0.00      0.00      0.00      0.00          1/52339      Rtc::ProxyObject#is_a?
+                      0.00      0.00      0.00      0.00        1/3416524      Rtc::ProxyObject#rtc_type
+                      0.00      0.00      0.00      0.00         1/317343      Kernel#is_a?
+                      0.00      0.00      0.00      0.00      1321/534242      Array#each
+                      0.00      0.00      0.00      0.00       1285/10683      SudokuSolver#eliminate
+                      0.00      0.00      0.00      0.00      6332/487174      Rtc::MethodWrapper#invoke
+                      0.00      0.00      0.00      0.00     16679/322570      Rtc::ProxyObject#method_missing
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00   266746/3937642      Hash#each_value
+                      0.00      0.00      0.00      0.00  3569508/3937642      Hash#each_key
+                      0.00      0.00      0.00      0.00       19/3937642      SudokuSolver#assign
+                      0.00      0.00      0.00      0.00       28/3937642      Method#call
+                      0.00      0.00      0.00      0.00       35/3937642      SudokuSolver#eliminate
+                      0.16      0.00      0.00      0.16       17/3937642      Object#rtc_cast
+                      0.82      0.03      0.00      0.79     8409/3937642      Object#rtc_annotate
+                      2.14      0.12      0.00      2.02    36708/3937642      Array#each
+                    431.75      0.19      0.00    431.56    56172/3937642      Rtc::MethodWrapper#invoke
+  87.96%   0.07%    434.88      0.34      0.00    434.54          3937642     *Object#rtc_type
+                    433.80      1.01      0.00    432.79  3937642/3937642      Object#rtc_get_type
+                     27.21     11.61      0.00     15.60 3883472/15127430      String#==
+                      0.33      0.14      0.00      0.19      44068/53678      Hash#==
+                      0.06      0.03      0.00      0.03     10102/157074      Object#==
+--------------------------------------------------------------------------------
+                    433.80      1.01      0.00    432.79  3937642/3937642      Object#rtc_type
+  87.74%   0.20%    433.80      1.01      0.00    432.79          3937642     *Object#rtc_get_type
+                    428.16      0.73      0.00    427.43     88136/176272      <Class::Rtc::TypeInferencer>#infer_type
+                     65.38     12.22      0.00     53.16  3937642/7875388      <Class::Rtc::Types::NominalType>#of
+                     21.33     11.75      0.00      9.58 3937642/15127430      String#==
+                      8.00      8.00      0.00      0.00  7875284/8171094      Kernel#class
+                      5.71      5.71      0.00      0.00  3937642/4069777      Rtc::Types::NominalType#type_parameters
+                      4.85      4.85      0.00      0.00 3937642/18725832      Module#name
+                      3.97      3.97      0.00      0.00 3937642/11522705      Fixnum#==
+                      1.57      0.12      0.00      1.46     44068/514276      Class#new
+                      0.07      0.07      0.00      0.00    44068/7148922      Hash#each_key
+                      0.07      0.07      0.00      0.00      44068/88136      Hash#each_value
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00     88136/176272      <Class::Rtc::TypeInferencer>#infer_type
+                    428.16      0.73      0.00    427.43     88136/176272      Object#rtc_get_type
+  86.60%   0.15%    428.16      0.73      0.00    427.43           176272     *<Class::Rtc::TypeInferencer>#infer_type
+                    424.42      0.16      0.00    424.26      88136/88136      Enumerator#each
+                      1.17      0.22      0.00      0.95     88136/514276      Class#new
+                      0.30      0.18      0.00      0.12     88136/137064      Set#to_a
+                      0.25      0.25      0.00      0.00   176272/7413144      Set#size
+                      0.18      0.18      0.00      0.00  176272/11522705      Fixnum#==
+                      0.16      0.16      0.00      0.00    88136/6062543      UnboundMethod#bind
+                      0.14      0.14      0.00      0.00    88136/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      0.09      0.09      0.00      0.00    88136/6243739      NilClass#nil?
+                      0.00      0.00      0.00      0.00    88136/6062543      Method#call
+                      0.00      0.00      0.00      0.00     88136/176272      <Class::Rtc::TypeInferencer>#infer_type
+--------------------------------------------------------------------------------
+                    424.42      0.16      0.00    424.26      88136/88136      <Class::Rtc::TypeInferencer>#infer_type
+  85.84%   0.03%    424.42      0.16      0.00    424.26            88136      Enumerator#each
+                    284.75     19.03      0.00    265.72    44068/7148922      Hash#each_key
+                    139.51     18.90      0.00    120.62      44068/88136      Hash#each_value
+--------------------------------------------------------------------------------
+                      0.07      0.07      0.00      0.00    44068/7148922      Object#rtc_get_type
+                     74.99     12.75      0.00     62.24  7060786/7148922      Set#each
+                    284.75     19.03      0.00    265.72    44068/7148922      Enumerator#each
+  72.78%   6.44%    359.81     31.85      0.00    327.96          7148922     *Hash#each_key
+                    123.32     39.87      0.00     83.45  7051146/7283370      Rtc::Types::NominalType#<=
+                     95.29      6.50      0.00     88.79  3525440/7060742      Enumerable#any?
+                      5.10      5.10      0.00      0.00  3569508/7413144      Set#size
+                      3.45      3.45      0.00      0.00 3569508/11522705      Fixnum#==
+                      0.92      0.11      0.00      0.81     44068/403654      Set#add
+                      0.01      0.00      0.00      0.01      19324/38811      Rtc::Types::ParameterizedType#<=
+                      0.00      0.00      0.00      0.00  3569508/3937642      Object#rtc_type
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00             4/76      SudokuSolver#assign
+                      0.00      0.00      0.00      0.00            36/76      Array#each
+                      0.00      0.00      0.00      0.00             3/76      Rtc::MethodWrapper#invoke
+                    323.82      0.00      0.00    323.82            33/76      Method#call
+  65.50%   0.00%    323.82      0.00      0.00    323.82               76     *SudokuSolver#search
+                    323.80      0.00      0.00    323.80        47/534242      Array#each
+                      0.20      0.00      0.00      0.20            16/17      Object#rtc_cast
+                      0.00      0.00      0.00      0.00          1/64746      Object#rtc_annotate
+                      0.00      0.00      0.00      0.00           27/881      Rtc::ProxyObject#==
+                      0.00      0.00      0.00      0.00             1/44      Rtc::Types::UnionType#<=
+                      0.00      0.00      0.00      0.00        16/157074      Object#==
+                      0.00      0.00      0.00      0.00        51/219973      <Class::Rtc::MasterSwitch>#turn_off
+                      0.00      0.00      0.00      0.00       50/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      0.00      0.00      0.00      0.00        30/219973      <Class::Rtc::MasterSwitch>#turn_on
+                      0.00      0.00      0.00      0.00          2/93068      Rtc::ProxyObject#===
+                      0.00      0.00      0.00      0.00        1/3416524      Rtc::ProxyObject#rtc_type
+                      0.00      0.00      0.00      0.00          1/52339      Rtc::ProxyObject#is_a?
+                      0.00      0.00      0.00      0.00        1/6243739      NilClass#nil?
+                      0.00      0.00      0.00      0.00         1/317343      Kernel#is_a?
+                      0.00      0.00      0.00      0.00        30/322570      Rtc::ProxyObject#method_missing
+                      0.00      0.00      0.00      0.00        50/487174      Rtc::MethodWrapper#invoke
+--------------------------------------------------------------------------------
+                      1.00      0.02      0.00      0.98     9862/7060742      Rtc::Types::Type#<=
+                     94.24      6.40      0.00     87.84  3525440/7060742      Hash#each_value
+                     95.29      6.50      0.00     88.79  3525440/7060742      Hash#each_key
+  38.54%   2.61%    190.53     12.92      0.00    177.61          7060742      Enumerable#any?
+                    177.60     20.77      0.00    156.83  7060742/7060786      Set#each
+--------------------------------------------------------------------------------
+                      0.01      0.00      0.00      0.01       44/7060786      Enumerable#all?
+                    177.60     20.77      0.00    156.83  7060742/7060786      Enumerable#any?
+  35.92%   4.20%    177.61     20.77      0.00    156.84          7060786     *Set#each
+                     74.99     12.75      0.00     62.24  7060786/7148922      Hash#each_key
+                      6.89      6.89      0.00      0.00  7060786/7060786      Kernel#block_given?
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00          260/261      Array#each
+                    170.23      0.00      0.00    170.23            1/261      Method#call
+  34.43%   0.00%    170.23      0.00      0.00    170.23              261     *SudokuSolver#parse_grid
+                    170.23      0.00      0.00    170.23         2/534242      Array#each
+                      0.00      0.00      0.00      0.00       260/219973      <Class::Rtc::MasterSwitch>#turn_off
+                      0.00      0.00      0.00      0.00      260/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      0.00      0.00      0.00      0.00       260/219973      <Class::Rtc::MasterSwitch>#turn_on
+                      0.00      0.00      0.00      0.00            1/670      String#split
+                      0.00      0.00      0.00      0.00         1/514276      Class#new
+                      0.00      0.00      0.00      0.00          1/68460      Array#zip
+                      0.00      0.00      0.00      0.00       260/487174      Rtc::MethodWrapper#invoke
+                      0.00      0.00      0.00      0.00         1/322570      Rtc::ProxyObject#method_missing
+--------------------------------------------------------------------------------
+                      0.07      0.07      0.00      0.00      44068/88136      Object#rtc_get_type
+                    139.51     18.90      0.00    120.62      44068/88136      Enumerator#each
+  28.23%   3.84%    139.58     18.96      0.00    120.62            88136      Hash#each_value
+                     94.24      6.40      0.00     87.84  3525440/7060742      Enumerable#any?
+                      5.08      5.08      0.00      0.00  3569508/7413144      Set#size
+                      4.78      4.78      0.00      0.00  3302762/3416524      Rtc::ProxyObject#rtc_type
+                      3.50      3.50      0.00      0.00 3569508/11522705      Fixnum#==
+                      0.90      0.12      0.00      0.79     44068/403654      Set#add
+                      0.00      0.00      0.00      0.00   266746/3937642      Object#rtc_type
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00       19/7283370      SudokuSolver#assign
+                      0.00      0.00      0.00      0.00       28/7283370      Method#call
+                      0.00      0.00      0.00      0.00       35/7283370      SudokuSolver#eliminate
+                      0.70      0.23      0.00      0.47    39062/7283370      Rtc::Types::ParameterizedType#<=
+                      0.79      0.26      0.00      0.53    44013/7283370      Rtc::MethodWrapper#invoke
+                      0.97      0.31      0.00      0.66    54989/7283370      Object#rtc_annotate
+                      1.69      0.54      0.00      1.15    94078/7283370      Array#each
+                    123.32     39.87      0.00     83.45  7051146/7283370      Hash#each_key
+  25.78%   8.34%    127.48     41.21      0.00     86.27          7283370     *Rtc::Types::NominalType#<=
+                     39.81     21.87      0.00     17.94 7283148/15127430      String#==
+                     28.59     28.59      0.00      0.0029133480/29230797      Module#===
+                     17.86     17.86      0.00      0.0014566296/18725832      Module#name
+                      0.01      0.00      0.00      0.01         222/9862      Rtc::Types::StructuralType#<=
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00     174/15127430      Rtc::TypeAnnotationParser#_next_token
+                      0.01      0.01      0.00      0.01    2187/15127430      BasicObject#!=
+                      0.11      0.06      0.00      0.05   20807/15127430      Array#each
+                     21.33     11.75      0.00      9.58 3937642/15127430      Object#rtc_get_type
+                     27.21     11.61      0.00     15.60 3883472/15127430      Object#rtc_type
+                     39.81     21.87      0.00     17.94 7283148/15127430      Rtc::Types::NominalType#<=
+  17.90%   9.16%     88.48     45.30      0.00     43.18         15127430      String#==
+                     21.75     17.83      0.00      3.9215127430/15127430      String#old_eq
+                     21.42     21.42      0.00      0.0015126476/15534994      Object#is_proxy_object?
+                      0.00      0.00      0.00      0.00       954/121977      Rtc::ProxyObject#is_proxy_object?
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00  3937694/7875388      <Class::Rtc::Types::NominalType>#of
+                      0.00      0.00      0.00      0.00       52/7875388      Rtc::TypeAnnotationParser#handle_type_ident
+                     65.38     12.22      0.00     53.16  3937642/7875388      Object#rtc_get_type
+  13.22%   2.47%     65.38     12.22      0.00     53.16          7875388     *<Class::Rtc::Types::NominalType>#of
+                      6.29      6.29      0.00      0.00  3937694/6062543      UnboundMethod#bind
+                      5.87      5.87      0.00      0.00  3937694/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      4.05      4.05      0.00      0.00  3937694/6243739      NilClass#nil?
+                      0.00      0.00      0.00      0.00  3937694/6062543      Method#call
+                      0.00      0.00      0.00      0.00  3937694/7875388      <Class::Rtc::Types::NominalType>#of
+--------------------------------------------------------------------------------
+                      0.01      0.01      0.00      0.00    9862/29230797      Rtc::Types::Type#<=
+                      0.02      0.02      0.00      0.00   19724/29230797      Rtc::Types::StructuralType#<=
+                      0.07      0.07      0.00      0.00   67731/29230797      Rtc::Types::ParameterizedType#<=
+                     28.59     28.59      0.00      0.0029133480/29230797      Rtc::Types::NominalType#<=
+   5.80%   5.80%     28.69     28.69      0.00      0.00         29230797      Module#===
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00      52/18725832      <Module::Rtc::ClassLoader>#load_class
+                      0.29      0.29      0.00      0.00  221842/18725832      Rtc::Types::NominalType#hash
+                      4.85      4.85      0.00      0.00 3937642/18725832      Object#rtc_get_type
+                     17.86     17.86      0.00      0.0014566296/18725832      Rtc::Types::NominalType#<=
+   4.65%   4.65%     23.00     23.00      0.00      0.00         18725832      Module#name
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00      19/15534994      Object#eql?
+                      0.00      0.00      0.00      0.00      52/15534994      Symbol#==
+                      0.00      0.00      0.00      0.00     707/15534994      Array#equal?
+                      0.00      0.00      0.00      0.00    2166/15534994      Rtc::ProxyObject#eql?
+                      0.01      0.01      0.00      0.00    4516/15534994      Hash#eql?
+                      0.01      0.01      0.00      0.00    8409/15534994      Object#rtc_annotate
+                      0.04      0.04      0.00      0.00   30508/15534994      Array#each
+                      0.07      0.07      0.00      0.00   45331/15534994      Hash#equal?
+                      0.07      0.07      0.00      0.00   48843/15534994      String#eql?
+                      0.08      0.08      0.00      0.00   53678/15534994      Hash#==
+                      0.08      0.08      0.00      0.00   57215/15534994      Object#equal?
+                      0.23      0.23      0.00      0.00  157074/15534994      Object#==
+                     21.42     21.42      0.00      0.0015126476/15534994      String#==
+   4.45%   4.45%     22.01     22.01      0.00      0.00         15534994      Object#is_proxy_object?
+--------------------------------------------------------------------------------
+                     21.75     17.83      0.00      3.9215127430/15127430      String#==
+   4.40%   3.61%     21.75     17.83      0.00      3.92         15127430      String#old_eq
+                      3.92      3.92      0.00      0.00  3883472/4025951      Kernel#respond_to_missing?
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00     48928/514276      Rtc::Types::ProceduralType#hash
+                      0.00      0.00      0.00      0.00        28/514276      SudokuSolver#cross
+                      0.00      0.00      0.00      0.00         3/514276      SudokuSolver#initialize
+                      0.00      0.00      0.00      0.00      9925/514276      Rtc::Types::ParameterizedType#hash
+                      0.00      0.00      0.00      0.00    149579/514276      Set#initialize
+                      0.00      0.00      0.00      0.00         1/514276      SudokuSolver#print_grid
+                      0.00      0.00      0.00      0.00         1/514276      SudokuSolver#parse_grid
+                      0.00      0.00      0.00      0.00        18/514276      Rtc::TypeAnnotationParser#scan_setup
+                      0.00      0.00      0.00      0.00        17/514276      Rtc::TypeAnnotationParser#_reduce_63
+                      0.01      0.00      0.00      0.01        51/514276      Object#rtc_cast
+                      0.02      0.01      0.00      0.01      3382/514276      Array#each
+                      0.34      0.00      0.00      0.34         1/514276      Global#[No method]
+                      1.17      0.22      0.00      0.95     88136/514276      <Class::Rtc::TypeInferencer>#infer_type
+                      1.57      0.12      0.00      1.46     44068/514276      Object#rtc_get_type
+                      3.58      0.12      0.00      3.46     43965/514276      Rtc::Types::ProceduralType#replace_parameters
+                      4.66      0.19      0.00      4.47     77245/514276      Object#rtc_annotate
+                      7.25      0.12      0.00      7.13     48928/514276      <Module::Rtc::MethodCheck>#check_args
+   3.76%   0.16%     18.60      0.77      0.00     17.82           514276     *Class#new
+                     12.15      0.61      0.00     11.54    149579/149579      Set#initialize
+                      3.40      0.54      0.00      2.86     43965/219825      Rtc::Types::ProceduralType#initialize
+                      1.40      0.37      0.00      1.03      44085/44085      Rtc::Types::ParameterizedType#initialize
+                      0.46      0.46      0.00      0.00    361264/361264      <Class::BasicObject>#allocate
+                      0.37      0.25      0.00      0.12      58853/58853      Rtc::HashBuilder#initialize
+                      0.34      0.00      0.00      0.34           1/2720      SudokuSolver#initialize
+                      0.25      0.25      0.00      0.00    149582/149582      Hash#initialize
+                      0.19      0.19      0.00      0.00    149582/149607      <Class::Hash>#allocate
+                      0.14      0.14      0.00      0.00      64763/64763      Rtc::ProxyObject#initialize
+                      0.00      0.00      0.00      0.00        3412/3412      Array#initialize
+                      0.00      0.00      0.00      0.00        3412/3412      <Class::Array>#allocate
+                      0.00      0.00      0.00      0.00            18/18      Rtc::TypeAnnotationParser#initialize
+                      0.00      0.00      0.00      0.00            18/18      <Class::StringScanner>#allocate
+                      0.00      0.00      0.00      0.00            18/18      StringScanner#initialize
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00    201827/403654      Set#add
+                      0.90      0.12      0.00      0.79     44068/403654      Hash#each_value
+                      0.92      0.11      0.00      0.81     44068/403654      Hash#each_key
+                      5.26      0.14      0.00      5.12     52248/403654      Object#rtc_annotate
+                      9.62      0.16      0.00      9.46     61443/403654      Array#each
+   3.38%   0.11%     16.70      0.53      0.00     16.17           403654     *Set#add
+                      0.32      0.32      0.00      0.00   201827/6062543      UnboundMethod#bind
+                      0.31      0.31      0.00      0.00   201827/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      0.21      0.21      0.00      0.00   201827/6243739      NilClass#nil?
+                      0.00      0.00      0.00      0.00   201827/6062543      Method#call
+                      0.00      0.00      0.00      0.00    201827/403654      Set#add
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00          1/64746      Global#[No method]
+                      0.00      0.00      0.00      0.00          1/64746      SudokuSolver#assign
+                      0.00      0.00      0.00      0.00          1/64746      SudokuSolver#eliminate
+                      0.00      0.00      0.00      0.00          1/64746      SudokuSolver#search
+                      0.00      0.00      0.00      0.00          1/64746      Method#call
+                      6.32      0.21      0.00      6.10      15976/64746      Array#each
+                      9.02      0.63      0.00      8.38      48765/64746      Rtc::MethodWrapper#invoke
+   3.10%   0.17%     15.34      0.85      0.00     14.49            64746      Object#rtc_annotate
+                      5.26      0.14      0.00      5.12     52248/403654      Set#add
+                      4.66      0.19      0.00      4.47     77245/514276      Class#new
+                      0.99      0.05      0.00      0.94       9735/38811      Rtc::Types::ParameterizedType#<=
+                      0.97      0.31      0.00      0.66    54989/7283370      Rtc::Types::NominalType#<=
+                      0.82      0.03      0.00      0.79     8409/3937642      Object#rtc_type
+                      0.79      0.44      0.00      0.35    141990/157074      Object#==
+                      0.73      0.27      0.00      0.46      52248/52248      Set#==
+                      0.10      0.10      0.00      0.00    64746/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      0.08      0.08      0.00      0.00     56337/121977      Rtc::ProxyObject#is_proxy_object?
+                      0.07      0.07      0.00      0.00    64747/8171094      Kernel#class
+                      0.01      0.01      0.00      0.00    8409/15534994      Object#is_proxy_object?
+                      0.00      0.00      0.00      0.00            22/44      Rtc::Types::UnionType#<=
+                      0.00      0.00      0.00      0.00             1/18      Rtc::TypeAnnotationParser#scan_str
+                      0.00      0.00      0.00      0.00         1/219973      <Class::Rtc::MasterSwitch>#turn_off
+                      0.00      0.00      0.00      0.00            1/554      String#+
+                      0.00      0.00      0.00      0.00         1/219973      <Class::Rtc::MasterSwitch>#turn_on
+--------------------------------------------------------------------------------
+                     14.07      0.61      0.00     13.46    291142/291142      Method#call
+   2.85%   0.12%     14.07      0.61      0.00     13.46           291142      Hash#[]=
+                      7.54      0.31      0.00      7.24     64763/836550      Rtc::ProxyObject#hash
+                      4.95      0.29      0.00      4.66      48928/48928      Rtc::Types::ProceduralType#hash
+                      0.53      0.17      0.00      0.36      51087/53378      Rtc::ProxyObject#eql?
+                      0.44      0.22      0.00      0.22     88136/221842      Rtc::Types::NominalType#hash
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00      48928/97856      <Module::Rtc::MethodCheck>#check_args
+                     13.23      0.42      0.00     12.81      48928/97856      Rtc::MethodWrapper#invoke
+   2.68%   0.09%     13.23      0.42      0.00     12.81            97856     *<Module::Rtc::MethodCheck>#check_args
+                      7.25      0.12      0.00      7.13     48928/514276      Class#new
+                      0.18      0.10      0.00      0.07     48928/137064      Set#to_a
+                      0.14      0.14      0.00      0.00    97856/7413144      Set#size
+                      0.08      0.08      0.00      0.00    48928/6062543      UnboundMethod#bind
+                      0.08      0.08      0.00      0.00    48928/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      0.05      0.05      0.00      0.00   48928/11522705      Fixnum#==
+                      0.05      0.05      0.00      0.00    48928/6243739      NilClass#nil?
+                      0.00      0.00      0.00      0.00     97856/534242      Array#each
+                      0.00      0.00      0.00      0.00    48928/6062543      Method#call
+                      0.00      0.00      0.00      0.00      48928/97856      <Module::Rtc::MethodCheck>#check_args
+--------------------------------------------------------------------------------
+                     12.15      0.61      0.00     11.54    149579/149579      Class#new
+   2.46%   0.12%     12.15      0.61      0.00     11.54           149579      Set#initialize
+                     10.64      0.33      0.00     10.31      61443/61443      Set#merge
+                      0.09      0.09      0.00      0.00    88136/6243739      NilClass#nil?
+                      0.06      0.06      0.00      0.00     61443/237303      Kernel#nil?
+                      0.00      0.00      0.00      0.00    149579/514276      Class#new
+--------------------------------------------------------------------------------
+                     11.75      7.45      0.00      4.30  4811181/4811181      Method#call
+   2.38%   1.51%     11.75      7.45      0.00      4.30          4811181      Hash#[]
+                      4.28      4.28      0.00      0.00  4025630/4035617      Kernel#hash
+                      0.01      0.00      0.00      0.01       1285/53378      Rtc::ProxyObject#eql?
+                      0.01      0.01      0.00      0.00      1285/836550      Rtc::ProxyObject#hash
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00       3/11522705      Integer#times
+                      0.00      0.00      0.00      0.00    1142/11522705      Array#include?
+                      0.00      0.00      0.00      0.00    2276/11522705      SudokuSolver#eliminate
+                      0.01      0.01      0.00      0.00    6655/11522705      Array#each
+                      0.05      0.05      0.00      0.00   44085/11522705      Rtc::Types::ParameterizedType#initialize
+                      0.05      0.05      0.00      0.00   48980/11522705      BasicObject#!=
+                      0.05      0.05      0.00      0.00   48928/11522705      <Module::Rtc::MethodCheck>#check_args
+                      0.12      0.12      0.00      0.00  117706/11522705      Rtc::HashBuilder#initialize
+                      0.18      0.18      0.00      0.00  176272/11522705      <Class::Rtc::TypeInferencer>#infer_type
+                      3.45      3.45      0.00      0.00 3569508/11522705      Hash#each_key
+                      3.50      3.50      0.00      0.00 3569508/11522705      Hash#each_value
+                      3.97      3.97      0.00      0.00 3937642/11522705      Object#rtc_get_type
+   2.30%   2.30%     11.39     11.39      0.00      0.00         11522705      Fixnum#==
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00    175860/219825      Array#each
+                     10.95      0.28      0.00     10.68     43965/219825      Rtc::MethodWrapper#invoke
+   2.22%   0.06%     10.95      0.28      0.00     10.68           219825     *Rtc::Types::ParameterizedType#get_method
+                      5.99      0.28      0.00      5.70      43965/87930      Rtc::Types::ProceduralType#replace_parameters
+                      2.44      0.09      0.00      2.36      43965/43965      Enumerable#each_with_index
+                      2.18      0.26      0.00      1.92     43965/195712      Rtc::Types::NominalType#get_method
+                      0.27      0.27      0.00      0.00   175860/6062543      UnboundMethod#bind
+                      0.26      0.26      0.00      0.00   175860/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      0.18      0.18      0.00      0.00   175860/6243739      NilClass#nil?
+                      0.07      0.07      0.00      0.00    43965/4069777      Rtc::Types::NominalType#type_parameters
+                      0.00      0.00      0.00      0.00   175860/6062543      Method#call
+--------------------------------------------------------------------------------
+                     10.64      0.33      0.00     10.31      61443/61443      Set#initialize
+   2.15%   0.07%     10.64      0.33      0.00     10.31            61443      Set#merge
+                     10.17      0.20      0.00      9.97      61443/61443      Set#do_with_enum
+                      0.07      0.07      0.00      0.00     61443/233623      Kernel#instance_of?
+                      0.07      0.07      0.00      0.00    61443/8171094      Kernel#class
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00        7/7081173      SudokuSolver#print_grid
+                      0.00      0.00      0.00      0.00       17/7081173      Rtc::TypeAnnotationParser#_reduce_67
+                      0.00      0.00      0.00      0.00       18/7081173      Rtc::TypeAnnotationParser#_reduce_4
+                      0.00      0.00      0.00      0.00       17/7081173      Object#rtc_cast
+                      0.00      0.00      0.00      0.00       18/7081173      Rtc::TypeAnnotationParser#_reduce_11
+                      0.00      0.00      0.00      0.00       34/7081173      Rtc::TypeAnnotationParser#_reduce_63
+                      0.00      0.00      0.00      0.00       35/7081173      Rtc::TypeAnnotationParser#_reduce_55
+                      0.00      0.00      0.00      0.00       34/7081173      Rtc::TypeAnnotationParser#_reduce_68
+                      0.00      0.00      0.00      0.00       52/7081173      Rtc::TypeAnnotationParser#_reduce_49
+                      0.00      0.00      0.00      0.00       50/7081173      SudokuSolver#search
+                      0.00      0.00      0.00      0.00       52/7081173      Rtc::TypeAnnotationParser#_reduce_46
+                      0.00      0.00      0.00      0.00       52/7081173      Rtc::TypeAnnotationParser#_reduce_51
+                      0.00      0.00      0.00      0.00      104/7081173      <Module::Rtc::ClassLoader>#load_class
+                      0.00      0.00      0.00      0.00      156/7081173      Rtc::TypeAnnotationParser#_reduce_50
+                      0.00      0.00      0.00      0.00      260/7081173      SudokuSolver#parse_grid
+                      0.00      0.00      0.00      0.00      388/7081173      SudokuSolver#assign
+                      0.00      0.00      0.00      0.00     2719/7081173      SudokuSolver#initialize
+                      0.01      0.01      0.00      0.00     6332/7081173      SudokuSolver#eliminate
+                      0.07      0.07      0.00      0.00    43965/7081173      Rtc::Types::ProceduralType#replace_parameters
+                      0.08      0.08      0.00      0.00    48928/7081173      <Module::Rtc::MethodCheck>#check_args
+                      0.10      0.10      0.00      0.00    64746/7081173      Object#rtc_annotate
+                      0.13      0.13      0.00      0.00    88050/7081173      Rtc::Types::Type#initialize
+                      0.14      0.14      0.00      0.00    89072/7081173      Rtc::Types::TypeParameter#replace_parameters
+                      0.14      0.14      0.00      0.00    88136/7081173      <Class::Rtc::TypeInferencer>#infer_type
+                      0.22      0.22      0.00      0.00   146784/7081173      Rtc::Types::NominalType#get_method
+                      0.26      0.26      0.00      0.00   175860/7081173      Rtc::Types::ParameterizedType#get_method
+                      0.26      0.26      0.00      0.00   175860/7081173      Rtc::Types::ProceduralType#initialize
+                      0.30      0.30      0.00      0.00   197496/7081173      Rtc::HashBuilder#include
+                      0.31      0.31      0.00      0.00   201827/7081173      Set#add
+                      0.33      0.33      0.00      0.00   219840/7081173      <Class::Object>#get_typesig_info
+                      0.49      0.49      0.00      0.00   322570/7081173      Rtc::ProxyObject#method_missing
+                      0.65      0.65      0.00      0.00   433450/7081173      Rtc::MethodWrapper#invoke
+                      1.23      1.23      0.00      0.00   836550/7081173      Rtc::ProxyObject#hash
+                      5.87      5.87      0.00      0.00  3937694/7081173      <Class::Rtc::Types::NominalType>#of
+   2.14%   2.14%     10.60     10.60      0.00      0.00          7081173      <Class::Rtc::MasterSwitch>#is_on?
+--------------------------------------------------------------------------------
+                      0.14      0.14      0.00      0.00    97856/7413144      <Module::Rtc::MethodCheck>#check_args
+                      0.25      0.25      0.00      0.00   176272/7413144      <Class::Rtc::TypeInferencer>#infer_type
+                      5.08      5.08      0.00      0.00  3569508/7413144      Hash#each_value
+                      5.10      5.10      0.00      0.00  3569508/7413144      Hash#each_key
+   2.14%   2.14%     10.58     10.58      0.00      0.00          7413144      Set#size
+--------------------------------------------------------------------------------
+                     10.17      0.20      0.00      9.97      61443/61443      Set#merge
+   2.06%   0.04%     10.17      0.20      0.00      9.97            61443      Set#do_with_enum
+                      9.89      0.12      0.00      9.77      61443/61443      Enumerable#each_entry
+                      0.08      0.08      0.00      0.00      61443/61443      Kernel#respond_to?
+--------------------------------------------------------------------------------
+                      9.89      0.12      0.00      9.77      61443/61443      Set#do_with_enum
+   2.00%   0.02%      9.89      0.12      0.00      9.77            61443      Enumerable#each_entry
+                      0.00      0.00      0.00      0.00     61443/534242      Array#each
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00       17/6062543      Rtc::TypeAnnotationParser#_reduce_67
+                      0.00      0.00      0.00      0.00       18/6062543      Rtc::TypeAnnotationParser#_reduce_4
+                      0.00      0.00      0.00      0.00       34/6062543      Rtc::TypeAnnotationParser#_reduce_68
+                      0.00      0.00      0.00      0.00       34/6062543      Rtc::TypeAnnotationParser#_reduce_63
+                      0.00      0.00      0.00      0.00       35/6062543      Rtc::TypeAnnotationParser#_reduce_55
+                      0.00      0.00      0.00      0.00       18/6062543      Rtc::TypeAnnotationParser#_reduce_11
+                      0.00      0.00      0.00      0.00       52/6062543      Rtc::TypeAnnotationParser#_reduce_49
+                      0.00      0.00      0.00      0.00       52/6062543      Rtc::TypeAnnotationParser#_reduce_51
+                      0.00      0.00      0.00      0.00       52/6062543      Rtc::TypeAnnotationParser#_reduce_46
+                      0.00      0.00      0.00      0.00      104/6062543      <Module::Rtc::ClassLoader>#load_class
+                      0.00      0.00      0.00      0.00      156/6062543      Rtc::TypeAnnotationParser#_reduce_50
+                      0.07      0.07      0.00      0.00    43965/6062543      Rtc::Types::ProceduralType#replace_parameters
+                      0.08      0.08      0.00      0.00    48928/6062543      <Module::Rtc::MethodCheck>#check_args
+                      0.13      0.13      0.00      0.00    89072/6062543      Rtc::Types::TypeParameter#replace_parameters
+                      0.14      0.14      0.00      0.00    88050/6062543      Rtc::Types::Type#initialize
+                      0.16      0.16      0.00      0.00    88136/6062543      <Class::Rtc::TypeInferencer>#infer_type
+                      0.23      0.23      0.00      0.00   146784/6062543      Rtc::Types::NominalType#get_method
+                      0.25      0.25      0.00      0.00   161285/6062543      Rtc::ProxyObject#method_missing
+                      0.27      0.27      0.00      0.00   175860/6062543      Rtc::Types::ProceduralType#initialize
+                      0.27      0.27      0.00      0.00   175860/6062543      Rtc::Types::ParameterizedType#get_method
+                      0.31      0.31      0.00      0.00   197496/6062543      Rtc::HashBuilder#include
+                      0.32      0.32      0.00      0.00   201827/6062543      Set#add
+                      0.35      0.35      0.00      0.00   219840/6062543      <Class::Object>#get_typesig_info
+                      0.75      0.75      0.00      0.00   487174/6062543      Rtc::MethodWrapper#invoke
+                      6.29      6.29      0.00      0.00  3937694/6062543      <Class::Rtc::Types::NominalType>#of
+   1.95%   1.95%      9.62      9.62      0.00      0.00          6062543      UnboundMethod#bind
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00       17/8171094      Object#rtc_cast
+                      0.00      0.00      0.00      0.00       17/8171094      Rtc::ProxyObject#class
+                      0.00      0.00      0.00      0.00       36/8171094      Racc::Parser#_racc_setup
+                      0.06      0.06      0.00      0.00    52248/8171094      Set#==
+                      0.07      0.07      0.00      0.00    61443/8171094      Set#merge
+                      0.07      0.07      0.00      0.00    64747/8171094      Object#rtc_annotate
+                      0.13      0.13      0.00      0.00   117302/8171094      Rtc::ProxyObject#method_missing
+                      8.00      8.00      0.00      0.00  7875284/8171094      Object#rtc_get_type
+   1.68%   1.68%      8.33      8.33      0.00      0.00          8171094      Kernel#class
+--------------------------------------------------------------------------------
+                      0.57      0.03      0.00      0.54       4988/14762      Set#hash
+                      7.07      0.99      0.00      6.08       9774/14762      Rtc::ProxyObject#hash
+   1.55%   0.21%      7.64      1.02      0.00      6.62            14762      Hash#hash
+                      0.80      0.80      0.00      0.00   812886/1861493      String#hash
+                      0.50      0.03      0.00      0.48        4988/9925      Rtc::Types::ParameterizedType#hash
+                      0.03      0.01      0.00      0.01      4988/221842      Rtc::Types::NominalType#hash
+                      0.01      0.01      0.00      0.00     9976/4035617      Kernel#hash
+                      0.00      0.00      0.00      0.00    770502/836550      Rtc::ProxyObject#hash
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00    770502/836550      Hash#hash
+                      0.01      0.01      0.00      0.00      1285/836550      Hash#[]
+                      7.54      0.31      0.00      7.24     64763/836550      Hash#[]=
+   1.53%   0.06%      7.55      0.31      0.00      7.24           836550     *Rtc::ProxyObject#hash
+                      7.07      0.99      0.00      6.08       9774/14762      Hash#hash
+                      1.23      1.23      0.00      0.00   836550/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      0.81      0.81      0.00      0.00   826765/1861493      String#hash
+                      0.00      0.00      0.00      0.00       11/4035617      Kernel#hash
+--------------------------------------------------------------------------------
+                      6.89      6.89      0.00      0.00  7060786/7060786      Set#each
+   1.39%   1.39%      6.89      6.89      0.00      0.00          7060786      Kernel#block_given?
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00        1/6243739      SudokuSolver#search
+                      0.00      0.00      0.00      0.00       17/6243739      Rtc::TypeAnnotationParser#_reduce_67
+                      0.00      0.00      0.00      0.00       18/6243739      Rtc::TypeAnnotationParser#_reduce_11
+                      0.00      0.00      0.00      0.00       18/6243739      Rtc::TypeAnnotationParser#_reduce_4
+                      0.00      0.00      0.00      0.00       34/6243739      Rtc::TypeAnnotationParser#_reduce_63
+                      0.00      0.00      0.00      0.00       20/6243739      SudokuSolver#assign
+                      0.00      0.00      0.00      0.00       29/6243739      Array#each
+                      0.00      0.00      0.00      0.00       34/6243739      Rtc::TypeAnnotationParser#_reduce_68
+                      0.00      0.00      0.00      0.00       35/6243739      Rtc::TypeAnnotationParser#_reduce_55
+                      0.00      0.00      0.00      0.00       36/6243739      SudokuSolver#eliminate
+                      0.00      0.00      0.00      0.00       52/6243739      Rtc::TypeAnnotationParser#_reduce_49
+                      0.00      0.00      0.00      0.00       29/6243739      Method#call
+                      0.00      0.00      0.00      0.00       52/6243739      Rtc::TypeAnnotationParser#_reduce_51
+                      0.00      0.00      0.00      0.00       52/6243739      Rtc::TypeAnnotationParser#_reduce_46
+                      0.00      0.00      0.00      0.00      104/6243739      <Module::Rtc::ClassLoader>#load_class
+                      0.00      0.00      0.00      0.00      156/6243739      Rtc::TypeAnnotationParser#_reduce_50
+                      0.05      0.05      0.00      0.00    43965/6243739      Rtc::Types::ProceduralType#replace_parameters
+                      0.05      0.05      0.00      0.00    48928/6243739      <Module::Rtc::MethodCheck>#check_args
+                      0.09      0.09      0.00      0.00    88136/6243739      Set#initialize
+                      0.09      0.09      0.00      0.00    89072/6243739      Rtc::Types::TypeParameter#replace_parameters
+                      0.09      0.09      0.00      0.00    88050/6243739      Rtc::Types::Type#initialize
+                      0.09      0.09      0.00      0.00    88136/6243739      <Class::Rtc::TypeInferencer>#infer_type
+                      0.17      0.17      0.00      0.00   161285/6243739      Rtc::ProxyObject#method_missing
+                      0.18      0.18      0.00      0.00   175860/6243739      Rtc::Types::ProceduralType#initialize
+                      0.18      0.18      0.00      0.00   175860/6243739      Rtc::Types::ParameterizedType#get_method
+                      0.20      0.20      0.00      0.00   195712/6243739      Rtc::Types::NominalType#get_method
+                      0.21      0.21      0.00      0.00   197496/6243739      Rtc::HashBuilder#include
+                      0.21      0.21      0.00      0.00   201827/6243739      Set#add
+                      0.23      0.23      0.00      0.00   219840/6243739      <Class::Object>#get_typesig_info
+                      0.56      0.56      0.00      0.00   531191/6243739      Rtc::MethodWrapper#invoke
+                      4.05      4.05      0.00      0.00  3937694/6243739      <Class::Rtc::Types::NominalType>#of
+   1.31%   1.31%      6.46      6.46      0.00      0.00          6243739      NilClass#nil?
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00      43965/87930      Rtc::Types::ProceduralType#replace_parameters
+                      5.99      0.28      0.00      5.70      43965/87930      Rtc::Types::ParameterizedType#get_method
+   1.21%   0.06%      5.99      0.28      0.00      5.70            87930     *Rtc::Types::ProceduralType#replace_parameters
+                      3.58      0.12      0.00      3.46     43965/514276      Class#new
+                      0.71      0.14      0.00      0.56     43965/178144      Rtc::Types::TypeParameter#replace_parameters
+                      0.07      0.07      0.00      0.00    43965/6062543      UnboundMethod#bind
+                      0.07      0.07      0.00      0.00    43965/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      0.05      0.05      0.00      0.00     43965/237303      Kernel#nil?
+                      0.05      0.05      0.00      0.00    43965/6243739      NilClass#nil?
+                      0.00      0.00      0.00      0.00      43965/87930      Rtc::Types::ProceduralType#replace_parameters
+                      0.00      0.00      0.00      0.00    43965/6062543      Method#call
+--------------------------------------------------------------------------------
+                      0.07      0.07      0.00      0.00    43965/4069777      Rtc::Types::ParameterizedType#get_method
+                      0.13      0.13      0.00      0.00    88170/4069777      Rtc::Types::ParameterizedType#initialize
+                      5.71      5.71      0.00      0.00  3937642/4069777      Object#rtc_get_type
+   1.19%   1.19%      5.91      5.91      0.00      0.00          4069777      Rtc::Types::NominalType#type_parameters
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00        1/3416524      Method#call
+                      0.00      0.00      0.00      0.00        1/3416524      SudokuSolver#assign
+                      0.00      0.00      0.00      0.00        1/3416524      SudokuSolver#eliminate
+                      0.00      0.00      0.00      0.00        1/3416524      SudokuSolver#search
+                      0.04      0.04      0.00      0.00    23261/3416524      Array#each
+                      0.14      0.14      0.00      0.00    90497/3416524      Rtc::MethodWrapper#invoke
+                      4.78      4.78      0.00      0.00  3302762/3416524      Hash#each_value
+   1.00%   1.00%      4.95      4.95      0.00      0.00          3416524      Rtc::ProxyObject#rtc_type
+--------------------------------------------------------------------------------
+                      4.95      0.29      0.00      4.66      48928/48928      Hash#[]=
+   1.00%   0.06%      4.95      0.29      0.00      4.66            48928      Rtc::Types::ProceduralType#hash
+                      2.21      0.16      0.00      2.05     48928/336139      Rtc::HashBuilder#include
+                      0.07      0.07      0.00      0.00      48928/58853      Rtc::HashBuilder#get_hash
+                      0.00      0.00      0.00      0.00     48928/534242      Array#each
+                      0.00      0.00      0.00      0.00     48928/514276      Class#new
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00    219840/337142      <Class::Object>#get_typesig_info
+                      4.55      0.66      0.00      3.89    117302/337142      Rtc::ProxyObject#method_missing
+   0.92%   0.13%      4.55      0.66      0.00      3.89           337142     *<Class::Object>#get_typesig_info
+                      0.70      0.34      0.00      0.36    117302/177242      Array#include?
+                      0.35      0.35      0.00      0.00   219840/6062543      UnboundMethod#bind
+                      0.33      0.33      0.00      0.00   219840/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      0.23      0.23      0.00      0.00   219840/6243739      NilClass#nil?
+                      0.20      0.20      0.00      0.00    117302/254366      Hash#keys
+                      0.16      0.16      0.00      0.00    117302/117302      Symbol#to_s
+                      0.05      0.05      0.00      0.00      43968/43968      Hash#include?
+                      0.00      0.00      0.00      0.00   219840/6062543      Method#call
+                      0.00      0.00      0.00      0.00    219840/337142      <Class::Object>#get_typesig_info
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00       11/4035617      Rtc::ProxyObject#hash
+                      0.01      0.01      0.00      0.00     9976/4035617      Hash#hash
+                      4.28      4.28      0.00      0.00  4025630/4035617      Hash#[]
+   0.87%   0.87%      4.29      4.29      0.00      0.00          4035617      Kernel#hash
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00      871/4025951      Hash#old_eql?
+                      0.06      0.06      0.00      0.00    53678/4025951      Hash#old_eq
+                      0.09      0.09      0.00      0.00    87930/4025951      String#===
+                      3.92      3.92      0.00      0.00  3883472/4025951      String#old_eq
+   0.82%   0.82%      4.07      4.07      0.00      0.00          4025951      Kernel#respond_to_missing?
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00    197496/336139      Rtc::HashBuilder#include
+                      0.00      0.00      0.00      0.00      9925/336139      Rtc::Types::ParameterizedType#hash
+                      1.77      0.19      0.00      1.58     79790/336139      Array#each
+                      2.21      0.16      0.00      2.05     48928/336139      Rtc::Types::ProceduralType#hash
+   0.80%   0.07%      3.98      0.35      0.00      3.63           336139     *Rtc::HashBuilder#include
+                      0.63      0.33      0.00      0.30    128718/221842      Rtc::Types::NominalType#hash
+                      0.59      0.01      0.00      0.58        4988/4988      Rtc::Types::UnionType#hash
+                      0.48      0.03      0.00      0.45        4937/9925      Rtc::Types::ParameterizedType#hash
+                      0.31      0.31      0.00      0.00   197496/6062543      UnboundMethod#bind
+                      0.30      0.30      0.00      0.00   197496/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      0.21      0.21      0.00      0.00   197496/6243739      NilClass#nil?
+                      0.11      0.11      0.00      0.00      79790/79790      Bignum#+
+                      0.00      0.00      0.00      0.00    197496/336139      Rtc::HashBuilder#include
+                      0.00      0.00      0.00      0.00   197496/6062543      Method#call
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00    175860/219825      Rtc::Types::ProceduralType#initialize
+                      3.40      0.54      0.00      2.86     43965/219825      Class#new
+   0.69%   0.11%      3.40      0.54      0.00      2.86           219825     *Rtc::Types::ProceduralType#initialize
+                      0.66      0.14      0.00      0.52     43965/176100      Rtc::Types::Type#initialize
+                      0.27      0.27      0.00      0.00   175860/6062543      UnboundMethod#bind
+                      0.26      0.26      0.00      0.00   175860/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      0.18      0.18      0.00      0.00   175860/6243739      NilClass#nil?
+                      0.14      0.14      0.00      0.00    131895/237303      Kernel#nil?
+                      0.00      0.00      0.00      0.00    175860/219825      Rtc::Types::ProceduralType#initialize
+                      0.00      0.00      0.00      0.00   175860/6062543      Method#call
+--------------------------------------------------------------------------------
+                      2.44      0.09      0.00      2.36      43965/43965      Rtc::Types::ParameterizedType#get_method
+   0.49%   0.02%      2.44      0.09      0.00      2.36            43965      Enumerable#each_with_index
+                      0.00      0.00      0.00      0.00     43965/534242      Array#each
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00    146784/195712      Rtc::Types::NominalType#get_method
+                      0.26      0.03      0.00      0.23      4963/195712      Rtc::MethodWrapper#invoke
+                      2.18      0.26      0.00      1.92     43965/195712      Rtc::Types::ParameterizedType#get_method
+   0.49%   0.06%      2.44      0.29      0.00      2.15           195712     *Rtc::Types::NominalType#get_method
+                      0.29      0.13      0.00      0.16      48928/48928      Rtc::Types::ProceduralType#instantiate
+                      0.23      0.23      0.00      0.00   146784/6062543      UnboundMethod#bind
+                      0.22      0.22      0.00      0.00   146784/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      0.20      0.20      0.00      0.00   195712/6243739      NilClass#nil?
+                      0.05      0.05      0.00      0.00     48928/317343      Kernel#is_a?
+                      0.00      0.00      0.00      0.00   146784/6062543      Method#call
+                      0.00      0.00      0.00      0.00    146784/195712      Rtc::Types::NominalType#get_method
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00         17/38811      Object#rtc_cast
+                      0.01      0.00      0.00      0.01      19324/38811      Hash#each_key
+                      0.43      0.03      0.00      0.40       4936/38811      Array#each
+                      0.59      0.02      0.00      0.57       4799/38811      Rtc::MethodWrapper#invoke
+                      0.99      0.05      0.00      0.94       9735/38811      Object#rtc_annotate
+   0.41%   0.02%      2.02      0.11      0.00      1.92            38811     *Rtc::Types::ParameterizedType#<=
+                      1.10      0.04      0.00      1.06        9640/9862      Rtc::Types::StructuralType#<=
+                      0.79      0.03      0.00      0.76      19531/19575      Enumerable#all?
+                      0.70      0.23      0.00      0.47    39062/7283370      Rtc::Types::NominalType#<=
+                      0.07      0.07      0.00      0.00   67731/29230797      Module#===
+                      0.04      0.04      0.00      0.00      19531/68460      Array#zip
+--------------------------------------------------------------------------------
+                      0.24      0.24      0.00      0.00   221842/1861493      Rtc::Types::NominalType#hash
+                      0.80      0.80      0.00      0.00   812886/1861493      Hash#hash
+                      0.81      0.81      0.00      0.00   826765/1861493      Rtc::ProxyObject#hash
+   0.37%   0.37%      1.85      1.85      0.00      0.00          1861493      String#hash
+--------------------------------------------------------------------------------
+                      1.77      0.10      0.00      1.67      33331/33331      Rtc::ProxyObject#method_missing
+   0.36%   0.02%      1.77      0.10      0.00      1.67            33331      String#include?
+                      0.00      0.00      0.00      0.00     33331/322570      Rtc::ProxyObject#method_missing
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00              6/8      Integer#times
+                      0.00      0.00      0.00      0.00              1/8      SudokuSolver#print_grid
+                      1.76      0.00      0.00      1.76              1/8      Method#call
+   0.36%   0.00%      1.76      0.00      0.00      1.76                8     *SudokuSolver#print_grid
+                      0.01      0.00      0.00      0.01             1/17      Object#rtc_cast
+                      0.00      0.00      0.00      0.00              1/4      Integer#times
+                      0.00      0.00      0.00      0.00              1/1      Kernel#puts
+                      0.00      0.00      0.00      0.00            1/881      Rtc::ProxyObject#==
+                      0.00      0.00      0.00      0.00         7/219973      <Class::Rtc::MasterSwitch>#turn_on
+                      0.00      0.00      0.00      0.00        7/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      0.00      0.00      0.00      0.00         7/219973      <Class::Rtc::MasterSwitch>#turn_off
+                      0.00      0.00      0.00      0.00         1/514276      Class#new
+                      0.00      0.00      0.00      0.00            2/554      String#+
+                      0.00      0.00      0.00      0.00             1/53      Array#join
+                      0.00      0.00      0.00      0.00         2/534242      Array#each
+                      0.00      0.00      0.00      0.00         7/487174      Rtc::MethodWrapper#invoke
+                      0.00      0.00      0.00      0.00              1/8      SudokuSolver#print_grid
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00     89072/178144      Rtc::Types::TypeParameter#replace_parameters
+                      0.71      0.14      0.00      0.56     43965/178144      Rtc::Types::ProceduralType#replace_parameters
+                      0.72      0.14      0.00      0.58     45107/178144      Array#map
+   0.29%   0.06%      1.43      0.29      0.00      1.14           178144     *Rtc::Types::TypeParameter#replace_parameters
+                      0.14      0.14      0.00      0.00    89072/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      0.13      0.13      0.00      0.00    89072/6062543      UnboundMethod#bind
+                      0.10      0.10      0.00      0.00      89072/89072      Hash#has_key?
+                      0.09      0.09      0.00      0.00    89072/6243739      NilClass#nil?
+                      0.00      0.00      0.00      0.00     89072/178144      Rtc::Types::TypeParameter#replace_parameters
+                      0.00      0.00      0.00      0.00    89072/6062543      Method#call
+--------------------------------------------------------------------------------
+                      1.40      0.37      0.00      1.03      44085/44085      Class#new
+   0.28%   0.07%      1.40      0.37      0.00      1.03            44085      Rtc::Types::ParameterizedType#initialize
+                      0.86      0.18      0.00      0.68      44085/44085      Rtc::Types::StructuralType#initialize
+                      0.13      0.13      0.00      0.00    88170/4069777      Rtc::Types::NominalType#type_parameters
+                      0.05      0.05      0.00      0.00   44085/11522705      Fixnum#==
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00     88050/176100      Rtc::Types::Type#initialize
+                      0.66      0.14      0.00      0.52     43965/176100      Rtc::Types::ProceduralType#initialize
+                      0.68      0.14      0.00      0.54     44085/176100      Rtc::Types::StructuralType#initialize
+   0.27%   0.06%      1.33      0.27      0.00      1.06           176100     *Rtc::Types::Type#initialize
+                      0.14      0.14      0.00      0.00    88050/6062543      UnboundMethod#bind
+                      0.13      0.13      0.00      0.00    88050/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      0.09      0.09      0.00      0.00    88050/6243739      NilClass#nil?
+                      0.00      0.00      0.00      0.00    88050/6062543      Method#call
+                      0.00      0.00      0.00      0.00     88050/176100      Rtc::Types::Type#initialize
+--------------------------------------------------------------------------------
+                      0.01      0.00      0.00      0.01         222/9862      Rtc::Types::NominalType#<=
+                      1.10      0.04      0.00      1.06        9640/9862      Rtc::Types::ParameterizedType#<=
+   0.22%   0.01%      1.10      0.04      0.00      1.07             9862      Rtc::Types::StructuralType#<=
+                      1.05      0.03      0.00      1.01        9862/9862      Rtc::Types::Type#<=
+                      0.02      0.02      0.00      0.00   19724/29230797      Module#===
+--------------------------------------------------------------------------------
+                      0.03      0.01      0.00      0.01      4988/221842      Hash#hash
+                      0.44      0.22      0.00      0.22     88136/221842      Hash#[]=
+                      0.63      0.33      0.00      0.30    128718/221842      Rtc::HashBuilder#include
+   0.22%   0.11%      1.09      0.56      0.00      0.53           221842      Rtc::Types::NominalType#hash
+                      0.29      0.29      0.00      0.00  221842/18725832      Module#name
+                      0.24      0.24      0.00      0.00   221842/1861493      String#hash
+--------------------------------------------------------------------------------
+                      1.05      0.03      0.00      1.01        9862/9862      Rtc::Types::StructuralType#<=
+   0.21%   0.01%      1.05      0.03      0.00      1.01             9862      Rtc::Types::Type#<=
+                      1.00      0.02      0.00      0.98     9862/7060742      Enumerable#any?
+                      0.01      0.01      0.00      0.00    9862/29230797      Module#===
+--------------------------------------------------------------------------------
+                      0.48      0.03      0.00      0.45        4937/9925      Rtc::HashBuilder#include
+                      0.50      0.03      0.00      0.48        4988/9925      Hash#hash
+   0.20%   0.01%      0.98      0.05      0.00      0.93             9925      Rtc::Types::ParameterizedType#hash
+                      0.01      0.01      0.00      0.00       9925/58853      Rtc::HashBuilder#get_hash
+                      0.00      0.00      0.00      0.00      9925/534242      Array#each
+                      0.00      0.00      0.00      0.00      9925/336139      Rtc::HashBuilder#include
+                      0.00      0.00      0.00      0.00      9925/514276      Class#new
+--------------------------------------------------------------------------------
+                      0.03      0.02      0.00      0.02      4963/166230      Rtc::MethodWrapper#invoke
+                      0.39      0.23      0.00      0.16     73337/166230      Rtc::ProxyObject#method_missing
+                      0.52      0.29      0.00      0.23     87930/166230      Rtc::Types::ParameterizedType#has_method?
+   0.19%   0.11%      0.94      0.54      0.00      0.40           166230      Rtc::Types::NominalType#has_method?
+                      0.18      0.18      0.00      0.00    166230/166230      Module#method_defined?
+                      0.13      0.13      0.00      0.00    117302/117302      Symbol#to_sym
+                      0.10      0.10      0.00      0.00      48928/48928      String#to_sym
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00        17/157074      SudokuSolver#assign
+                      0.00      0.00      0.00      0.00        16/157074      SudokuSolver#search
+                      0.00      0.00      0.00      0.00        19/157074      Method#call
+                      0.00      0.00      0.00      0.00        18/157074      Kernel#===
+                      0.00      0.00      0.00      0.00        21/157074      SudokuSolver#eliminate
+                      0.00      0.00      0.00      0.00        21/157074      Array#each
+                      0.00      0.00      0.00      0.00        51/157074      Object#rtc_cast
+                      0.03      0.01      0.00      0.01      4819/157074      Rtc::MethodWrapper#invoke
+                      0.06      0.03      0.00      0.03     10102/157074      Object#rtc_type
+                      0.79      0.44      0.00      0.35    141990/157074      Object#rtc_annotate
+   0.18%   0.10%      0.88      0.49      0.00      0.39           157074      Object#==
+                      0.23      0.23      0.00      0.00  157074/15534994      Object#is_proxy_object?
+                      0.16      0.16      0.00      0.00    157074/157074      Object#old_eq
+--------------------------------------------------------------------------------
+                      0.86      0.18      0.00      0.68      44085/44085      Rtc::Types::ParameterizedType#initialize
+   0.17%   0.04%      0.86      0.18      0.00      0.68            44085      Rtc::Types::StructuralType#initialize
+                      0.68      0.14      0.00      0.54     44085/176100      Rtc::Types::Type#initialize
+--------------------------------------------------------------------------------
+                      0.85      0.12      0.00      0.72      43965/43965      Method#call
+   0.17%   0.03%      0.85      0.12      0.00      0.72            43965      Array#map
+                      0.72      0.14      0.00      0.58     45107/178144      Rtc::Types::TypeParameter#replace_parameters
+--------------------------------------------------------------------------------
+                      0.01      0.00      0.00      0.01         44/19575      Rtc::Types::UnionType#<=
+                      0.79      0.03      0.00      0.76      19531/19575      Rtc::Types::ParameterizedType#<=
+   0.16%   0.01%      0.80      0.03      0.00      0.77            19575     *Enumerable#all?
+                      0.01      0.00      0.00      0.01       44/7060786      Set#each
+                      0.00      0.00      0.00      0.00     19531/534242      Array#each
+--------------------------------------------------------------------------------
+                      0.07      0.06      0.00      0.00     59940/177242      Array#each
+                      0.70      0.34      0.00      0.36    117302/177242      <Class::Object>#get_typesig_info
+   0.15%   0.08%      0.76      0.40      0.00      0.36           177242      Array#include?
+                      0.36      0.36      0.00      0.00    381275/381275      Module#==
+                      0.00      0.00      0.00      0.00    1142/11522705      Fixnum#==
+--------------------------------------------------------------------------------
+                      0.73      0.27      0.00      0.46      52248/52248      Object#rtc_annotate
+   0.15%   0.05%      0.73      0.27      0.00      0.46            52248      Set#==
+                      0.29      0.16      0.00      0.13      52248/57215      Object#equal?
+                      0.06      0.06      0.00      0.00    52248/8171094      Kernel#class
+                      0.06      0.06      0.00      0.00     52248/233623      Kernel#instance_of?
+                      0.06      0.06      0.00      0.00     52248/317343      Kernel#is_a?
+--------------------------------------------------------------------------------
+                      0.33      0.09      0.00      0.24      43965/87930      Rtc::ProxyObject#method_missing
+                      0.37      0.09      0.00      0.28      43965/87930      Rtc::MethodWrapper#invoke
+   0.14%   0.04%      0.70      0.18      0.00      0.52            87930      Rtc::Types::ParameterizedType#has_method?
+                      0.52      0.29      0.00      0.23     87930/166230      Rtc::Types::NominalType#has_method?
+--------------------------------------------------------------------------------
+                      0.59      0.01      0.00      0.58        4988/4988      Rtc::HashBuilder#include
+   0.12%   0.00%      0.59      0.01      0.00      0.58             4988      Rtc::Types::UnionType#hash
+                      0.58      0.01      0.00      0.57        4988/4988      Set#hash
+--------------------------------------------------------------------------------
+                      0.58      0.01      0.00      0.57        4988/4988      Rtc::Types::UnionType#hash
+   0.12%   0.00%      0.58      0.01      0.00      0.57             4988      Set#hash
+                      0.57      0.03      0.00      0.54       4988/14762      Hash#hash
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00        125/53378      Hash#old_eql?
+                      0.01      0.00      0.00      0.01        881/53378      Rtc::ProxyObject#==
+                      0.01      0.00      0.00      0.01       1285/53378      Hash#[]
+                      0.53      0.17      0.00      0.36      51087/53378      Hash#[]=
+   0.11%   0.04%      0.56      0.18      0.00      0.38            53378     *Rtc::ProxyObject#eql?
+                      0.27      0.15      0.00      0.12      48843/48843      String#eql?
+                      0.07      0.07      0.00      0.00     51212/121977      Rtc::ProxyObject#is_proxy_object?
+                      0.03      0.01      0.00      0.02        4516/4516      Hash#eql?
+                      0.00      0.00      0.00      0.00    2166/15534994      Object#is_proxy_object?
+                      0.00      0.00      0.00      0.00            19/19      Object#eql?
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00          2/93068      SudokuSolver#assign
+                      0.00      0.00      0.00      0.00          2/93068      SudokuSolver#search
+                      0.00      0.00      0.00      0.00          2/93068      Method#call
+                      0.00      0.00      0.00      0.00          2/93068      Array#each
+                      0.00      0.00      0.00      0.00          2/93068      SudokuSolver#eliminate
+                      0.54      0.23      0.00      0.31      93058/93068      Rtc::MethodWrapper#invoke
+   0.11%   0.05%      0.54      0.23      0.00      0.31            93068      Rtc::ProxyObject#===
+                      0.22      0.14      0.00      0.08      83460/87930      String#===
+                      0.09      0.02      0.00      0.07        9608/9942      Kernel#===
+--------------------------------------------------------------------------------
+                      0.18      0.10      0.00      0.07     48928/137064      <Module::Rtc::MethodCheck>#check_args
+                      0.30      0.18      0.00      0.12     88136/137064      <Class::Rtc::TypeInferencer>#infer_type
+   0.10%   0.06%      0.48      0.28      0.00      0.20           137064      Set#to_a
+                      0.20      0.20      0.00      0.00    137064/254366      Hash#keys
+--------------------------------------------------------------------------------
+                      0.46      0.46      0.00      0.00    361264/361264      Class#new
+   0.09%   0.09%      0.46      0.46      0.00      0.00           361264      <Class::BasicObject>#allocate
+--------------------------------------------------------------------------------
+                      0.44      0.44      0.00      0.00    404240/404240      Method#call
+   0.09%   0.09%      0.44      0.44      0.00      0.00           404240      Array#[]
+--------------------------------------------------------------------------------
+                      0.20      0.20      0.00      0.00    137064/254366      Set#to_a
+                      0.20      0.20      0.00      0.00    117302/254366      <Class::Object>#get_typesig_info
+   0.08%   0.08%      0.40      0.40      0.00      0.00           254366      Hash#keys
+--------------------------------------------------------------------------------
+                      0.07      0.03      0.00      0.04       9610/53678      Kernel#===
+                      0.33      0.14      0.00      0.19      44068/53678      Object#rtc_type
+   0.08%   0.03%      0.39      0.16      0.00      0.23            53678      Hash#==
+                      0.15      0.10      0.00      0.06      53678/53678      Hash#old_eq
+                      0.08      0.08      0.00      0.00   53678/15534994      Object#is_proxy_object?
+--------------------------------------------------------------------------------
+                      0.37      0.25      0.00      0.12      58853/58853      Class#new
+   0.07%   0.05%      0.37      0.25      0.00      0.12            58853      Rtc::HashBuilder#initialize
+                      0.12      0.12      0.00      0.00  117706/11522705      Fixnum#==
+--------------------------------------------------------------------------------
+                      0.36      0.36      0.00      0.00    381275/381275      Array#include?
+   0.07%   0.07%      0.36      0.36      0.00      0.00           381275      Module#==
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00         1/317343      SudokuSolver#eliminate
+                      0.00      0.00      0.00      0.00         1/317343      Method#call
+                      0.00      0.00      0.00      0.00         1/317343      SudokuSolver#assign
+                      0.00      0.00      0.00      0.00         1/317343      SudokuSolver#search
+                      0.02      0.02      0.00      0.00     15976/317343      Array#each
+                      0.05      0.05      0.00      0.00     48928/317343      Rtc::Types::NominalType#get_method
+                      0.06      0.06      0.00      0.00     52248/317343      Set#==
+                      0.06      0.06      0.00      0.00     52339/317343      Rtc::ProxyObject#is_a?
+                      0.17      0.17      0.00      0.00    147848/317343      Rtc::MethodWrapper#invoke
+   0.07%   0.07%      0.36      0.36      0.00      0.00           317343      Kernel#is_a?
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00         1/219973      Object#rtc_annotate
+                      0.00      0.00      0.00      0.00         7/219973      SudokuSolver#print_grid
+                      0.00      0.00      0.00      0.00         1/219973      Global#[No method]
+                      0.00      0.00      0.00      0.00        17/219973      Object#rtc_cast
+                      0.00      0.00      0.00      0.00        25/219973      Array#each
+                      0.00      0.00      0.00      0.00        30/219973      SudokuSolver#search
+                      0.00      0.00      0.00      0.00        32/219973      Method#call
+                      0.00      0.00      0.00      0.00       260/219973      SudokuSolver#parse_grid
+                      0.00      0.00      0.00      0.00       364/219973      SudokuSolver#assign
+                      0.00      0.00      0.00      0.00      2719/219973      SudokuSolver#initialize
+                      0.01      0.01      0.00      0.00      6291/219973      SudokuSolver#eliminate
+                      0.08      0.08      0.00      0.00     48957/219973      Rtc::MethodWrapper#invoke
+                      0.25      0.25      0.00      0.00    161269/219973      Rtc::ProxyObject#method_missing
+   0.07%   0.07%      0.35      0.35      0.00      0.00           219973      <Class::Rtc::MasterSwitch>#turn_on
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00         1/219973      Object#rtc_annotate
+                      0.00      0.00      0.00      0.00         7/219973      SudokuSolver#print_grid
+                      0.00      0.00      0.00      0.00        17/219973      Object#rtc_cast
+                      0.00      0.00      0.00      0.00        29/219973      Method#call
+                      0.00      0.00      0.00      0.00        29/219973      Array#each
+                      0.00      0.00      0.00      0.00        51/219973      SudokuSolver#search
+                      0.00      0.00      0.00      0.00       260/219973      SudokuSolver#parse_grid
+                      0.00      0.00      0.00      0.00       408/219973      SudokuSolver#assign
+                      0.00      0.00      0.00      0.00      2719/219973      SudokuSolver#initialize
+                      0.01      0.01      0.00      0.00      6369/219973      SudokuSolver#eliminate
+                      0.08      0.08      0.00      0.00     48813/219973      Rtc::MethodWrapper#invoke
+                      0.25      0.25      0.00      0.00    161270/219973      Rtc::ProxyObject#method_missing
+   0.07%   0.07%      0.35      0.35      0.00      0.00           219973      <Class::Rtc::MasterSwitch>#turn_off
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00        2718/2720      Array#each
+                      0.00      0.00      0.00      0.00           1/2720      SudokuSolver#initialize
+                      0.34      0.00      0.00      0.34           1/2720      Class#new
+   0.07%   0.00%      0.34      0.00      0.00      0.34             2720     *SudokuSolver#initialize
+                      0.34      0.00      0.00      0.34         5/534242      Array#each
+                      0.15      0.03      0.00      0.12      2719/487174      Rtc::MethodWrapper#invoke
+                      0.00      0.00      0.00      0.00      2719/219973      <Class::Rtc::MasterSwitch>#turn_off
+                      0.00      0.00      0.00      0.00      2719/219973      <Class::Rtc::MasterSwitch>#turn_on
+                      0.00      0.00      0.00      0.00     2719/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      0.00      0.00      0.00      0.00              2/2      Enumerable#to_a
+                      0.00      0.00      0.00      0.00              2/2      String#<=>
+                      0.00      0.00      0.00      0.00              2/2      <Class::Range>#allocate
+                      0.00      0.00      0.00      0.00         3/514276      Class#new
+                      0.00      0.00      0.00      0.00           1/2720      SudokuSolver#initialize
+--------------------------------------------------------------------------------
+                      0.03      0.02      0.00      0.01       4967/57215      Rtc::MethodWrapper#invoke
+                      0.29      0.16      0.00      0.13      52248/57215      Set#==
+   0.07%   0.04%      0.32      0.18      0.00      0.14            57215      Object#equal?
+                      0.08      0.08      0.00      0.00   57215/15534994      Object#is_proxy_object?
+                      0.06      0.06      0.00      0.00      57215/57215      Object#old_equal?
+--------------------------------------------------------------------------------
+                      0.29      0.13      0.00      0.16      48928/48928      Rtc::Types::NominalType#get_method
+   0.06%   0.03%      0.29      0.13      0.00      0.16            48928      Rtc::Types::ProceduralType#instantiate
+                      0.16      0.11      0.00      0.05      48928/48928      Rtc::Types::ProceduralType#parameterized?
+--------------------------------------------------------------------------------
+                      0.27      0.15      0.00      0.12      48843/48843      Rtc::ProxyObject#eql?
+   0.05%   0.03%      0.27      0.15      0.00      0.12            48843      String#eql?
+                      0.07      0.07      0.00      0.00   48843/15534994      Object#is_proxy_object?
+                      0.05      0.05      0.00      0.00      48843/48843      String#old_eql?
+--------------------------------------------------------------------------------
+                      0.27      0.27      0.00      0.00    138646/138646      Method#call
+   0.05%   0.05%      0.27      0.27      0.00      0.00           138646      Fixnum#*
+--------------------------------------------------------------------------------
+                      0.26      0.14      0.00      0.11      45331/45331      Rtc::MethodWrapper#invoke
+   0.05%   0.03%      0.26      0.14      0.00      0.11            45331      Hash#equal?
+                      0.07      0.07      0.00      0.00   45331/15534994      Object#is_proxy_object?
+                      0.05      0.05      0.00      0.00      45331/45331      Hash#old_equal?
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00        52/233623      <Module::Rtc::ClassLoader>#load_class
+                      0.06      0.06      0.00      0.00     52248/233623      Set#==
+                      0.07      0.07      0.00      0.00     61443/233623      Set#merge
+                      0.13      0.13      0.00      0.00    119880/233623      Array#each
+   0.05%   0.05%      0.25      0.25      0.00      0.00           233623      Kernel#instance_of?
+--------------------------------------------------------------------------------
+                      0.05      0.05      0.00      0.00     43965/237303      Rtc::Types::ProceduralType#replace_parameters
+                      0.06      0.06      0.00      0.00     61443/237303      Set#initialize
+                      0.14      0.14      0.00      0.00    131895/237303      Rtc::Types::ProceduralType#initialize
+   0.05%   0.05%      0.25      0.25      0.00      0.00           237303      Kernel#nil?
+--------------------------------------------------------------------------------
+                      0.25      0.25      0.00      0.00    206844/206844      Method#call
+   0.05%   0.05%      0.25      0.25      0.00      0.00           206844      Fixnum#+
+--------------------------------------------------------------------------------
+                      0.25      0.25      0.00      0.00    149582/149582      Class#new
+   0.05%   0.05%      0.25      0.25      0.00      0.00           149582      Hash#initialize
+--------------------------------------------------------------------------------
+                      0.01      0.01      0.00      0.01       4470/87930      Rtc::MethodWrapper#invoke
+                      0.22      0.14      0.00      0.08      83460/87930      Rtc::ProxyObject#===
+   0.05%   0.03%      0.23      0.14      0.00      0.09            87930      String#===
+                      0.09      0.09      0.00      0.00    87930/4025951      Kernel#respond_to_missing?
+--------------------------------------------------------------------------------
+                      0.01      0.00      0.00      0.01             1/17      SudokuSolver#print_grid
+                      0.20      0.00      0.00      0.20            16/17      SudokuSolver#search
+   0.04%   0.00%      0.21      0.00      0.00      0.21               17      Object#rtc_cast
+                      0.16      0.00      0.00      0.16       17/3937642      Object#rtc_type
+                      0.03      0.00      0.00      0.03            17/18      Rtc::TypeAnnotationParser#scan_str
+                      0.01      0.00      0.00      0.01        51/514276      Class#new
+                      0.00      0.00      0.00      0.00         17/38811      Rtc::Types::ParameterizedType#<=
+                      0.00      0.00      0.00      0.00        51/157074      Object#==
+                      0.00      0.00      0.00      0.00            17/17      Rtc::ProxyObject#class
+                      0.00      0.00      0.00      0.00           17/554      String#+
+                      0.00      0.00      0.00      0.00       17/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      0.00      0.00      0.00      0.00        17/219973      <Class::Rtc::MasterSwitch>#turn_on
+                      0.00      0.00      0.00      0.00        17/219973      <Class::Rtc::MasterSwitch>#turn_off
+                      0.00      0.00      0.00      0.00        17/121977      Rtc::ProxyObject#is_proxy_object?
+                      0.00      0.00      0.00      0.00       17/8171094      Kernel#class
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00        25/149607      Kernel#clone
+                      0.19      0.19      0.00      0.00    149582/149607      Class#new
+   0.04%   0.04%      0.19      0.19      0.00      0.00           149607      <Class::Hash>#allocate
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00         1/161270      Array#each
+                      0.05      0.05      0.00      0.00     43968/161270      Rtc::MethodWrapper#invoke
+                      0.13      0.13      0.00      0.00    117301/161270      Rtc::ProxyObject#method_missing
+   0.04%   0.04%      0.19      0.19      0.00      0.00           161270      Array#pop
+--------------------------------------------------------------------------------
+                      0.18      0.18      0.00      0.00    166230/166230      Rtc::Types::NominalType#has_method?
+   0.04%   0.04%      0.18      0.18      0.00      0.00           166230      Module#method_defined?
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00        17/121977      Object#rtc_cast
+                      0.00      0.00      0.00      0.00       954/121977      String#==
+                      0.02      0.02      0.00      0.00     13457/121977      Array#each
+                      0.07      0.07      0.00      0.00     51212/121977      Rtc::ProxyObject#eql?
+                      0.08      0.08      0.00      0.00     56337/121977      Object#rtc_annotate
+   0.04%   0.04%      0.18      0.18      0.00      0.00           121977      Rtc::ProxyObject#is_proxy_object?
+--------------------------------------------------------------------------------
+                      0.18      0.18      0.00      0.00    161534/161534      Method#call
+   0.04%   0.04%      0.18      0.18      0.00      0.00           161534      Array#push
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00          1/52339      SudokuSolver#eliminate
+                      0.00      0.00      0.00      0.00          1/52339      Array#each
+                      0.00      0.00      0.00      0.00          1/52339      Method#call
+                      0.00      0.00      0.00      0.00          1/52339      SudokuSolver#search
+                      0.00      0.00      0.00      0.00          1/52339      SudokuSolver#assign
+                      0.17      0.11      0.00      0.06      52334/52339      Rtc::MethodWrapper#invoke
+   0.03%   0.02%      0.17      0.11      0.00      0.06            52339      Rtc::ProxyObject#is_a?
+                      0.06      0.06      0.00      0.00     52339/317343      Kernel#is_a?
+--------------------------------------------------------------------------------
+                      0.16      0.16      0.00      0.00    157074/157074      Object#==
+   0.03%   0.03%      0.16      0.16      0.00      0.00           157074      Object#old_eq
+--------------------------------------------------------------------------------
+                      0.16      0.16      0.00      0.00    117302/117302      <Class::Object>#get_typesig_info
+   0.03%   0.03%      0.16      0.16      0.00      0.00           117302      Symbol#to_s
+--------------------------------------------------------------------------------
+                      0.16      0.11      0.00      0.05      48928/48928      Rtc::Types::ProceduralType#instantiate
+   0.03%   0.02%      0.16      0.11      0.00      0.05            48928      Rtc::Types::ProceduralType#parameterized?
+                      0.05      0.05      0.00      0.00     48928/102652      Array#empty?
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00         52/51167      <Module::Rtc::ClassLoader>#load_class
+                      0.15      0.09      0.00      0.06      51115/51167      Array#each
+   0.03%   0.02%      0.15      0.09      0.00      0.06            51167      BasicObject#!=
+                      0.05      0.05      0.00      0.00   48980/11522705      Fixnum#==
+                      0.01      0.01      0.00      0.01    2187/15127430      String#==
+--------------------------------------------------------------------------------
+                      0.15      0.10      0.00      0.06      53678/53678      Hash#==
+   0.03%   0.02%      0.15      0.10      0.00      0.06            53678      Hash#old_eq
+                      0.06      0.06      0.00      0.00    53678/4025951      Kernel#respond_to_missing?
+--------------------------------------------------------------------------------
+                      0.14      0.14      0.00      0.00      64763/64763      Class#new
+   0.03%   0.03%      0.14      0.14      0.00      0.00            64763      Rtc::ProxyObject#initialize
+--------------------------------------------------------------------------------
+                      0.13      0.13      0.00      0.00    117302/117302      Rtc::Types::NominalType#has_method?
+   0.03%   0.03%      0.13      0.13      0.00      0.00           117302      Symbol#to_sym
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00          1/68460      SudokuSolver#parse_grid
+                      0.04      0.04      0.00      0.00      19531/68460      Rtc::Types::ParameterizedType#<=
+                      0.09      0.09      0.00      0.00      48928/68460      Array#each
+   0.02%   0.02%      0.12      0.12      0.00      0.00            68460      Array#zip
+--------------------------------------------------------------------------------
+                      0.05      0.05      0.00      0.00     48928/102652      Rtc::Types::ProceduralType#parameterized?
+                      0.06      0.06      0.00      0.00     53724/102652      Rtc::MethodWrapper#invoke
+   0.02%   0.02%      0.11      0.11      0.00      0.00           102652      Array#empty?
+--------------------------------------------------------------------------------
+                      0.11      0.11      0.00      0.00      79790/79790      Rtc::HashBuilder#include
+   0.02%   0.02%      0.11      0.11      0.00      0.00            79790      Bignum#+
+--------------------------------------------------------------------------------
+                      0.10      0.10      0.00      0.00      48928/48928      Rtc::Types::NominalType#has_method?
+   0.02%   0.02%      0.10      0.10      0.00      0.00            48928      String#to_sym
+--------------------------------------------------------------------------------
+                      0.10      0.10      0.00      0.00      89072/89072      Rtc::Types::TypeParameter#replace_parameters
+   0.02%   0.02%      0.10      0.10      0.00      0.00            89072      Hash#has_key?
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00          19/9942      SudokuSolver#assign
+                      0.00      0.00      0.00      0.00          28/9942      Array#each
+                      0.00      0.00      0.00      0.00          28/9942      Method#call
+                      0.00      0.00      0.00      0.00          35/9942      SudokuSolver#eliminate
+                      0.00      0.00      0.00      0.00          50/9942      Rtc::MethodWrapper#invoke
+                      0.00      0.00      0.00      0.00         174/9942      Rtc::TypeAnnotationParser#_next_token
+                      0.09      0.02      0.00      0.07        9608/9942      Rtc::ProxyObject#===
+   0.02%   0.00%      0.09      0.02      0.00      0.07             9942      Kernel#===
+                      0.07      0.03      0.00      0.04       9610/53678      Hash#==
+                      0.00      0.00      0.00      0.00        18/157074      Object#==
+--------------------------------------------------------------------------------
+                      0.01      0.01      0.00      0.00       9925/58853      Rtc::Types::ParameterizedType#hash
+                      0.07      0.07      0.00      0.00      48928/58853      Rtc::Types::ProceduralType#hash
+   0.02%   0.02%      0.09      0.09      0.00      0.00            58853      Rtc::HashBuilder#get_hash
+--------------------------------------------------------------------------------
+                      0.08      0.02      0.00      0.06        1142/1142      Rtc::ProxyObject#method_missing
+   0.02%   0.00%      0.08      0.02      0.00      0.06             1142      String#sub
+                      0.00      0.00      0.00      0.00      1142/322570      Rtc::ProxyObject#method_missing
+--------------------------------------------------------------------------------
+                      0.08      0.08      0.00      0.00      61443/61443      Set#do_with_enum
+   0.02%   0.02%      0.08      0.08      0.00      0.00            61443      Kernel#respond_to?
+--------------------------------------------------------------------------------
+                      0.06      0.06      0.00      0.00      57215/57215      Object#equal?
+   0.01%   0.01%      0.06      0.06      0.00      0.00            57215      Object#old_equal?
+--------------------------------------------------------------------------------
+                      0.06      0.06      0.00      0.00      48928/48928      Rtc::MethodWrapper#invoke
+   0.01%   0.01%      0.06      0.06      0.00      0.00            48928      String#to_s
+--------------------------------------------------------------------------------
+                      0.05      0.05      0.00      0.00      43968/43968      <Class::Object>#get_typesig_info
+   0.01%   0.01%      0.05      0.05      0.00      0.00            43968      Hash#include?
+--------------------------------------------------------------------------------
+                      0.05      0.05      0.00      0.00      48843/48843      String#eql?
+   0.01%   0.01%      0.05      0.05      0.00      0.00            48843      String#old_eql?
+--------------------------------------------------------------------------------
+                      0.05      0.05      0.00      0.00      45331/45331      Hash#equal?
+   0.01%   0.01%      0.05      0.05      0.00      0.00            45331      Hash#old_equal?
+--------------------------------------------------------------------------------
+                      0.04      0.04      0.00      0.00      34473/34473      Rtc::ProxyObject#method_missing
+   0.01%   0.01%      0.04      0.04      0.00      0.00            34473      String#to_str
+--------------------------------------------------------------------------------
+                      0.04      0.04      0.00      0.00      29432/29432      Array#each
+   0.01%   0.01%      0.04      0.04      0.00      0.00            29432      Array#[]=
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00             1/18      Object#rtc_annotate
+                      0.03      0.00      0.00      0.03            17/18      Object#rtc_cast
+   0.01%   0.00%      0.03      0.00      0.00      0.03               18      Rtc::TypeAnnotationParser#scan_str
+                      0.03      0.00      0.00      0.03            18/18      Racc::Parser#do_parse
+                      0.00      0.00      0.00      0.00            18/18      Rtc::TypeAnnotationParser#scan_setup
+--------------------------------------------------------------------------------
+                      0.03      0.00      0.00      0.03            18/18      Rtc::TypeAnnotationParser#scan_str
+   0.01%   0.00%      0.03      0.00      0.00      0.03               18      Racc::Parser#do_parse
+                      0.03      0.00      0.00      0.03            18/18      Racc::Parser#_racc_do_parse_c
+                      0.00      0.00      0.00      0.00            18/18      Racc::Parser#_racc_setup
+--------------------------------------------------------------------------------
+                      0.03      0.00      0.00      0.03            18/18      Racc::Parser#do_parse
+   0.01%   0.00%      0.03      0.00      0.00      0.03               18      Racc::Parser#_racc_do_parse_c
+                      0.02      0.00      0.00      0.02          157/157      Rtc::TypeAnnotationParser#next_token
+                      0.00      0.00      0.00      0.00            35/70      Rtc::TypeAnnotationParser#_reduce_55
+                      0.00      0.00      0.00      0.00            17/51      Rtc::TypeAnnotationParser#_reduce_63
+                      0.00      0.00      0.00      0.00           52/208      Rtc::TypeAnnotationParser#_reduce_50
+                      0.00      0.00      0.00      0.00           52/104      Rtc::TypeAnnotationParser#_reduce_51
+                      0.00      0.00      0.00      0.00           52/104      Rtc::TypeAnnotationParser#_reduce_46
+                      0.00      0.00      0.00      0.00           52/104      Rtc::TypeAnnotationParser#_reduce_49
+                      0.00      0.00      0.00      0.00            17/51      Rtc::TypeAnnotationParser#_reduce_68
+                      0.00      0.00      0.00      0.00            18/36      Rtc::TypeAnnotationParser#_reduce_11
+                      0.00      0.00      0.00      0.00            18/36      Rtc::TypeAnnotationParser#_reduce_4
+                      0.00      0.00      0.00      0.00            17/34      Rtc::TypeAnnotationParser#_reduce_67
+--------------------------------------------------------------------------------
+                      0.03      0.01      0.00      0.02        4516/4516      Rtc::ProxyObject#eql?
+   0.01%   0.00%      0.03      0.01      0.00      0.02             4516      Hash#eql?
+                      0.01      0.01      0.00      0.00        4516/4516      Hash#old_eql?
+                      0.01      0.01      0.00      0.00    4516/15534994      Object#is_proxy_object?
+--------------------------------------------------------------------------------
+                      0.02      0.00      0.00      0.02          157/157      Racc::Parser#_racc_do_parse_c
+   0.00%   0.00%      0.02      0.00      0.00      0.02              157      Rtc::TypeAnnotationParser#next_token
+                      0.02      0.01      0.00      0.01          174/174      Rtc::TypeAnnotationParser#_next_token
+                      0.00      0.00      0.00      0.00            35/35      StringScanner#eos?
+--------------------------------------------------------------------------------
+                      0.02      0.01      0.00      0.01          174/174      Rtc::TypeAnnotationParser#next_token
+   0.00%   0.00%      0.02      0.01      0.00      0.01              174      Rtc::TypeAnnotationParser#_next_token
+                      0.01      0.01      0.00      0.00        4459/4459      StringScanner#scan
+                      0.00      0.00      0.00      0.00         174/9942      Kernel#===
+                      0.00      0.00      0.00      0.00     174/15127430      String#==
+                      0.00      0.00      0.00      0.00          157/157      Rtc::TypeAnnotationParser#action
+                      0.00      0.00      0.00      0.00          174/174      StringScanner#peek
+                      0.00      0.00      0.00      0.00            18/18      Symbol#===
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00            1/881      SudokuSolver#print_grid
+                      0.00      0.00      0.00      0.00            1/881      Method#call
+                      0.00      0.00      0.00      0.00            1/881      SudokuSolver#eliminate
+                      0.00      0.00      0.00      0.00            2/881      Rtc::MethodWrapper#invoke
+                      0.00      0.00      0.00      0.00           27/881      SudokuSolver#search
+                      0.01      0.00      0.00      0.01          849/881      Array#each
+   0.00%   0.00%      0.01      0.00      0.00      0.01              881      Rtc::ProxyObject#==
+                      0.01      0.00      0.00      0.01        881/53378      Rtc::ProxyObject#eql?
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00             1/44      SudokuSolver#eliminate
+                      0.00      0.00      0.00      0.00             1/44      Rtc::MethodWrapper#invoke
+                      0.00      0.00      0.00      0.00             1/44      SudokuSolver#search
+                      0.00      0.00      0.00      0.00             1/44      Method#call
+                      0.00      0.00      0.00      0.00             1/44      SudokuSolver#assign
+                      0.00      0.00      0.00      0.00            17/44      Array#each
+                      0.00      0.00      0.00      0.00            22/44      Object#rtc_annotate
+   0.00%   0.00%      0.01      0.00      0.00      0.01               44      Rtc::Types::UnionType#<=
+                      0.01      0.00      0.00      0.01         44/19575      Enumerable#all?
+--------------------------------------------------------------------------------
+                      0.01      0.01      0.00      0.00        4516/4516      Hash#eql?
+   0.00%   0.00%      0.01      0.01      0.00      0.00             4516      Hash#old_eql?
+                      0.00      0.00      0.00      0.00      871/4025951      Kernel#respond_to_missing?
+                      0.00      0.00      0.00      0.00        125/53378      Rtc::ProxyObject#eql?
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00            1/670      SudokuSolver#parse_grid
+                      0.00      0.00      0.00      0.00           18/670      Array#each
+                      0.00      0.00      0.00      0.00           52/670      <Module::Rtc::ClassLoader>#load_class
+                      0.01      0.01      0.00      0.00          599/670      Rtc::ProxyObject#method_missing
+   0.00%   0.00%      0.01      0.01      0.00      0.00              670      String#split
+--------------------------------------------------------------------------------
+                      0.01      0.01      0.00      0.00        4459/4459      Rtc::TypeAnnotationParser#_next_token
+   0.00%   0.00%      0.01      0.01      0.00      0.00             4459      StringScanner#scan
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00            17/52      Rtc::TypeAnnotationParser#_reduce_63
+                      0.00      0.00      0.00      0.00            35/52      Rtc::TypeAnnotationParser#_reduce_55
+   0.00%   0.00%      0.01      0.00      0.00      0.01               52      Rtc::TypeAnnotationParser#handle_type_ident
+                      0.00      0.00      0.00      0.00           52/156      <Module::Rtc::ClassLoader>#load_class
+                      0.00      0.00      0.00      0.00       52/7875388      <Class::Rtc::Types::NominalType>#of
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00          707/707      Rtc::MethodWrapper#invoke
+   0.00%   0.00%      0.00      0.00      0.00      0.00              707      Array#equal?
+                      0.00      0.00      0.00      0.00     707/15534994      Object#is_proxy_object?
+                      0.00      0.00      0.00      0.00          707/707      Array#old_equal?
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00        3707/3707      Rtc::ProxyObject#method_missing
+   0.00%   0.00%      0.00      0.00      0.00      0.00             3707      String#length
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00        3412/3412      Class#new
+   0.00%   0.00%      0.00      0.00      0.00      0.00             3412      Array#initialize
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00        3412/3412      Class#new
+   0.00%   0.00%      0.00      0.00      0.00      0.00             3412      <Class::Array>#allocate
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00            35/70      Rtc::TypeAnnotationParser#_reduce_55
+                      0.00      0.00      0.00      0.00            35/70      Racc::Parser#_racc_do_parse_c
+   0.00%   0.00%      0.00      0.00      0.00      0.00               70     *Rtc::TypeAnnotationParser#_reduce_55
+                      0.00      0.00      0.00      0.00            35/52      Rtc::TypeAnnotationParser#handle_type_ident
+                      0.00      0.00      0.00      0.00       35/6062543      UnboundMethod#bind
+                      0.00      0.00      0.00      0.00       35/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      0.00      0.00      0.00      0.00       35/6243739      NilClass#nil?
+                      0.00      0.00      0.00      0.00       35/6062543      Method#call
+                      0.00      0.00      0.00      0.00            35/70      Rtc::TypeAnnotationParser#_reduce_55
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00          104/156      <Module::Rtc::ClassLoader>#load_class
+                      0.00      0.00      0.00      0.00           52/156      Rtc::TypeAnnotationParser#handle_type_ident
+   0.00%   0.00%      0.00      0.00      0.00      0.00              156     *<Module::Rtc::ClassLoader>#load_class
+                      0.00      0.00      0.00      0.00            52/52      Kernel#eval
+                      0.00      0.00      0.00      0.00            52/52      <Module::Rtc::ClassLoader>#find_type_ident
+                      0.00      0.00      0.00      0.00            52/52      Symbol#==
+                      0.00      0.00      0.00      0.00         52/51167      BasicObject#!=
+                      0.00      0.00      0.00      0.00      104/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      0.00      0.00      0.00      0.00      104/6062543      UnboundMethod#bind
+                      0.00      0.00      0.00      0.00            52/53      Array#join
+                      0.00      0.00      0.00      0.00           52/670      String#split
+                      0.00      0.00      0.00      0.00      104/6243739      NilClass#nil?
+                      0.00      0.00      0.00      0.00      52/18725832      Module#name
+                      0.00      0.00      0.00      0.00        52/233623      Kernel#instance_of?
+                      0.00      0.00      0.00      0.00      104/6062543      Method#call
+                      0.00      0.00      0.00      0.00          104/156      <Module::Rtc::ClassLoader>#load_class
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00            34/51      Rtc::TypeAnnotationParser#_reduce_63
+                      0.00      0.00      0.00      0.00            17/51      Racc::Parser#_racc_do_parse_c
+   0.00%   0.00%      0.00      0.00      0.00      0.00               51     *Rtc::TypeAnnotationParser#_reduce_63
+                      0.00      0.00      0.00      0.00            17/52      Rtc::TypeAnnotationParser#handle_type_ident
+                      0.00      0.00      0.00      0.00        17/514276      Class#new
+                      0.00      0.00      0.00      0.00       34/6062543      UnboundMethod#bind
+                      0.00      0.00      0.00      0.00       34/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      0.00      0.00      0.00      0.00       34/6243739      NilClass#nil?
+                      0.00      0.00      0.00      0.00       34/6062543      Method#call
+                      0.00      0.00      0.00      0.00            34/51      Rtc::TypeAnnotationParser#_reduce_63
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00          156/208      Rtc::TypeAnnotationParser#_reduce_50
+                      0.00      0.00      0.00      0.00           52/208      Racc::Parser#_racc_do_parse_c
+   0.00%   0.00%      0.00      0.00      0.00      0.00              208     *Rtc::TypeAnnotationParser#_reduce_50
+                      0.00      0.00      0.00      0.00      156/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      0.00      0.00      0.00      0.00      156/6062543      UnboundMethod#bind
+                      0.00      0.00      0.00      0.00      156/6243739      NilClass#nil?
+                      0.00      0.00      0.00      0.00      156/6062543      Method#call
+                      0.00      0.00      0.00      0.00          156/208      Rtc::TypeAnnotationParser#_reduce_50
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00            28/28      Method#call
+   0.00%   0.00%      0.00      0.00      0.00      0.00               28      SudokuSolver#cross
+                      0.00      0.00      0.00      0.00        28/534242      Array#each
+                      0.00      0.00      0.00      0.00        28/514276      Class#new
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00          707/707      Array#equal?
+   0.00%   0.00%      0.00      0.00      0.00      0.00              707      Array#old_equal?
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00           52/104      Rtc::TypeAnnotationParser#_reduce_51
+                      0.00      0.00      0.00      0.00           52/104      Racc::Parser#_racc_do_parse_c
+   0.00%   0.00%      0.00      0.00      0.00      0.00              104     *Rtc::TypeAnnotationParser#_reduce_51
+                      0.00      0.00      0.00      0.00       52/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      0.00      0.00      0.00      0.00       52/6062543      UnboundMethod#bind
+                      0.00      0.00      0.00      0.00       52/6243739      NilClass#nil?
+                      0.00      0.00      0.00      0.00       52/6062543      Method#call
+                      0.00      0.00      0.00      0.00           52/104      Rtc::TypeAnnotationParser#_reduce_51
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00           52/104      Rtc::TypeAnnotationParser#_reduce_46
+                      0.00      0.00      0.00      0.00           52/104      Racc::Parser#_racc_do_parse_c
+   0.00%   0.00%      0.00      0.00      0.00      0.00              104     *Rtc::TypeAnnotationParser#_reduce_46
+                      0.00      0.00      0.00      0.00       52/6062543      UnboundMethod#bind
+                      0.00      0.00      0.00      0.00       52/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      0.00      0.00      0.00      0.00       52/6243739      NilClass#nil?
+                      0.00      0.00      0.00      0.00       52/6062543      Method#call
+                      0.00      0.00      0.00      0.00           52/104      Rtc::TypeAnnotationParser#_reduce_46
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00           52/104      Rtc::TypeAnnotationParser#_reduce_49
+                      0.00      0.00      0.00      0.00           52/104      Racc::Parser#_racc_do_parse_c
+   0.00%   0.00%      0.00      0.00      0.00      0.00              104     *Rtc::TypeAnnotationParser#_reduce_49
+                      0.00      0.00      0.00      0.00       52/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      0.00      0.00      0.00      0.00       52/6062543      UnboundMethod#bind
+                      0.00      0.00      0.00      0.00       52/6243739      NilClass#nil?
+                      0.00      0.00      0.00      0.00       52/6062543      Method#call
+                      0.00      0.00      0.00      0.00           52/104      Rtc::TypeAnnotationParser#_reduce_49
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00             1/25      Rtc::MethodWrapper#invoke
+                      0.00      0.00      0.00      0.00             2/25      SudokuSolver#assign
+                      0.00      0.00      0.00      0.00             3/25      Method#call
+                      0.00      0.00      0.00      0.00            19/25      Array#each
+   0.00%   0.00%      0.00      0.00      0.00      0.00               25      Rtc::ProxyObject#clone
+                      0.00      0.00      0.00      0.00            25/25      Kernel#clone
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00            52/52      <Module::Rtc::ClassLoader>#load_class
+   0.00%   0.00%      0.00      0.00      0.00      0.00               52      Kernel#eval
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00            25/25      Rtc::ProxyObject#clone
+   0.00%   0.00%      0.00      0.00      0.00      0.00               25      Kernel#clone
+                      0.00      0.00      0.00      0.00            25/25      Kernel#initialize_clone
+                      0.00      0.00      0.00      0.00        25/149607      <Class::Hash>#allocate
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00            1/554      Object#rtc_annotate
+                      0.00      0.00      0.00      0.00            2/554      SudokuSolver#print_grid
+                      0.00      0.00      0.00      0.00           19/554      Integer#times
+                      0.00      0.00      0.00      0.00           17/554      Object#rtc_cast
+                      0.00      0.00      0.00      0.00          515/554      Array#each
+   0.00%   0.00%      0.00      0.00      0.00      0.00              554      String#+
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00              3/4      Integer#times
+                      0.00      0.00      0.00      0.00              1/4      SudokuSolver#print_grid
+   0.00%   0.00%      0.00      0.00      0.00      0.00                4     *Integer#times
+                      0.00      0.00      0.00      0.00           19/554      String#+
+                      0.00      0.00      0.00      0.00       3/11522705      Fixnum#==
+                      0.00      0.00      0.00      0.00              3/4      Integer#times
+                      0.00      0.00      0.00      0.00              6/8      SudokuSolver#print_grid
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00            52/52      <Module::Rtc::ClassLoader>#load_class
+   0.00%   0.00%      0.00      0.00      0.00      0.00               52      <Module::Rtc::ClassLoader>#find_type_ident
+                      0.00      0.00      0.00      0.00        52/534242      Array#each
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00            34/51      Rtc::TypeAnnotationParser#_reduce_68
+                      0.00      0.00      0.00      0.00            17/51      Racc::Parser#_racc_do_parse_c
+   0.00%   0.00%      0.00      0.00      0.00      0.00               51     *Rtc::TypeAnnotationParser#_reduce_68
+                      0.00      0.00      0.00      0.00       34/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      0.00      0.00      0.00      0.00       34/6062543      UnboundMethod#bind
+                      0.00      0.00      0.00      0.00       34/6243739      NilClass#nil?
+                      0.00      0.00      0.00      0.00            17/17      Array#+
+                      0.00      0.00      0.00      0.00       34/6062543      Method#call
+                      0.00      0.00      0.00      0.00            34/51      Rtc::TypeAnnotationParser#_reduce_68
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00            25/25      Kernel#clone
+   0.00%   0.00%      0.00      0.00      0.00      0.00               25      Kernel#initialize_clone
+                      0.00      0.00      0.00      0.00            25/25      Hash#initialize_copy
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00            25/25      Kernel#initialize_clone
+   0.00%   0.00%      0.00      0.00      0.00      0.00               25      Hash#initialize_copy
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00          157/157      Rtc::TypeAnnotationParser#_next_token
+   0.00%   0.00%      0.00      0.00      0.00      0.00              157      Rtc::TypeAnnotationParser#action
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00            18/36      Rtc::TypeAnnotationParser#_reduce_11
+                      0.00      0.00      0.00      0.00            18/36      Racc::Parser#_racc_do_parse_c
+   0.00%   0.00%      0.00      0.00      0.00      0.00               36     *Rtc::TypeAnnotationParser#_reduce_11
+                      0.00      0.00      0.00      0.00       18/6062543      UnboundMethod#bind
+                      0.00      0.00      0.00      0.00       18/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      0.00      0.00      0.00      0.00       18/6243739      NilClass#nil?
+                      0.00      0.00      0.00      0.00       18/6062543      Method#call
+                      0.00      0.00      0.00      0.00            18/36      Rtc::TypeAnnotationParser#_reduce_11
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00            52/52      <Module::Rtc::ClassLoader>#load_class
+   0.00%   0.00%      0.00      0.00      0.00      0.00               52      Symbol#==
+                      0.00      0.00      0.00      0.00      52/15534994      Object#is_proxy_object?
+                      0.00      0.00      0.00      0.00            52/52      Symbol#old_eq
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00            18/36      Rtc::TypeAnnotationParser#_reduce_4
+                      0.00      0.00      0.00      0.00            18/36      Racc::Parser#_racc_do_parse_c
+   0.00%   0.00%      0.00      0.00      0.00      0.00               36     *Rtc::TypeAnnotationParser#_reduce_4
+                      0.00      0.00      0.00      0.00       18/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      0.00      0.00      0.00      0.00       18/6062543      UnboundMethod#bind
+                      0.00      0.00      0.00      0.00       18/6243739      NilClass#nil?
+                      0.00      0.00      0.00      0.00       18/6062543      Method#call
+                      0.00      0.00      0.00      0.00            18/36      Rtc::TypeAnnotationParser#_reduce_4
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00            17/34      Rtc::TypeAnnotationParser#_reduce_67
+                      0.00      0.00      0.00      0.00            17/34      Racc::Parser#_racc_do_parse_c
+   0.00%   0.00%      0.00      0.00      0.00      0.00               34     *Rtc::TypeAnnotationParser#_reduce_67
+                      0.00      0.00      0.00      0.00       17/7081173      <Class::Rtc::MasterSwitch>#is_on?
+                      0.00      0.00      0.00      0.00       17/6062543      UnboundMethod#bind
+                      0.00      0.00      0.00      0.00       17/6243739      NilClass#nil?
+                      0.00      0.00      0.00      0.00       17/6062543      Method#call
+                      0.00      0.00      0.00      0.00            17/34      Rtc::TypeAnnotationParser#_reduce_67
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00          174/174      Rtc::TypeAnnotationParser#_next_token
+   0.00%   0.00%      0.00      0.00      0.00      0.00              174      StringScanner#peek
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00            18/18      Rtc::TypeAnnotationParser#scan_str
+   0.00%   0.00%      0.00      0.00      0.00      0.00               18      Rtc::TypeAnnotationParser#scan_setup
+                      0.00      0.00      0.00      0.00        18/514276      Class#new
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00            18/18      Racc::Parser#do_parse
+   0.00%   0.00%      0.00      0.00      0.00      0.00               18      Racc::Parser#_racc_setup
+                      0.00      0.00      0.00      0.00       36/8171094      Kernel#class
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00            81/81      Rtc::ProxyObject#method_missing
+   0.00%   0.00%      0.00      0.00      0.00      0.00               81      String#center
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00            19/19      Rtc::ProxyObject#eql?
+   0.00%   0.00%      0.00      0.00      0.00      0.00               19      Object#eql?
+                      0.00      0.00      0.00      0.00      19/15534994      Object#is_proxy_object?
+                      0.00      0.00      0.00      0.00            19/19      Object#old_eql?
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00             1/53      SudokuSolver#print_grid
+                      0.00      0.00      0.00      0.00            52/53      <Module::Rtc::ClassLoader>#load_class
+   0.00%   0.00%      0.00      0.00      0.00      0.00               53      Array#join
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00            52/52      Array#each
+   0.00%   0.00%      0.00      0.00      0.00      0.00               52      Module#const_defined?
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00            52/52      Array#each
+   0.00%   0.00%      0.00      0.00      0.00      0.00               52      Module#const_get
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00            81/81      Array#each
+   0.00%   0.00%      0.00      0.00      0.00      0.00               81      Kernel#kind_of?
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00            52/52      Symbol#==
+   0.00%   0.00%      0.00      0.00      0.00      0.00               52      Symbol#old_eq
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00            17/17      Object#rtc_cast
+   0.00%   0.00%      0.00      0.00      0.00      0.00               17      Rtc::ProxyObject#class
+                      0.00      0.00      0.00      0.00       17/8171094      Kernel#class
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00            18/18      Class#new
+   0.00%   0.00%      0.00      0.00      0.00      0.00               18      Rtc::TypeAnnotationParser#initialize
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00            35/35      Rtc::TypeAnnotationParser#next_token
+   0.00%   0.00%      0.00      0.00      0.00      0.00               35      StringScanner#eos?
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00            18/18      Class#new
+   0.00%   0.00%      0.00      0.00      0.00      0.00               18      <Class::StringScanner>#allocate
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00            18/18      Class#new
+   0.00%   0.00%      0.00      0.00      0.00      0.00               18      StringScanner#initialize
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00            17/17      Rtc::TypeAnnotationParser#_reduce_68
+   0.00%   0.00%      0.00      0.00      0.00      0.00               17      Array#+
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00            18/18      Rtc::TypeAnnotationParser#_next_token
+   0.00%   0.00%      0.00      0.00      0.00      0.00               18      Symbol#===
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00            19/19      Object#eql?
+   0.00%   0.00%      0.00      0.00      0.00      0.00               19      Object#old_eql?
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00              1/1      SudokuSolver#print_grid
+   0.00%   0.00%      0.00      0.00      0.00      0.00                1      Kernel#puts
+                      0.00      0.00      0.00      0.00              1/1      IO#puts
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00              2/2      SudokuSolver#initialize
+   0.00%   0.00%      0.00      0.00      0.00      0.00                2      Enumerable#to_a
+                      0.00      0.00      0.00      0.00              2/2      Range#each
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00              2/2      Enumerable#to_a
+   0.00%   0.00%      0.00      0.00      0.00      0.00                2      Range#each
+                      0.00      0.00      0.00      0.00              2/2      String#upto
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00              1/1      Kernel#puts
+   0.00%   0.00%      0.00      0.00      0.00      0.00                1      IO#puts
+                      0.00      0.00      0.00      0.00              1/1      IO#write
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00              1/1      IO#puts
+   0.00%   0.00%      0.00      0.00      0.00      0.00                1      IO#write
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00              2/2      Range#each
+   0.00%   0.00%      0.00      0.00      0.00      0.00                2      String#upto
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00              2/2      SudokuSolver#initialize
+   0.00%   0.00%      0.00      0.00      0.00      0.00                2      String#<=>
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00              1/1      Rtc::ProxyObject#method_missing
+   0.00%   0.00%      0.00      0.00      0.00      0.00                1      String#chomp
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00      0.00              2/2      SudokuSolver#initialize
+   0.00%   0.00%      0.00      0.00      0.00      0.00                2      <Class::Range>#allocate
+
+* indicates recursively called methods

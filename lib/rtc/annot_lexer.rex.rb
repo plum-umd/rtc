@@ -97,14 +97,32 @@ class TypeAnnotationParser < Racc::Parser
       when (text = @ss.scan(/type /))
          action { [:K_TYPE, text] }
 
+      when (text = @ss.scan(/%none/))
+         action { [:T_BOTTOM, text] }
+
       when (text = @ss.scan(/typevar /))
          action { [:K_TYPEVAR, text] }
+
+      when (text = @ss.scan(/%any/))
+         action { [:T_TOP, text] }
+
+      when (text = @ss.scan(/%false/))
+         action { [:T_FALSE, text] }
+
+      when (text = @ss.scan(/%true/))
+         action { [:T_TRUE, text] }
+
+      when (text = @ss.scan(/%bool/))
+         action { [:T_BOOL, text] }
 
       when (text = @ss.scan(/or/))
          action { [:K_OR, text] }
 
       when (text = @ss.scan(/self/))
          action { [:K_SELF, text] }
+
+      when (text = @ss.scan(/Tuple/))
+         action { [:K_TUPLE, text] }
 
       when (text = @ss.scan(/nil/))
          action { [:K_NIL, text] }
