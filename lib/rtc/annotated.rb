@@ -149,7 +149,7 @@ module Rtc::Annotated
 
         if meta_info.has_key?('unwrap')
           unwrap = meta_info['unwrap']
-        elsif meta_info.has_key(:unwrap)
+        elsif meta_info.has_key?(:unwrap)
           unwrap = meta_info[:unwrap]
         else
           unwrap = []

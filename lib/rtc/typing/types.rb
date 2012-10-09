@@ -871,7 +871,8 @@ module Rtc::Types
             builder = Rtc::HashBuilder.new(23, 41)
             builder.include(@nominal)
             @parameters.each do |p|
-                builder.include(p.pointed_type)
+              #builder.include(p.pointed_type)
+              builder.include(p)
             end
             builder.get_hash
         end
