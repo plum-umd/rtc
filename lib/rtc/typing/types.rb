@@ -319,6 +319,11 @@ module Rtc::Types
             |method_name, method_type|
             new_methods[method_name] = yield method_type
           }
+          StructuralType.new(new_fields, new_methods)
+        end
+        
+        def is_terminal
+          false
         end
 
         def each
@@ -339,7 +344,10 @@ module Rtc::Types
         def method_names
           @method_types.keys
         end
-        
+
+        def has_method?(name)
+          @method_types.has_key?(name)
+        end
         def any?
           yield self
         end
@@ -1250,7 +1258,7 @@ module Rtc::Types
         end
         
         def map
-          OptionArg.new(yield type)
+          OptionalArg.new(yield type)
         end
 
         def to_s

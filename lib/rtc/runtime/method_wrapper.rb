@@ -31,31 +31,16 @@ module Rtc
         end
         begin
           $CHECK_COUNT+=1
-          #puts "%{method_name}"
-          #flag = false
-          #debug = "%{method_name}" == "zip"
           method_type = new_invokee.rtc_type.get_method("%{method_name}".to_s)
           if method_type.is_a?(Rtc::Types::ProceduralType)
             method_types = NativeArray[method_type]
           else
             method_types = NativeArray.new(method_type.types.to_a)
           end
-          #regulars_args = Rtc::NativeArray.new(regular_args)
-          #puts "DEBUG: about to select arguments" if debug
           chosen_type, annotated_args, unsolved_tvars = Rtc::MethodCheck.select_and_check_args(method_types, "%{method_name}", regular_args,  (not blk.nil?), self.class)
           
           unwrap_arg_pos = chosen_type.unwrap
           mutate = chosen_type.mutate
-
-          # if debug
-          #   puts "PROXY DEBUG:"
-          #   annotated_args.each {
-          #     |a|
-          #     puts a.is_proxy_object?
-          #   }
-          # end
-
-          #puts "DEBUG: about to call native" if debug
 
           if blk
             block_proxy = Rtc::BlockProxy.new(blk, chosen_type.block_type, "%{method_name}",
@@ -80,18 +65,15 @@ module Rtc
             
             raise Rtc::TypeMismatchException, "invalid return type in %{method_name}"
           end
-          #puts "DEBUG: got out of return checking" if debug
+  
           if ret_value === false || ret_value === nil ||
               ret_value.is_a?(Rtc::Types::Type) || unwrap_arg_pos.include?(-1)
             ret_proxy = ret_value
           else
             ret_proxy = ret_value.rtc_annotate(chosen_type.return_type.to_actual_type)
           end
-          #flag = true
-          #puts "leaving wrapper for %{method_name}"
           return ret_proxy
         ensure
-          #puts "leaving wrapper for  %{method_name} due to exception" if not flag
           Rtc::MasterSwitch.turn_on
         end
       else
@@ -211,7 +193,7 @@ METHOD_TEMPLATE
       check_result = Rtc::MethodCheck.check_args(@block_type, args,
                               @unsolved_type_variables)
       if not check_result
-        raise Rtc::TypeMismatchException "Block arg failed!"
+        raise Rtc::TypeMismatchException, "Block arg failed!"
       end
       annotated_args, @unsolved_type_variables = check_result
       Rtc::MasterSwitch.turn_on

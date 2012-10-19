@@ -1,16 +1,7 @@
 require "test/unit"
 require 'rtc_lib'
 
-rtc_typesig("class MyHash<k,v>")
-class MyHash
-  rtc_annotated
-end
-
 module Foo
-  rtc_typesig("class MyFooHash<k,v>")
-  class MyFooHash
-    rtc_annotated
-  end
   module Bar
     class B; end
     class C; end
@@ -47,12 +38,6 @@ class MyClass
 end
 
 class TestParser < Test::Unit::TestCase
-  def test_annotations_applied
-    assert_equal(Rtc::Types::NominalType.of(MyHash).type_parameters,
-    [ Rtc::Types::TypeParameter.new(:k), Rtc::Types::TypeParameter.new(:v)])
-    assert_equal(Rtc::Types::NominalType.of(Foo::MyFooHash).type_parameters,
-    [ Rtc::Types::TypeParameter.new(:k), Rtc::Types::TypeParameter.new(:v)])
-  end
   
   def test_anon_typesig
     my_add_sig = MyClass.new.rtc_typeof("my_add")
@@ -76,5 +61,13 @@ class TestParser < Test::Unit::TestCase
   
   def test_no_return
     assert_equal(MyClass.rtc_instance_typeof("no_return").return_type, Rtc::Types::TopType.instance)
+  end
+
+  def test_structural_annotations
+    my_parser = Rtc::TypeAnnotationParser.new(Object)
+    assert_nothing_raised do
+      my_parser.scan_str("foo: ([ to_s: () -> String ]) -> String")
+      my_parser.scan_str("'%': (Array<[to_s : () -> String]>) -> String")
+    end
   end
 end

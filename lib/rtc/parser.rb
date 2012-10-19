@@ -107,8 +107,8 @@ module Rtc
         def handle_structural_type(list)
             field_types = {}
             method_types = {}
-            list[:fields].each {|f| field_types[f.id.to_sym] = f.type }
-            list[:methods].each {|m| method_types[m.id.to_sym] = m.type }
+            list[:fields].each {|f| field_types[f.id.to_s] = f.type }
+            list[:methods].each {|m| method_types[m.id.to_s] = m.type }
             t = Rtc::Types::StructuralType.new(field_types, method_types)
             return t
         end
