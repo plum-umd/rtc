@@ -3,15 +3,14 @@ module Rtc
   class TypeInferencer
     def self.infer_type(it)
         curr_type = Set.new
-        has_parameterized_type = false
         it.each {
           |elem|
           elem_type = elem.rtc_type
-          super_count = 0
           if curr_type.size == 0 
             curr_type << elem_type
             next
           end
+          super_count = 0
           was_subtype = curr_type.any? {
             |seen_type|
             if elem_type <= seen_type
@@ -41,7 +40,7 @@ module Rtc
       private
       
       def self.extract_types(param_type)
-        param_type.real_type.instance_of?(UnionType) ? wrapped_type.types.to_a : [wrapped_type]
+        param_type.instance_of?(Rtc::Types::UnionType) ? param_type.types.to_a : [param_type]
       end
 
       #FIXME(jtoman): see if we can lift this step into the gen_type step
@@ -70,11 +69,11 @@ module Rtc
         }
         parameterized_classes.each {
           |nominal,type_set|
-          non_param_classes << ParameterizedType.new(nominal,
+          non_param_classes << Rtc::Types::ParameterizedType.new(nominal,
           type_set.map {
             |unioned_type_parameter|
-            TypeVariable.new(Rtc::Types::UnionType.of(unify_param_types(unioned_type_parameter)),true)
-          })
+            Rtc::Types::UnionType.of(unify_param_types(unioned_type_parameter))
+          }, true)
         }
         non_param_classes
       end

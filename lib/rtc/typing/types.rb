@@ -831,6 +831,10 @@ module Rtc::Types
           ParameterizedType.new(new_nominal, new_params, dynamic)
         end
         
+        def parameterized?
+          true
+        end
+
         def <=(other)
           case other
           when ParameterizedType
