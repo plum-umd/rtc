@@ -28,14 +28,15 @@ module Rtc
     end
     
     def ClassLoader.find_type_ident(name_list, scope)
-        curr_scope = scope
-        name_list.each {|id|
-          if curr_scope.const_defined?(id)
-            curr_scope = curr_scope.const_get(id)
-          else
-            return nil
-          end }
-        return curr_scope
+      curr_scope = scope
+      name_list.each {|id|
+        if curr_scope.const_defined?(id)
+          curr_scope = curr_scope.const_get(id)
+        else
+          return nil
+        end 
+      }
+      return curr_scope
     end
 
   end

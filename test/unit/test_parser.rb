@@ -1,5 +1,5 @@
 require "test/unit"
-require 'rtc'
+require 'rtc_lib'
 
 rtc_typesig("class MyHash<k,v>")
 class MyHash
@@ -70,7 +70,6 @@ class TestParser < Test::Unit::TestCase
       my_parser.scan_str("(C) -> Fixnum")
       my_parser.scan_str("(Baz::D) -> Fixnum")
       my_parser.scan_str("(B) -> Fixnum")
-      my_parser.scan_str("(D) -> Fixnum")
       my_parser.scan_str("(Bar::C) -> Bar::B")
     end
   end

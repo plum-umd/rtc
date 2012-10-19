@@ -95,38 +95,40 @@ class Object
       self.is_a?(Rtc::Types::Type)
     status = Rtc::MasterSwitch.is_on?
     Rtc::MasterSwitch.turn_off if status == true
-
-    if annotation_string.class == String
-      parser = Rtc::TypeAnnotationParser.new(self.class)
-      annotated_type = parser.scan_str("##"+annotation_string)
-    else
-      if annotation_string.is_a?(Rtc::Types::TypeVariable)
-        raise "fatal error, cannot annotate on type variables"
-      end
-      annotated_type = annotation_string
-    end
-
-    if self.is_proxy_object?
-      if not self.proxy_type <= annotated_type
-        raise Rtc::AnnotateException, "object proxy type " + self.proxy_type.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s        
-      end
-      if annotated_type.is_tuple
-        r = Rtc::ProxyObject.new(@object, annotated_type)
+    begin
+      if annotation_string.class == String
+        parser = Rtc::TypeAnnotationParser.new(self.class)
+        annotated_type = parser.scan_str("##"+annotation_string)
       else
-        r = Rtc::ProxyObject.new(@object, annotated_type)        
+        if annotation_string.is_a?(Rtc::Types::TypeVariable)
+          raise "fatal error, cannot annotate on type variables"
+        end
+        annotated_type = annotation_string
       end
-    else
-      unless Rtc::MethodCheck.check_type(self, annotated_type)
-        raise Rtc::AnnotateException, "object type " + self.rtc_type.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s
-      end
-      if annotated_type.is_tuple
-        r = Rtc::TupleProxy.new(self, annotated_type)
+
+      if self.is_proxy_object?
+        if not self.proxy_type <= annotated_type
+          raise Rtc::AnnotateException, "object proxy type " + self.proxy_type.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s        
+        end
+        if annotated_type.is_tuple
+          r = Rtc::ProxyObject.new(@object, annotated_type)
+        else
+          r = Rtc::ProxyObject.new(@object, annotated_type)        
+        end
       else
-        r = Rtc::ProxyObject.new(self, annotated_type)
+        unless Rtc::MethodCheck.check_type(self, annotated_type)
+          raise Rtc::AnnotateException, "object type " + self.rtc_type.to_s + " NOT <= rtc_annotate argument type " + annotated_type.to_s
+        end
+        if annotated_type.is_tuple
+          r = Rtc::TupleProxy.new(self, annotated_type)
+        else
+          r = Rtc::ProxyObject.new(self, annotated_type)
+        end
       end
+      r
+    ensure
+      Rtc::MasterSwitch.turn_on if status == true
     end
-    Rtc::MasterSwitch.turn_on if status == true
-    r
   end
 end
 
@@ -189,8 +191,8 @@ module Rtc::Annotated
             field_name = sig.id.to_s[2..-1]
             field_type = sig.type
             meta_type.add_field(field_name, field_type)
-            getter_type = Rtc::Types::ProceduralType.new(field_type, [])
-            setter_type = Rtc::Types::ProceduralType.new(field_type, [field_type])
+            getter_type = Rtc::Types::ProceduralType.new([], field_type, [])
+            setter_type = Rtc::Types::ProceduralType.new([], field_type, [field_type])
             [Rtc::ClassMethodTypeSignature.new(sig.pos, field_name, getter_type),
               Rtc::ClassMethodTypeSignature.new(sig.pos, field_name+"=", setter_type)]
           else
@@ -259,9 +261,10 @@ module Rtc::Annotated
 
     def method_added(method_name)
       return if not defined? @annot_parser
+      needs_wrapper = @deferred_methods.include?(method_name.to_s) or
+        @next_methods.size > 0
       if @deferred_methods.include?(method_name.to_s)
         @deferred_methods.delete(method_name.to_s)
-        @method_wrappers[method_name.to_s] = Rtc::MethodWrapper.make_wrapper(self, method_name.to_s)
       end
       if @next_methods.size != 0
         this_type = Rtc::Types::NominalType.of(self)
@@ -270,9 +273,9 @@ module Rtc::Annotated
           this_type.add_method(method_name.to_s, m_sig)
         }
         @next_methods = []
-        if not @method_wrappers[method_name.to_s]
-          @method_wrappers[method_name.to_s] = Rtc::MethodWrapper.make_wrapper(self, method_name.to_s)
-        end
+      end
+      if needs_wrapper
+        @method_wrappers[method_name.to_s] = Rtc::MethodWrapper.make_wrapper(self, method_name.to_s)
       end
     end
     

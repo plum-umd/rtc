@@ -1,6 +1,5 @@
 require "test/unit"
-require 'rtc'
-#require 'weakref'
+require 'rtc_lib'
 
 class A
   def f1

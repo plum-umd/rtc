@@ -143,7 +143,13 @@ METHOD_TEMPLATE
     
     def self.make_wrapper(class_obj, method_name, is_class = false)
       return nil if Rtc::Disabled
-      mangled_name = self.mangle_name(method_name, class_obj.name)
+      if is_class
+        class_obj.to_s =~ /(?<=Class:)([^>]+)>+$/
+        class_name = $1
+      else
+        class_name = class_obj.name
+      end
+      mangled_name = self.mangle_name(method_name, class_name)
       if is_class
         invokee_fetch = "new_invokee = self"
       else

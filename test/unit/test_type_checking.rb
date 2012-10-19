@@ -1,7 +1,7 @@
 require "test/unit"
-require 'rtc'
+require 'rtc_lib'
 
-class MyClass
+class TypeCheckingTestClass
   rtc_annotated
   
   typesig("simple_method: (Fixnum) -> Fixnum")
@@ -59,18 +59,6 @@ class MyClass
       a + b + 5
     end
   end
-  
-  typesig("multi_candidate: (Fixnum,Fixnum) -> String")
-  typesig("multi_candidate: (Fixnum,Fixnum) -> Fixnum")
-  def multi_candidate(a,b)
-    if a + b > 5
-      "Foo"
-    elsif a + b > 0
-      4
-    else
-      :foo
-    end
-  end
 end
 
 class FieldClass
@@ -83,19 +71,12 @@ class FieldClass
   attr_accessor :bar
 end
 
-class Array
-  typesig("my_push: (t) -> Array<t>")
-  def my_push(obj)
-    self.push(obj)
-  end
-end
-
 class TestTypeChecking < Test::Unit::TestCase
  
   attr_reader :test_instance 
  
   def initialize(*)
-    @test_instance = MyClass.new
+    @test_instance = TypeCheckingTestClass.new.rtc_annotate("TypeCheckingTestClass")
     super
   end
  
@@ -107,7 +88,11 @@ class TestTypeChecking < Test::Unit::TestCase
       end
     }
   end
- 
+  
+  def setup
+    assert(Rtc::MasterSwitch.is_on?)
+  end
+  
   def test_simple
     assert_nothing_raised do
       test_instance.simple_method(5)
@@ -160,14 +145,20 @@ class TestTypeChecking < Test::Unit::TestCase
       test_instance.different_formals(1,"foo",4,5,6,7,8)
     end
     
-    check_failure(test_instance.method(:different_formals),[
+     [
       [1,2,5],
       [1,"foo","bar",5],
       [1,"foo",4,"bar",5]
-    ])
+     ].each {
+      |arg_vector|
+      assert_raise Rtc::TypeMismatchException do
+        test_instance.different_formals(*arg_vector)
+      end
+    }
   end
    
-   def test_parameterized_arg
+    def test_parameterized_arg
+      $RTC_STRICT = true
      assert_nothing_raised do
        test_instance.parameterized_arg([:subscribers, :talks])
        test_instance.parameterized_arg([:subscribers])
@@ -175,10 +166,16 @@ class TestTypeChecking < Test::Unit::TestCase
        test_instance.parameterized_arg([:subscribed_talks])
      end
      
-     check_failure(test_instance.method(:parameterized_arg),[
+     [
        [:tals],
        [:talks,:foorbar]
-     ])
+     ].each {
+        |arg_vector|
+        assert_raise Rtc::TypeMismatchException do
+          test_instance.parameterized_arg(*arg_vector)
+        end
+      }
+      $RTC_STRICT = false
    end
    
    def test_intersection_type
@@ -186,39 +183,32 @@ class TestTypeChecking < Test::Unit::TestCase
        test_instance.intersection_type(4,4)
        test_instance.intersection_type("foo")
      end
-     
-     check_failure(test_instance.method(:intersection_type),[
-       [4],
-       ["foo","bar"],
-       [4,"boo"],
-     ])
+     [
+      [4],
+      ["foo","bar"],
+      [4,"boo"],
+     ].each {
+       |arg_vector|
+       assert_raise Rtc::TypeMismatchException do
+         test_instance.intersection_type(*arg_vector)
+       end
+     }
    end
-   
-   def test_multi_candidate
-     assert_nothing_raised do
-       test_instance.multi_candidate(1,0)
-       test_instance.multi_candidate(3,3)
-     end
-     
-     assert_raise Rtc::TypeMismatchException do
-       test_instance.multi_candidate(-1,-1)
-     end
-     
-   end
-   
    def test_field_checking
-     field_instance = FieldClass.new
+     field_instance = FieldClass.new.rtc_annotate("FieldClass")
      assert_nothing_raised do
        field_instance.foo = 4
      end
-     check_failure(field_instance.method(:foo=),[
-       [:foo],
-       ["4"]
-     ])
+     [:foo, "4"].each {
+       |v|
+       assert_raise Rtc::TypeMismatchException do
+         field_instance.foo = v
+       end
+     }
    end
    
    def test_intersection_field
-     field_instance = FieldClass.new
+     field_instance = FieldClass.new.rtc_annotate("FieldClass")
      assert_nothing_raised do
        field_instance.bar = 4
        field_instance.bar = "3"
@@ -246,24 +236,24 @@ class TestTypeChecking < Test::Unit::TestCase
    
    
    def test_parameterized_instance_typeof
-     expected_method_type = Rtc::Types::ProceduralType.new(Rtc::Types::UnionType.of([
-       Rtc::Types::NominalType.of(TrueClass), Rtc::Types::NominalType.of(FalseClass)
-     ]),[ Rtc::Types::TypeParameter.new(:t) ])
-     assert_equal(Set.rtc_instance_typeof("includes?"),expected_method_type)
+     expected_method_type = Rtc::Types::ProceduralType.new([],Rtc::Types::TypeParameter.new(:t), [
+        Rtc::Types::NominalType.of(Fixnum)
+     ])
+     assert_equal(expected_method_type, Array.rtc_instance_typeof("at"))
    end
    
    
    def test_instance_typeof
-     expected_method_type = Rtc::Types::ProceduralType.new(Rtc::Types::NominalType.of(Fixnum),[
+     expected_method_type = Rtc::Types::ProceduralType.new([], Rtc::Types::NominalType.of(Fixnum),[
        Rtc::Types::NominalType.of(Fixnum)
      ])
-     test_instance = MyClass.new
+     test_instance = TypeCheckingTestClass.new.rtc_annotate("TypeCheckingTestClass")
      assert_equal(test_instance.rtc_typeof("simple_method"),expected_method_type)
-     assert_equal(test_instance.rtc_typeof("simple_method"),MyClass.rtc_instance_typeof("simple_method"))
+     assert_equal(test_instance.rtc_typeof("simple_method"),TypeCheckingTestClass.rtc_instance_typeof("simple_method"))
      assert_equal(FieldClass.rtc_instance_typeof("@foo"),(fixnum_type = Rtc::Types::NominalType.of(Fixnum)))
      assert_equal(FieldClass.rtc_instance_typeof(:@foo),fixnum_type)
-     assert_equal(MyClass.rtc_instance_typeof(:simple_method),expected_method_type)
-     assert_equal(MyClass.rtc_instance_typeof("simple_method"),expected_method_type)
+     assert_equal(TypeCheckingTestClass.rtc_instance_typeof(:simple_method),expected_method_type)
+     assert_equal(TypeCheckingTestClass.rtc_instance_typeof("simple_method"),expected_method_type)
    end
    
    
@@ -285,14 +275,14 @@ class TestTypeChecking < Test::Unit::TestCase
    def test_inheritance_typeof
      rtc_of = Rtc::Types::NominalType.method(:of)
      proc_type = Rtc::Types::ProceduralType
-     foo_type = proc_type.new(rtc_of[String], [
+     foo_type = proc_type.new([], rtc_of[String], [
        rtc_of[Fixnum]
      ])
      child_instance = ChildClass.new
      assert_equal(child_instance.rtc_typeof("foo"), foo_type)
      assert_equal(ChildClass.rtc_instance_typeof("foo"), foo_type)
      
-     bar_type = proc_type.new(rtc_of[String],[
+     bar_type = proc_type.new([], rtc_of[String],[
        rtc_of[String]
      ])
      assert_equal(ChildClass.rtc_instance_typeof("bar"), bar_type)
@@ -304,18 +294,16 @@ class TestTypeChecking < Test::Unit::TestCase
    end
    
    def test_constrained()
-     my_arr = [1]
+     my_arr = [1, "foo"]
+     annotated_arr = nil
      assert_nothing_raised do
-       my_arr.my_push("foo")
+       annotated_arr = my_arr.rtc_annotate("Array<String or Fixnum>")
      end
-     assert_raise Rtc::TypeNarrowingError do
-       my_arr.rtc_annotate("Array<Fixnum>")
-     end
-     assert_nothing_raised do
-       my_arr.rtc_annotate("Array<String or Fixnum>")
+     assert_raise Rtc::AnnotateException do
+       annotated_arr.rtc_annotate("Array<Fixnum>")
      end
      assert_raise Rtc::TypeMismatchException do
-       my_arr.my_push(4.0)
+       annotated_arr.push(4.0)
      end
    end
    
@@ -341,26 +329,25 @@ class TestTypeChecking < Test::Unit::TestCase
     end
   end
    
-   def test_override_typesig
-     assert_nothing_raised do
-      OverrideSig.new.foo("2")
-     end
-     assert_raise Rtc::TypeMismatchException do
-     
-       OverrideSig.new.foo(4)
-     end
-     
-     assert_raise Rtc::TypeMismatchException do
-       ParentSig.new.foo("2")
-     end
-     
-     assert_nothing_raised do
-       ParentSig.new.foo(4)
-     end
-   end
+  def test_override_typesig
+    assert_nothing_raised do
+      OverrideSig.new.rtc_annotate("OverrideSig").foo("2")
+    end
+    assert_raise Rtc::TypeMismatchException do
+      OverrideSig.new.rtc_annotate("OverrideSig").foo(4)
+    end
+    
+    assert_raise Rtc::TypeMismatchException do
+      ParentSig.new.rtc_annotate("ParentSig").foo("2")
+    end
+    
+    assert_nothing_raised do
+      ParentSig.new.rtc_annotate("ParentSig").foo(4)
+    end
+  end
    
    def test_typeof_include_super
-     expected_type = Rtc::Types::ProceduralType.new(Rtc::Types::NominalType.of(Fixnum), [])
+     expected_type = Rtc::Types::ProceduralType.new([], Rtc::Types::NominalType.of(Fixnum), [])
      assert_equal(expected_type,OverrideSig.rtc_instance_typeof("bar"))
      assert_equal(nil, OverrideSig.rtc_instance_typeof("bar", false))
      assert_equal(Rtc::Types::NominalType.of(Fixnum), OverrideSig.rtc_instance_typeof(:@baz_field))
