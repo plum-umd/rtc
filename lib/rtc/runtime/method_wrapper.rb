@@ -76,7 +76,7 @@ module Rtc
           }
           
           unless Rtc::MethodCheck.check_return(chosen_type, ret_value, unsolved_tvars)
-            p ret_value.rtc_type, chosen_type.return_type, "%{method_name}", self, chosen_type
+            #p ret_value.rtc_type, chosen_type.return_type, "%{method_name}", self, chosen_type
             
             raise Rtc::TypeMismatchException, "invalid return type in %{method_name}"
           end
@@ -130,19 +130,20 @@ METHOD_TEMPLATE
       "===" => "__rtc_rtc_op_strict_eq",
       '&' => "__rtc_rtc_op_bitand",
     }
-    def self.mangle_name(method_name)
+    def self.mangle_name(method_name, class_name)
+      class_name = class_name.sub("::", "_")
       if @mangled.has_key?(method_name.to_s)
-        @mangled[method_name.to_s]
+        class_name + @mangled[method_name.to_s]
       elsif method_name.to_s =~ /^(.+)=$/
-        "__rtc_rtc_set_" + $1
+        class_name + "__rtc_rtc_set_" + $1
       else
-        "__rtc_" + method_name.to_s
+        class_name + "__rtc_" + method_name.to_s
       end
     end
     
     def self.make_wrapper(class_obj, method_name, is_class = false)
       return nil if Rtc::Disabled
-      mangled_name = self.mangle_name(method_name)
+      mangled_name = self.mangle_name(method_name, class_obj.name)
       if is_class
         invokee_fetch = "new_invokee = self"
       else

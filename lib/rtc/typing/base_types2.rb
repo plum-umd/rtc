@@ -136,8 +136,8 @@ end
 class Rtc::NativeArray < Array
   instance_methods.each {
     |m|
-    if self.method_defined?(Rtc::MethodWrapper.mangle_name(m))
-      eval("alias :#{m} :#{Rtc::MethodWrapper.mangle_name(m)}")
+    if self.method_defined?(Rtc::MethodWrapper.mangle_name(m, Array.name))
+      eval("alias :#{m} :#{Rtc::MethodWrapper.mangle_name(m, Array.name)}")
     end
   }
 end
@@ -205,8 +205,8 @@ end
 class Rtc::NativeHash
   instance_methods.each {
     |m|
-    if self.method_defined?(Rtc::MethodWrapper.mangle_name(m))
-      eval("alias :#{m} :#{Rtc::MethodWrapper.mangle_name(m)}")
+    if self.method_defined?(Rtc::MethodWrapper.mangle_name(m, Hash.name))
+      eval("alias :#{m} :#{Rtc::MethodWrapper.mangle_name(m, Hash.name)}")
     end
   }
 end
