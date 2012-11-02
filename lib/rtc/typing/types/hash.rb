@@ -21,7 +21,7 @@ module Rtc::Types
     end
 
     def each
-      @num_required.each {
+      @type_map.each {
         |k,t|
         yield t
       }
