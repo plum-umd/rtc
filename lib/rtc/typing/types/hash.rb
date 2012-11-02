@@ -5,11 +5,10 @@ module Rtc::Types
   class HashType < Type
     attr_reader :optional, :required, :num_required
     def initialize(type_mapping)
-      @open = is_open
       @type_map = type_mapping
       @num_required = 0
-      @required = NativeHash.new
-      @optional = NativeHash.new
+      @required = Rtc::NativeHash.new
+      @optional = Rtc::NativeHash.new
       type_mapping.each {
         |k,t|
         if t.is_a?(OptionalArg)
@@ -28,7 +27,7 @@ module Rtc::Types
       }
     end
     def map
-      mapped_types = NativeHash.new
+      mapped_types = Rtc::NativeHash.new
       @type_map.each {
         |k,t|
         mapped_types[k] = yield t
@@ -68,7 +67,12 @@ module Rtc::Types
     end
     
     def to_s
-      puts "implement me"
+      components = Rtc::NativeArray.new
+      @type_map.each {
+        |k,v|
+        components << "#{k.inspect} => #{v.to_s}"
+      }
+      return "{"+components.join(", ")+"}"
     end
 
     def ==(other)

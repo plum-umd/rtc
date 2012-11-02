@@ -101,6 +101,7 @@ rule
                                         "use !FIXME"}
                                        # text can't contain "'", so gsub is okay
   '[^']*'                         { [:T_STRING, text.gsub("'", "")] }
+  =>                                   { [:T_ASSOC, text] } 
 
   \<\=                                 { [:T_SUBTYPE, text] }
   @{INST_ID_RE}                        { [:T_IVAR, text] }

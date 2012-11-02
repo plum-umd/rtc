@@ -163,6 +163,9 @@ class TypeAnnotationParser < Racc::Parser
       when (text = @ss.scan(/'[^']*'/))
          action { [:T_STRING, text.gsub("'", "")] }
 
+      when (text = @ss.scan(/=>/))
+         action { [:T_ASSOC, text] }
+
       when (text = @ss.scan(/\<\=/))
          action { [:T_SUBTYPE, text] }
 

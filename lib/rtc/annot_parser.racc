@@ -24,7 +24,7 @@ token T_BEGIN_LINE T_SEMICOLON
 token T_COLON T_DOUBLE_COLON T_DOT
 token T_STAR T_QUESTION
 token T_CARROT T_BANG
-token T_EQUAL
+token T_EQUAL T_ASSOC
 
 token T_RARROW
 token T_LPAREN T_RPAREN
@@ -140,14 +140,33 @@ rule
       T_LPAREN T_RPAREN block T_RARROW type_expr {
         result = construct_msig([], val[2], val[4])
       }
-    | T_LPAREN type_expr_comma_list T_RPAREN block T_RARROW /*named_*/ type_expr {
+    | T_LPAREN method_arg_list T_RPAREN block T_RARROW /*named_*/ type_expr {
         result = construct_msig(val[1], val[3], val[5])
       }
-    | T_LPAREN type_expr_comma_list T_RPAREN block {
+    | T_LPAREN method_arg_list T_RPAREN block {
     	result = construct_msig(val[1], val[3], Rtc::Types::TopType.instance)
       }
     | T_LPAREN T_RPAREN block {
         result = construct_msig([], val[2], Rtc::Types::TopType.instance)
+      }
+
+  # kinda ridiculous
+  method_arg_list:
+    method_arg T_COMMA method_arg_list {
+      result = val[2].unshift(val[0])
+    }
+    | method_arg {
+      result = [val[0]]
+    }
+  method_arg:
+    T_QUESTION type_expr {
+        result = Rtc::Types::OptionalArg.new(val[1])
+      }
+    | T_STAR type_expr {
+        result = Rtc::Types::Vararg.new(val[1])
+      }
+    | type_expr {
+        result = val[0]
       }
 
 
@@ -198,12 +217,6 @@ rule
           # flatten if there is no union
           result = list[0]
         end
-      }
-    | T_QUESTION type_expr { 
-        result = Rtc::Types::OptionalArg.new(val[1])
-      }
-    | T_STAR type_expr { 
-        result = Rtc::Types::Vararg.new(val[1])
       }
 
   or_type_list:
@@ -258,7 +271,30 @@ rule
       }
     | K_NIL {
     	result = Rtc::Types::NominalType.of(NilClass)
+      }
+    | T_LBRACE hash_member_list T_RBRACE {
+        result = Rtc::Types::HashType.new(val[1])
+      }
+
+  hash_member_list:
+     hash_key T_ASSOC hash_type T_COMMA hash_member_list {
+       result = val[4]
+       result[val[0]] = val[2]
+     }
+    | hash_key T_ASSOC hash_type {
+      result = Rtc::NativeHash.new
+      result[val[0]] = val[2]
+     }
+
+  hash_key:
+     T_STRING { result = val[0] }
+   | T_SYMBOL { result = eval(val[0]) }
+
+  hash_type:
+    T_QUESTION type_expr {
+       result = Rtc::Types::OptionalArg.new(val[1])
     }
+   | type_expr { result = val[0] }
 
   tuple:
       K_TUPLE T_LESS type_expr_comma_list T_GREATER {
