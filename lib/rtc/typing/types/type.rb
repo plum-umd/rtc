@@ -103,7 +103,11 @@ module Rtc::Types
         end
 
         def each
-          raise "you must implement this"
+          raise "you must implement this method"
+        end
+
+        def map
+          raise "you must implement this method"
         end
 
         def to_actual_type
