@@ -73,6 +73,8 @@ class Object
       end
       if annotated_type.is_tuple
         r = Rtc::TupleProxy.new(@object, annotated_type)
+      elsif annotated_type.is_a?(Rtc::Types::HashType)
+        r = Rtc::HashProxy.new(@object, annotated_type)
       else
         r = Rtc::ProxyObject.new(@object, annotated_type)
       end
@@ -82,6 +84,8 @@ class Object
       end
       if annotated_type.is_tuple
         r = Rtc::TupleProxy.new(self, annotated_type)
+      elsif annotated_type.is_a?(Rtc::Types::HashType)
+        r = Rtc::HashProxy.new(self, annotated_type)
       else
         r = Rtc::ProxyObject.new(self, annotated_type)        
       end
@@ -112,6 +116,8 @@ class Object
         end
         if annotated_type.is_tuple
           r = Rtc::ProxyObject.new(@object, annotated_type)
+        elsif annotated_type.is_a?(Rtc::Types::HashType)
+          r = Rtc::HashProxy.new(@object, annotated_type)
         else
           r = Rtc::ProxyObject.new(@object, annotated_type)        
         end
@@ -121,6 +127,8 @@ class Object
         end
         if annotated_type.is_tuple
           r = Rtc::TupleProxy.new(self, annotated_type)
+        elsif annotated_type.is_a?(Rtc::Types::HashType)
+          r = Rtc::HashProxy.new(self, annotated_type)
         else
           r = Rtc::ProxyObject.new(self, annotated_type)
         end

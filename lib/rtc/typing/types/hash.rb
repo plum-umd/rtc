@@ -97,7 +97,6 @@ module Rtc::Types
         }
         @require.each {
           |k,t|
-          req_builder = HashBuilder.new(497,419)
           current_hash += 503 * ((497 + k.hash * 419) + t.hash * 419)
         }
         @cached_hash = current_hash

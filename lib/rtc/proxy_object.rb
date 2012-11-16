@@ -412,7 +412,6 @@ module Rtc
       end
 
       Rtc::MasterSwitch.turn_off
-
       unless @proxy_type.has_method?(method)
         raise NoMethodError, "#{self.rtc_to_str} has no method #{method}"
       end
@@ -468,6 +467,10 @@ module Rtc
       end
     end
 
+    def method_missing(*args)
+      raise "Method #{args[0]} is not allowed on Proxy Types"
+    end
+
     def []=(*args)
       if args.length == 2 and args[0].is_a?(Numeric)
         index = args[0]
@@ -512,6 +515,43 @@ module Rtc
         t.rtc_annotate(v)
       }
     end
+  end
+  class HashProxy < ProxyObject
+    def initialize(object, hash_type)
+      raise "Error, argument 2 must be a hash type" unless hash_type.is_a?(Rtc::Types::HashType)
+      super(object, hash_type)
+    end
+    
+    def [](key)
+      return nil unless proxy_type.has_member?(key)
+      hash_value = object[key]
+      #TODO(jtoman): do we need to check types here?
+      return hash_value.rtc_annotate(proxy_type.get_member_type(key))
+    end
+
+    def []=(key, value)
+      raise "Key #{key} is not allowed in record #{proxy_type.to_s}" unless proxy_type.has_member?(key)
+      unless Rtc::MethodCheck.check_type(value, proxy_type.get_member_type(key))
+        raise Rtc::TypeMismatchException,"Value #{value} of type #{value.rtc_type} is not allowed for key #{proxy_type.get_member_type(key)}"
+      end
+      object[key] = value
+    end
+
+    def member?(key)
+      return false unless proxy_type.has_member?(key)
+      return object.member?(key)
+    end
+
+    def method_missing(*args)
+      raise "Method #{args[0]} not allowed on hash types"
+    end
+
+    alias :store :'[]='
+
+    alias :has_key? :member?
+    alias :key? :member?
+    alias :include? :member?
+
   end
 end
 

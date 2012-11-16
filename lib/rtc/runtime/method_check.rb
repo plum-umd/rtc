@@ -16,6 +16,20 @@ module Rtc::MethodCheck
         i += 1
       end
       return true
+    elsif type.is_a?(Rtc::Types::HashType)
+      return false unless value.is_a?(Hash)
+      type.required.each {
+        |k,t|
+        return false unless value.has_key?(k)
+        return false unless self.check_type(value[k], t, check_variables)
+      }
+      type.optional.each {
+        |k,t|
+        if value.has_key?(k)
+          return false unless self.check_type(value[k], t, check_variables)
+        end
+      }
+      return true
     elsif $RTC_STRICT or (not value.rtc_is_complex?)
         return value.rtc_type <= type
     else
