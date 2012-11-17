@@ -1,15 +1,6 @@
 # Type signature classes.
 
 module Rtc
-    class ClassAnnotation
-      attr_reader :qualified_name
-      attr_reader :parameters
-      def initialize(qualified_name, parameters)
-        @qualified_name = qualified_name
-        @parameters = parameters
-      end
-    end
-
     class TypeSignature
 
         attr_accessor :pos

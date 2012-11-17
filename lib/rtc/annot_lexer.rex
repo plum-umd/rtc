@@ -66,8 +66,8 @@ rule
   {END_RE}                                   { [:K_END, text] }
   {TYPE_RE}                                  { [:K_TYPE, text] }
   %none					     { [:T_BOTTOM, text] }
-  {TYPEVAR_RE}                               { [:K_TYPEVAR, text] }
   %any					     { [:T_TOP, text] }
+  {TYPEVAR_RE}                               { [:K_TYPEVAR, text] }
   %false                                     { [:T_FALSE, text] }
   %true                                      { [:T_TRUE, text] }
   %bool                                      { [:T_BOOL, text] }
@@ -78,14 +78,8 @@ rule
   self                                 { [:K_SELF, text] }
   Tuple                                { [:K_TUPLE, text] }
   nil								   { [:K_NIL, text] }
-# {TYPE_ID_RE}                        { [:T_TYPE_ID, text] }
-# {TYPE_ID_RE}						   { [:T_TICKED_ID, text] }
   {TYPE_ID_RE}						   { [:T_LOCAL_ID, text] }
   {CONST_ID_RE}                        { [:T_CONST_ID, text] }
-# {METH_NAME_RE}                       { [:T_METHOD_NAME, text] }
-# this is a new one to handle the fact that we'll be deaing with
-# annotations *within* ruby strings
-#  {METH_SYM_RE}                        { [:T_METHOD_NAME, text] }
   {SCOPED_ID_RE}					   { [:T_SCOPED_ID, text] }
   {SUFFIXED_ID_RE}					   { [:T_SUFFIXED_ID, text] }
   {SYMBOL_RE}						   { [:T_SYMBOL, text] }

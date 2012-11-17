@@ -10,7 +10,6 @@ end
 
 require 'rtc/annotated'
 require 'rtc/options'
-require 'rtc/runtime/class_modifier'
 
 $RTC_STRICT = false
 $CHECK_COUNT = 0
@@ -26,9 +25,6 @@ def rtc_no_subtype
 end
 
 def rtc_typesig(my_sig)
-  parser = Rtc::TypeAnnotationParser.new(self)
-  class_annot = parser.scan_str(my_sig)
-  raise "Invalid annotation, expected class annotation" unless class_annot.instance_of?(Rtc::ClassAnnotation)
-  Rtc::ClassModifier.handle_class_annot(class_annot)
+  raise "This form of class annotations is deprecated. Please use the rtc_annotated t_param form instead."
 end
 

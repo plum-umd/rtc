@@ -4,7 +4,6 @@
 
 require 'rtc/annot_parser.tab'
 require 'rtc/runtime/method_wrapper.rb'
-require 'rtc/runtime/class_modifier.rb'
 require 'rtc/proxy_object'
 require 'set'
 
@@ -177,10 +176,6 @@ module Rtc::Annotated
           end
         }
 
-        if signatures.instance_of?(Rtc::ClassAnnotation)
-           Rtc::ClassModifier.handle_class_annot(signatures)
-           return
-        end
         this_type = Rtc::Types::NominalType.of(self)
 
         meta_type = self.rtc_type
@@ -313,9 +308,6 @@ module Rtc::Annotated
       
 
     def self.extended(extendee)
-      if Rtc::ClassModifier.deferred?(extendee)
-        Rtc::ClassModifier.modify_class(extendee)
-      end
       #FIXME: there must be a better way to do this
       [[:@annot_parser, Rtc::TypeAnnotationParser.new(extendee)],
        [:@method_wrappers,{}],

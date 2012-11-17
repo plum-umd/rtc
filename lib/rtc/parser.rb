@@ -11,18 +11,6 @@ module Rtc
         @logger = Logging.get_logger('TypeAnnotationParser')
 
         Types = Rtc::Types
-        # receives a single string that may contain "::" or "." and constructs a
-        # method identifier according to the content
-        def handle_scoped_id(name)
-            names = name.split(/::|\./)
-            if names.length == 2
-              meta = class << proxy; self end
-              return MethodIdentifier.new(names[1])
-            else
-                fail "Internal error. Only A.foo is allowed"
-            end
-        end
-
         # makes up a hash that contains a method type information for convenience
         # in later use
         def construct_msig(domain, block, range)
@@ -47,17 +35,6 @@ module Rtc
           end
         end
 
-        def handle_class_decl(ident, ids=[])
-          return nil if ids.empty?
-          if ident[:type] == :absolute
-            qualified_name = ident[:name_list].join("::")
-          else
-            qualified_name = (@proxy.instance_of?(Object)? "" : (@proxy.name + "::")) + ident[:name_list].join("::")
-          end
-
-          return ClassAnnotation.new(qualified_name, ids)
-        end
-
         public
 
         # constructs a method type (mono or poly) and coalesces type parameters
@@ -75,14 +52,6 @@ module Rtc
 
 
             mtype = Types::ProceduralType.new(parameters, range, domain, block)
-#            if parameters 
-#                mtype = Types::ParameterizedProceduralType.new(range,
-#                                                               domain,
-#                                                               block,
-#                                                               parameters)
-#            else
-#                mtype = Types::ProceduralType.new(range, domain, block)
-#            end
             type_klass = meth_id.instance_of?(Rtc::ClassMethodIdentifier) ? ClassMethodTypeSignature : MethodTypeSignature 
             return type_klass.new(pos, meth_id, mtype)
         end

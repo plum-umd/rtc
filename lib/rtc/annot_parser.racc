@@ -51,7 +51,6 @@ rule
   entry:
       e_method { result = val[0] }
     | e_field { result = val[0] }
-    | e_class  { result = val[0] }
     | e_annotation { result = val[0] }
 
 
@@ -73,9 +72,6 @@ rule
 
   e_field:
       field_annotation_list T_EOF { result = val[0] }
-
-  e_class:
-      class_annotation T_EOF { result = val[0] }
 
   e_annotation:
       T_DOUBLE_HASH type_expr T_EOF { result = val[1] }
@@ -305,26 +301,6 @@ rule
       type_expr { result = [val[0]] } 
     | type_expr T_COMMA type_expr_comma_list {
         result = [val[0]] + val[2] }
-
-
-  class_decl:
-      type_ident T_LESS type_id_list T_GREATER {
-        id = val[0]
-        type_vars = val[2]
-        result = handle_class_decl(id, type_vars)
-      }
-    | type_ident {
-        id = val[0]
-        result = handle_class_decl(id)
-      }
-
-  class_annotation:
-      K_CLASS class_decl {
-        result = val[1]
-      }
-    | K_MODULE class_decl {
-        result = val[1]
-      }
 
 
   field_type:
