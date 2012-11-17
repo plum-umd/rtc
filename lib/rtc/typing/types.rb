@@ -89,19 +89,9 @@ class Object
         class_obj
       elsif class_obj.klass == Array
           Rtc::Types::ParameterizedType.new(class_obj, Rtc::NativeArray[Rtc::TypeInferencer.infer_type(self.each)], true)
-      # elsif class_obj.klass == MySet 
-          # begin
-            # self.flatten
-          # rescue ArgumentError
-            # return Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create([Object.new].each)])
-          # end  
-# 
-          # Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each)])
       elsif class_obj.klass == Set 
           Rtc::Types::ParameterizedType.new(class_obj, [Rtc::TypeInferencer.infer_type(self.each)], true)
       elsif class_obj.klass == Hash
-          #Rtc::Types::ParameterizedType.new(class_obj, [Rtc::Types::TypeVariable.create(self.each_key),
-          #  Rtc::Types::TypeVariable.create(self.each_value)])
           Rtc::Types::ParameterizedType.new(class_obj, Rtc::NativeArray[
             Rtc::TypeInferencer.infer_type(self.each_key),
             Rtc::TypeInferencer.infer_type(self.each_value)
@@ -111,7 +101,11 @@ class Object
         iterators = class_obj.klass.rtc_meta[:iterators]
         tv = class_obj.type_parameters.map {
           |param|
-          if iterators[param.symbol].is_a?(Proc)
+          if iterators[param.symbol].nil?
+            raise "Cannot infer type of type parameter #{param.symbol} on class #{self.class}"
+          elsif iterators[param.symbol].is_a?(Proc)
+            # this is a function call, not a hash lookup by the way
+            # despite what the weird operator would imply
             enum = iterators[param.symbol][self]
           else
             enum = self.send(iterators[param.symbol])

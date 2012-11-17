@@ -294,7 +294,11 @@ module Rtc::Annotated
       t_params.each {
         |pair|
         t_parameters << pair[0]
-        iterators[pair[0]] = pair[1]
+        if pair.length == 1
+          iterators[pair[0]] = nil
+        else
+          iterators[pair[0]] = pair[1]
+        end
       }
       Rtc::Types::NominalType.of(self).type_parameters = t_parameters
       define_iterators(iterators)
