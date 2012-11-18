@@ -109,5 +109,15 @@ class TestParser < Test::Unit::TestCase
         typesig("foo: (%undefined)")
       }
     end
+
+    reserved_symbols = [ "true", "false", "none", "any", "bool" ]
+    reserved_symbols.each {
+      |r_sym|
+      assert_raise Racc::ParseError do
+        ParserTestClass.instance_exec {
+          typesig("type %#{r_sym} = FalseClass")
+        }
+      end
+    }
   end
 end
