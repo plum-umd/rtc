@@ -54,6 +54,7 @@ module Rtc::Types
         def has_method?(name)
           @method_types.has_key?(name)
         end
+
         def any?
           yield self
         end

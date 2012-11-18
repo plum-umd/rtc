@@ -150,6 +150,7 @@ module Rtc::Annotated
     def typesig(string_signature, meta_info={})
       status = Rtc::MasterSwitch.is_on?
       Rtc::MasterSwitch.turn_off
+      begin
         if meta_info.has_key?('mutate')
           mutate = meta_info['mutate']
         else
@@ -163,14 +164,18 @@ module Rtc::Annotated
         else
           unwrap = []
         end
- 
+        
         signatures = @annot_parser.scan_str(string_signature)
-        return unless signatures
-
+        if signatures.is_a?(Rtc::TypeAbbreviation)
+          raise "Type #{signatures.type_name} already defined in context #{self.to_s}" if @type_names.has_key?(signatures.type_name)
+          @type_names[signatures.type_name] = signatures.aliased_type
+          return
+        end
+        
         signatures.each {
           |s|
           if s.instance_of?(Rtc::ClassMethodTypeSignature) or
-            s.instance_of?(Rtc::MethodTypeSignature)
+              s.instance_of?(Rtc::MethodTypeSignature)
             s.type.mutate = mutate
             s.type.unwrap = unwrap
           end
@@ -181,34 +186,36 @@ module Rtc::Annotated
         meta_type = self.rtc_type
 
         (signatures.map {
-          |sig|
-          if sig.instance_of?(Rtc::InstanceVariableTypeSignature)
-            field_name = sig.id.to_s[1..-1]
-            field_type = sig.type
-            this_type.add_field(field_name, field_type)
-            getter_type = Rtc::Types::ProceduralType.new([], field_type, [])
-            setter_type = Rtc::Types::ProceduralType.new([], field_type, [field_type])
-            [Rtc::MethodTypeSignature.new(sig.pos,field_name,getter_type),
+           |sig|
+           if sig.instance_of?(Rtc::InstanceVariableTypeSignature)
+             field_name = sig.id.to_s[1..-1]
+             field_type = sig.type
+             this_type.add_field(field_name, field_type)
+             getter_type = Rtc::Types::ProceduralType.new([], field_type, [])
+             setter_type = Rtc::Types::ProceduralType.new([], field_type, [field_type])
+             [Rtc::MethodTypeSignature.new(sig.pos,field_name,getter_type),
               Rtc::MethodTypeSignature.new(sig.pos,field_name+"=",setter_type)]
-          elsif sig.instance_of?(Rtc::ClassVariableTypeSignature)
-            field_name = sig.id.to_s[2..-1]
-            field_type = sig.type
-            meta_type.add_field(field_name, field_type)
-            getter_type = Rtc::Types::ProceduralType.new([], field_type, [])
-            setter_type = Rtc::Types::ProceduralType.new([], field_type, [field_type])
-            [Rtc::ClassMethodTypeSignature.new(sig.pos, field_name, getter_type),
+           elsif sig.instance_of?(Rtc::ClassVariableTypeSignature)
+             field_name = sig.id.to_s[2..-1]
+             field_type = sig.type
+             meta_type.add_field(field_name, field_type)
+             getter_type = Rtc::Types::ProceduralType.new([], field_type, [])
+             setter_type = Rtc::Types::ProceduralType.new([], field_type, [field_type])
+             [Rtc::ClassMethodTypeSignature.new(sig.pos, field_name, getter_type),
               Rtc::ClassMethodTypeSignature.new(sig.pos, field_name+"=", setter_type)]
-          else
-            sig
-          end
-        }).flatten.each do |signature|
+           else
+             sig
+           end
+         }).flatten.each do |signature|
           if signature.instance_of?(Rtc::ClassMethodTypeSignature)
             handle_class_typesig(signature)
           else
             handle_instance_typesig(signature)
           end
         end
+      ensure
         Rtc::MasterSwitch.set_to(status)
+      end
     end
     
     def handle_instance_typesig(signature)
@@ -306,6 +313,9 @@ module Rtc::Annotated
       @class_proxy = Rtc::ProxyObject.new(self, self.rtc_type);
     end
       
+    def rtc_lookup_type(t_name)
+      @type_names[t_name]
+    end
 
     def self.extended(extendee)
       #FIXME: there must be a better way to do this
@@ -314,7 +324,8 @@ module Rtc::Annotated
        [:@deferred_methods, Set.new],
        [:@next_methods, []],
        [:@class_method_wrappers, {}],
-       [:@deferred_class_methods, Set.new]
+       [:@deferred_class_methods, Set.new],
+       [:@type_names, Rtc::NativeHash.new]
       ].each {
         |i_var, value|
         extendee.instance_variable_set(i_var, value)

@@ -103,9 +103,6 @@ class TypeAnnotationParser < Racc::Parser
       when (text = @ss.scan(/%any/))
          action { [:T_TOP, text] }
 
-      when (text = @ss.scan(/typevar /))
-         action { [:K_TYPEVAR, text] }
-
       when (text = @ss.scan(/%false/))
          action { [:T_FALSE, text] }
 
@@ -114,6 +111,9 @@ class TypeAnnotationParser < Racc::Parser
 
       when (text = @ss.scan(/%bool/))
          action { [:T_BOOL, text] }
+
+      when (text = @ss.scan(/%[A-Za-z][A-Za-z_0-9]*'?/))
+         action { [:T_TYPE_NAME, text[1..-1]] }
 
       when (text = @ss.scan(/or/))
          action { [:K_OR, text] }

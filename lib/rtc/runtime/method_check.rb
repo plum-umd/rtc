@@ -140,7 +140,7 @@ module Rtc::MethodCheck
     return unsolved_type_variables
   end
 
-
+  # comment this too. it needs it badly
   def self.annotate_args(method_type, args)
     annot_vector = Rtc::NativeArray.new(args.length)
     arg_types = method_type.arg_types
@@ -190,8 +190,8 @@ module Rtc::MethodCheck
     return annot_vector
   end
   
-  # returns false on type error
-  # or a true value.
+  # returns false on type error or a true value.
+  # TOOD(jtoman): comment this. it needs it *badly*
   def self.check_arg_impl(m_type, args,annotate_now, annot_vector = nil)
     expected_arg_types = m_type.arg_types
     arg_layout = m_type.parameter_layout

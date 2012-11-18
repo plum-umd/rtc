@@ -33,6 +33,7 @@ token T_LBRACKET T_RBRACKET
 token T_LBRACE T_RBRACE
 
 token T_TRUE T_BOOL T_FALSE
+token T_TYPE_NAME
 
 token T_SUBTYPE
 
@@ -52,6 +53,7 @@ rule
       e_method { result = val[0] }
     | e_field { result = val[0] }
     | e_annotation { result = val[0] }
+    | e_type { result = val[0] }
 
 
   field_sig:
@@ -75,6 +77,9 @@ rule
 
   e_annotation:
       T_DOUBLE_HASH type_expr T_EOF { result = val[1] }
+
+  e_type:
+      K_TYPE T_TYPE_NAME T_EQUAL type_expr T_EOF { result = Rtc::TypeAbbreviation.new(val[1], val[3])  }
 
   method_start:
       T_BEGIN_LINE { result = nil }
@@ -216,11 +221,27 @@ rule
       }
 
   or_type_list:
-      single_type_expr { result = {:or_list => [val[0]]} }
+      single_type_expr {
+      # before unions could only be built via this parser rule so we didn't
+      # need to account for nested unions (they were impossible to construct
+      # in the grammar). Now with type abbreviations, it's possible to construct
+      # a nested union as follows:
+      # type %foo = Fixnum or String
+      # type %bar = Float or Proc
+      # type %baz = %foo or %baz
+      # so we need to flatten it as we parse an or expression, so that the above
+      # yields the type Fixnum or String or Float or Proc
+      if val[0].is_a?(Rtc::Types::UnionType)
+         result = {:or_list => val[0].types.to_a }
+      else
+         result = {:or_list => [val[0]]} 
+      end }
     | single_type_expr K_OR or_type_list {
-        # need to differientiate OR lists from tuples (which are just arrays)
-        val[2][:or_list] = [val[0]] + val[2][:or_list]
-        result = val[2]
+        if val[0].is_a?(Rtc::Types::UnionType)
+           result = {:or_list => val[0].types.to_a + val[2][:or_list] }
+        else 
+           result = {:or_list => [val[0]] + val[2][:or_list] }
+        end
       }
 
   single_type_expr:
@@ -270,6 +291,9 @@ rule
       }
     | T_LBRACE hash_member_list T_RBRACE {
         result = Rtc::Types::HashType.new(val[1])
+      }
+    | T_TYPE_NAME {
+        result = get_type(val[0])
       }
 
   hash_member_list:

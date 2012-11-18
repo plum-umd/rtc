@@ -1,6 +1,13 @@
 # Type signature classes.
 
 module Rtc
+  class TypeAbbreviation
+    attr_accessor :type_name, :aliased_type
+    def initialize(t_name, type)
+      @type_name = t_name
+      @aliased_type = type
+    end
+  end
     class TypeSignature
 
         attr_accessor :pos

@@ -1,4 +1,5 @@
 require 'rtc_lib'
+require "test/unit"
 
 class HashTester
   rtc_annotated

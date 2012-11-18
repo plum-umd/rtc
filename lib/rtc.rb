@@ -25,6 +25,6 @@ def rtc_no_subtype
 end
 
 def rtc_typesig(my_sig)
-  raise "This form of class annotations is deprecated. Please use the rtc_annotated t_param form instead."
+  raise "This form of class annotations is deprecated. Please use the rtc_annotated (t_param) form instead."
 end
 

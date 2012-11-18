@@ -28,11 +28,8 @@ macro
   TYPE_ID_RE [a-z_]+\w*\'?
   SCOPED_ID_RE ([A-Za-z_]+\w*|self)\.(\w|\[|\]|=)+[\?\!\=]?
   SUFFIXED_ID_RE [A-Za-z_]+\w*[\?\!\=]
-
-#unused: METH_SYM_RE (?:[%&\*\+\-\/\<\>\^\|\~]|\*\*|\+\@|\-\@|\<\<|\<\=|\<\=\>|\=\=|\>\=|\>\>|\[\]|\=\=\=|\<\=\=\>|\[\]\=|\=\~)
-
-# unused: METH_NAME_RE [A-Za-z_]+\w*[\!\=\?]
   SYMBOL_RE :[A-Za-z_][A-Za-z_0-9]*
+  TYPE_NAME_RE %[A-Za-z][A-Za-z_0-9]*'?
 #in order to match spaces, you have to define an RE. Yes this is ridiculous
   CLASS_RE class\ 
   METACLASS_RE metaclass\ 
@@ -67,11 +64,11 @@ rule
   {TYPE_RE}                                  { [:K_TYPE, text] }
   %none					     { [:T_BOTTOM, text] }
   %any					     { [:T_TOP, text] }
-  {TYPEVAR_RE}                               { [:K_TYPEVAR, text] }
   %false                                     { [:T_FALSE, text] }
   %true                                      { [:T_TRUE, text] }
   %bool                                      { [:T_BOOL, text] }
-
+  {TYPE_NAME_RE}                             { [:T_TYPE_NAME, text[1..-1]] }
+  
 
 # keywords
   or                                   { [:K_OR, text] }

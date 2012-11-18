@@ -26,6 +26,14 @@ module Rtc
         def handle_type_param(kind, text)
             return Rtc::Types::TypeParameter.new(text.to_sym)
         end
+        
+        def get_type(type_name)
+          to_ret = @proxy.rtc_lookup_type(type_name)
+          if to_ret.nil?
+            raise "Type #{type_name} not defined in context #{@object}"
+          end
+          to_ret
+        end
 
         def handle_type_ident(ident)
           begin
