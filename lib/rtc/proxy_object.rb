@@ -198,6 +198,34 @@ end
 
 module Rtc
 
+  class InstantiatedMethod
+    def initialize(method_name, object, the_proxy, method_type)
+      @method_name = method_name.to_sym
+      @object = object
+      @proxy = the_proxy
+      @method_type = method_type
+    end
+    def call(*args, &blk)
+      if not Rtc::MasterSwitch.is_on?
+        return @object.send @method_name, *args, &blk
+      end
+      Rtc::MasterSwitch.turn_off
+      begin
+        @object.rtc_push_proxy(@proxy)
+        args.push({ :__rtc_type => @method_type })
+        Rtc::MasterSwitch.turn_on
+        r = @object.send(@method_name, *args, &blk)
+      ensure
+        Rtc::MasterSwitch.turn_off
+        @object.rtc_pop_proxy
+        Rtc::MasterSwitch.turn_on
+      end
+      return r
+    end
+    alias :[] :call
+    alias :'()' :call
+  end
+
   class ProxyObject
     attr_reader :object
     attr_reader :proxy_type
@@ -375,8 +403,6 @@ module Rtc
       @object.untrusted
     end
 
-    # private def remove_instance_variable(symbol)
-
     def is_proxy_object?
       true
     end
@@ -387,6 +413,21 @@ module Rtc
     
     def true_rtc_type
       @object.rtc_type
+    end
+
+    def rtc_instantiate(method_name, type_subst)
+      parser = Rtc::TypeAnnotationParser.new(@object.class)
+      method_name = method_name.to_s
+      t_vars = Rtc::NativeHash.new
+      type_subst.each_pair {
+        |k,v|
+        t_vars[k] = parser.scan_str("##" + v)
+      }
+      method_type = @proxy_type.get_method(method_name, nil, t_vars)
+      if method_type.nil?
+        raise NoMethodError, "Type signature for method #{method_name} not found in type #{@proxy_type}";
+      end
+      Rtc::InstantiatedMethod.new(method_name, @object, self, method_type)
     end
 
     def rtc_to_s
@@ -416,26 +457,15 @@ module Rtc
         raise NoMethodError, "#{self.rtc_to_str} has no method #{method}"
       end
 
-      #if @object.class.get_typesig_info(method)
-      #  args.push({'__rtc_special' => true, 'self_proxy' => self})
-      #end
-
       begin
-        #puts "about to push proxy for #{method}"
         @object.rtc_push_proxy(self)
-        #puts "done pushing proxy for #{method}"
         Rtc::MasterSwitch.turn_on
         r = @object.send method, *args, &block
       ensure
         Rtc::MasterSwitch.turn_off
-        #puts "about to call pop proxy for #{method}"
         @object.rtc_pop_proxy
-        #puts "done popping proxy #{method}"
         Rtc::MasterSwitch.turn_on
-        #puts "master switch is on in #{method}"
-        #puts "call depth #{caller.length}"
       end
-      #puts "returning from #{method}"
       return r
     end
   end

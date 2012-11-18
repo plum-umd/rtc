@@ -155,13 +155,31 @@ module Rtc::Types
 
           @method_types[name] = type
         end
-        def get_method(name, which = nil)
-          if @method_types[name] && (which.nil? or which == @klass)
-            @method_types[name].is_a?(IntersectionType) ?
-              @method_types[name].map { |it| it.instantiate } :
-              @method_types[name].instantiate
+        def get_method(name, which = nil, type_subst = nil)
+          it = self
+          if which
+            while it and which != it.klass
+              it = it.superclass
+            end
+            if it.nil?
+              return nil
+            end
+            type_hash = it.method_types
+            if m_type = type_hash[name]
+              m_type.is_a?(IntersectionType) ?
+              m_type.map { |m| m.instantiate(type_subst) } :
+                m_type.instantiate(type_subst)
+            else
+              nil
+            end
           else
-            (sc = superclass) ? sc.get_method(name, which) : nil
+            while it and not it.method_types.has_key?(name)
+              it = it.superclass
+            end
+            return nil if it.nil?
+            m_type = it.method_types[name]
+            m_type.is_a?(IntersectionType) ? m_type.map { |m| m.instantiate(type_subst) } :
+              m_type.instantiate(type_subst)
           end
         end
         
@@ -182,6 +200,14 @@ module Rtc::Types
         end
         
         protected
+
+        def method_types
+          @method_types
+        end
+
+        def field_types
+          @field_types
+        end
 
         def can_subtype?(other)
             (other.instance_of?(StructuralType) or

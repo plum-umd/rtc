@@ -48,6 +48,9 @@ class ParserTestClass
   typesig("type %t' = :date or :talks")
   typesig("unioned_unions: (%t') -> Fixnum")
   def unioned_unions(a); end
+
+  #TODO(jtoman): tests for vararg and rest types. That is
+  #we need to make sure that forms like "*String or *Fixnum" are not allowed
 end
 
 class TestParser < Test::Unit::TestCase

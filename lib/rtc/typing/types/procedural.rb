@@ -56,20 +56,40 @@ module Rtc::Types
           arg_types.each { |a| yield a }
         end
         
-        def instantiate
+        def instantiate(type_replacement = nil)
           if not parameterized?
             return self
           end
-          type_vars = Rtc::NativeHash.new
-          parameters.map {
-            |t_param|
-            type_vars[t_param.symbol] = TypeVariable.new(t_param.symbol, self)
-          }
+          if not type_replacement.nil?
+            # make sure that this is a complete instantiation (we may
+            # want to move onto partial inference later
+            # however, that would require a more subtle approach to type variables
+            # than the one we take now (where we have "immutable types" that are
+            # actually mutating behind the scenes).
+            parameters.each {
+              |t_param|
+              unless type_replacement.include?(t_param.symbol)
+                raise "Incomplete instantiation. This method has a type parameter #{t_param.symbol} that does not appear in this instantiation"
+              end
+            }
+          end
+          # has variables indicates that this solves for variables instead of
+          # using a user specified replacement
+          has_variables = type_replacement.nil?
+          if type_replacement.nil?
+            type_replacement = Rtc::NativeHash.new
+            parameters.map {
+              |t_param|
+              type_replacement[t_param.symbol] = TypeVariable.new(t_param.symbol, self)
+            }
+          end
           to_return = self.map {
             |t|
-            t.replace_parameters(type_vars)
+            t.replace_parameters(type_replacement)
           };
-          to_return.type_variables = type_vars.values;
+          if has_variables
+            to_return.type_variables = type_replacement.values;
+          end
           return to_return
         end
         

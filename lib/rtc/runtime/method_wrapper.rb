@@ -30,8 +30,11 @@ module Rtc
           end
         end
         begin
-          $CHECK_COUNT+=1
-          method_type = new_invokee.rtc_type.get_method("%{method_name}".to_s)
+          if regular_args[-1].is_a?(Hash) and regular_args[-1].has_key?(:__rtc_type)
+            method_type = regular_args.pop()[:__rtc_type]
+          else
+            method_type = new_invokee.rtc_type.get_method("%{method_name}".to_s)
+          end
           if method_type.is_a?(Rtc::Types::ProceduralType)
             method_types = NativeArray[method_type]
           else
