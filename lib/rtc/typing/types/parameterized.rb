@@ -114,8 +114,8 @@ module Rtc::Types
           return replace_type(@nominal.get_field(name, which))
         end
         
-        def get_method(name, which = nil)
-          replacement_map = Rtc::NativeHash.new
+        def get_method(name, which = nil, tvars = nil)
+          replacement_map = tvars || Rtc::NativeHash.new
           if dynamic
             # no caching here folks
             @nominal.type_parameters.each_with_index {
