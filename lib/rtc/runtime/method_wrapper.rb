@@ -203,7 +203,7 @@ METHOD_TEMPLATE
       ret = @proc.call(*annotated_args)
       Rtc::MasterSwitch.turn_off
       return_valid = Rtc::MethodCheck.check_return(@block_type, ret, @unsolved_type_variables)
-      raise Rtc::TypeMismatchException, "Block return type mismatch" unless return_valid
+      raise Rtc::TypeMismatchException, "Block return type mismatch, expected #{@block_type.return_type}, got #{ret.rtc_type}" unless return_valid
       begin
         if ret === false or ret === nil or ret.is_a?(Rtc::Types::Type)
           ret
