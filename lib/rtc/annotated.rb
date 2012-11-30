@@ -7,18 +7,6 @@ require 'rtc/runtime/method_wrapper.rb'
 require 'rtc/proxy_object'
 require 'set'
 
-class TypeSigInfo
-  attr_reader :sig
-  attr_reader :mutate
-  attr_reader :unwrap
-  
-  def initialize(sig, mutate, unwrap)
-    @sig = sig
-    @mutate = mutate
-    @unwrap = unwrap
-  end
-end
-
 class Object
   attr_reader :annotated_methods
   attr_reader :proxies
@@ -248,6 +236,10 @@ module Rtc::Annotated
     #FIXME(jtoman): needs a better and catchier name
     def no_subtype
       self.rtc_meta[:no_subtype] = true
+      self.instance_eval("alias :new :__rtc_original_new")
+      def self.__rtc_autowrapped
+        false
+      end
     end
     
     def define_iterator(param_name,iterator_name)
@@ -255,6 +247,9 @@ module Rtc::Annotated
     end
     
     def define_iterators(iter_hash)
+      if @rtc_autowrap
+        raise "Auto annotation is not allowed on parameterized classes"
+      end
       rtc_meta.fetch(:iterators).merge!(iter_hash)
     end
     
@@ -269,6 +264,11 @@ module Rtc::Annotated
       end
     end
 
+    def rtc_autowrapped?
+      return false unless method_defined?(:__rtc_original_new)
+      return __rtc_autowrapped
+    end
+    
     def method_added(method_name)
       return if not defined? @annot_parser
       needs_wrapper = @deferred_methods.include?(method_name.to_s) or
@@ -304,6 +304,22 @@ module Rtc::Annotated
       }
       Rtc::Types::NominalType.of(self).type_parameters = t_parameters
       define_iterators(iterators)
+    end
+
+    def rtc_autowrap
+      if respond_to?(:__rtc_original_new) and __rtc_autowrapped
+        return
+      end
+      def self.__rtc_autowrapped
+        true
+      end
+      if not respond_to?(:__rtc_original_new)
+        self.instance_eval("alias :__rtc_original_new :new")
+      end
+      def self.new(*args, &blk)
+        obj = __rtc_original_new(*args, &blk)
+        obj.rtc_annotate(obj.rtc_type)
+      end
     end
 
     def rtc_typed
