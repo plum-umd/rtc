@@ -57,6 +57,10 @@ module Rtc::Types
           false
         end
 
+        def contains_free_variables?
+          false
+        end
+
         def is_tuple
           false
         end

@@ -29,6 +29,10 @@ module Rtc::Types
             return IntersectionType.new(types)
         end
 
+        def contains_free_variables?
+          types.reduce(false) { |r, t| r |= t.contains_free_variables?  }
+        end
+
         def map
           IntersectionType.new(types.map {
             |t|

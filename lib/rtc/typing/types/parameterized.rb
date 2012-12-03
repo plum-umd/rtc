@@ -120,7 +120,7 @@ module Rtc::Types
             # no caching here folks
             @nominal.type_parameters.each_with_index {
               |t_param, type_index|
-              replacement_map[t_param.symbol] = TypeVariable.new(t_param.symbol, self, parameters[type_index])
+              replacement_map[t_param.symbol] ||= TypeVariable.new(t_param.symbol, self, parameters[type_index])
             }
             to_ret = @nominal.get_method(name, which).replace_parameters(replacement_map)
             if to_ret.is_a?(IntersectionType)
@@ -138,9 +138,9 @@ module Rtc::Types
             end
             @nominal.type_parameters.each_with_index {
               |t_param, type_index|
-              replacement_map[t_param.symbol] = parameters[type_index]
+              replacement_map[t_param.symbol] ||= parameters[type_index]
             }
-            to_ret = @nominal.get_method(name, which).replace_parameters(replacement_map)
+            to_ret = @nominal.get_method(name, which, replacement_map)
             has_tvars = 
               if to_ret.is_a?(IntersectionType)
                 to_ret.types.any? {

@@ -426,6 +426,8 @@ module Rtc
       method_type = @proxy_type.get_method(method_name, nil, t_vars)
       if method_type.nil?
         raise NoMethodError, "Type signature for method #{method_name} not found in type #{@proxy_type}";
+      elsif method_type.contains_free_variables?
+        raise "Incomplete instantiation. This method has a type parameter that does not appear in this instantiation"
       end
       Rtc::InstantiatedMethod.new(method_name, @object, self, method_type)
     end

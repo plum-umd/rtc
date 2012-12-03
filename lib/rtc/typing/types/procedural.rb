@@ -57,44 +57,47 @@ module Rtc::Types
         end
         
         def instantiate(type_replacement = nil)
-          if not parameterized?
+          if type_replacement.nil? and not parameterized?
             return self
           end
+          free_variables = []
           if not type_replacement.nil?
-            # make sure that this is a complete instantiation (we may
-            # want to move onto partial inference later
-            # however, that would require a more subtle approach to type variables
-            # than the one we take now (where we have "immutable types" that are
-            # actually mutating behind the scenes).
+            duped = false
             parameters.each {
               |t_param|
               unless type_replacement.include?(t_param.symbol)
-                raise "Incomplete instantiation. This method has a type parameter #{t_param.symbol} that does not appear in this instantiation"
+                if not duped
+                  type_replacement = type_replacement.dup
+                  duped = true
+                end
+                new_tv = TypeVariable.new(t_param.symbol, self)
+                type_replacement[t_param.symbol] = new_tv
+                free_variables.push(new_tv)
               end
             }
-          end
-          # has variables indicates that this solves for variables instead of
-          # using a user specified replacement
-          has_variables = type_replacement.nil?
-          if type_replacement.nil?
+          else
             type_replacement = Rtc::NativeHash.new
             parameters.map {
               |t_param|
-              type_replacement[t_param.symbol] = TypeVariable.new(t_param.symbol, self)
+              new_tv = TypeVariable.new(t_param.symbol, self)
+              type_replacement[t_param.symbol] = new_tv
+              free_variables.push(new_tv)
             }
           end
           to_return = self.map {
             |t|
             t.replace_parameters(type_replacement)
           };
-          if has_variables
-            to_return.type_variables = type_replacement.values;
-          end
+          to_return.type_variables = free_variables
           return to_return
         end
         
         def parameterized?
           not parameters.empty?
+        end
+
+        def contains_free_variables?
+          not type_variables.empty?
         end
 
         # Return true if +self+ is a subtype of +other+. This follows the usual

@@ -122,5 +122,12 @@ class TestPolymorphicMethod < Test::Unit::TestCase
       instance.rtc_instantiate(:two_unsolved_args, :u => "Fixnum")
     end
 
+    assert_nothing_raised do
+      # test case from our paper
+      a = [1,2,3].rtc_annotate("Array<Fixnum or String>")
+      m = a.rtc_instantiate(:map, :u=>"Fixnum or String")
+      r = m.call() { |n| if (n % 2 == 0) then n else n.to_s end }
+      r.pop
+    end
   end
 end
