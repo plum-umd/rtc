@@ -66,7 +66,7 @@ module Rtc
           unless Rtc::MethodCheck.check_return(chosen_type, ret_value, unsolved_tvars)
             #p ret_value.rtc_type, chosen_type.return_type, "%{method_name}", self, chosen_type
             
-            raise Rtc::TypeMismatchException, "invalid return type in %{method_name}"
+            raise Rtc::TypeMismatchException, "invalid return type in %{method_name}, expected \#{chosen_type.return_type}, got \#{ret_value.rtc_type}"
           end
   
           if ret_value === false || ret_value === nil ||
