@@ -61,6 +61,10 @@ module Rtc::Types
           false
         end
 
+        def free_vars
+          []
+        end
+
         def is_tuple
           false
         end

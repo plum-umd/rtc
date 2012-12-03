@@ -427,7 +427,12 @@ module Rtc
       if method_type.nil?
         raise NoMethodError, "Type signature for method #{method_name} not found in type #{@proxy_type}";
       elsif method_type.contains_free_variables?
-        raise "Incomplete instantiation. This method has a type parameter that does not appear in this instantiation"
+        free_vars = method_type.free_vars
+        if free_vars.length == 1
+          raise "Incomplete instantiation. This method has a type parameter #{free_vars[0]} that does not appear in this instantiation"
+        else
+          raise "Incomplete instantiation. This method has type parameters #{free_vars.map { |s| s.to_s }.join(', ')} that do not appear in this instantiation"
+        end
       end
       Rtc::InstantiatedMethod.new(method_name, @object, self, method_type)
     end

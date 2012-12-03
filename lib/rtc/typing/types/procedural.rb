@@ -100,6 +100,10 @@ module Rtc::Types
           not type_variables.empty?
         end
 
+        def free_vars
+          type_variables.map { |v| v.name }
+        end
+
         # Return true if +self+ is a subtype of +other+. This follows the usual
         # semantics of TopType and BottomType. If +other+ is also an instance of
         # ProceduralType, return true iff all of the following hold:

@@ -33,6 +33,10 @@ module Rtc::Types
           types.reduce(false) { |r, t| r |= t.contains_free_variables?  }
         end
 
+        def free_vars
+          types.reduce([]) { |r, t| r.concat(t.free_vars).uniq }
+        end
+
         def map
           IntersectionType.new(types.map {
             |t|
