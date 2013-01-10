@@ -102,6 +102,7 @@ METHOD_TEMPLATE
       "%" => "__rtc_rtc_op_mod",
       "+" => "__rtc_rtc_op_plus",
       "-" => "__rtc_rtc_op_minus",
+      "~" => "__rtc_rtc_op_telda",
       ("<" + "<") => "__rtc_rtc_op_ls",
       ">>"=> "__rtc_rtc_op_rs",
       "^" => "__rtc_rtc_op_bitxor",
@@ -112,6 +113,7 @@ METHOD_TEMPLATE
       ">=" => "__rtc_rtc_op_gte",
       "<=>" => "__rtc_rtc_op_3comp",
       "==" => "__rtc_rtc_op_eq",
+      "=~" => "__rtc_rtc_op_eq_telda",
       "===" => "__rtc_rtc_op_strict_eq",
       '&' => "__rtc_rtc_op_bitand",
     }
