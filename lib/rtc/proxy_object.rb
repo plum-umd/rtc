@@ -241,7 +241,7 @@ module Rtc
       # FIXME:  weak ref caused problems with Rtc types
 
       @object = object
-      @proxy_type = proxy_type
+      @proxy_type = proxy_type.proxy_simplify
     end
 
     def !~(other)

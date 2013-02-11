@@ -132,6 +132,13 @@ module Rtc::Types
           }
         end
 
+        # Used to simplify the type when proxying an object.  Namely removing
+        # NilClass or FalseClass from unions, since nil and false cannot be
+        # proxied.
+        def proxy_simplify
+          self
+        end
+
         protected
 
         # Returns +true+ if +self+ could possibly be a subtype of +other+. It

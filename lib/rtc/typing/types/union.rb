@@ -79,6 +79,22 @@ module Rtc::Types
             end
         end
 
+        # You can't proxy nil or false, so remove those possibilities
+        # if they're in the type.
+        def proxy_simplify
+          ts = @types.dup.delete_if do |t|
+            t.is_a? NominalType and
+              (t.klass == NilClass or t.klass == FalseClass)
+          end
+          if ts.length == @types.length
+          then self
+          else if ts.length == 1
+               then ts.to_a[0]
+               else UnionType.new(ts)
+               end
+          end
+        end
+
         private
 
         # Creates a new UnionType that is the union of all the types in +type+.

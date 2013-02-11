@@ -484,6 +484,20 @@ class TestProxy < Test::Unit::TestCase
     assert_equal(z.proxy_types_to_s, ["Array<B>", "Array<A>"])
   end
 
+  def test_rtc_annotate_nonnil
+    x = 3.rtc_annotate("Fixnum or NilClass")
+    y = lambda { 3 }.rtc_annotate("() -> Fixnum or NilClass")
+
+    assert_equal(x.proxy_types_to_s, ["Fixnum"])
+    assert_equal(y.call().proxy_types_to_s, ["Fixnum"])
+  end
+
+  def test_rtc_annotate_nonfalse
+    x = true.rtc_annotate("TrueClass or FalseClass")
+
+    assert_equal(x.proxy_types_to_s, ["TrueClass"])
+  end
+
   def test_plus
     x = [1, 2].rtc_annotate("Array<Fixnum>")
     assert_equal(x + [3, 4], [1, 2, 3, 4])
