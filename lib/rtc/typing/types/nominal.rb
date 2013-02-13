@@ -155,6 +155,7 @@ module Rtc::Types
 
           @method_types[name] = type
         end
+
         def get_method(name, which = nil, type_subst = nil)
           it = self
           if which
@@ -173,11 +174,30 @@ module Rtc::Types
               nil
             end
           else
-            while it and not it.method_types.has_key?(name)
-              it = it.superclass
+            found = false
+
+            klass.ancestors.each {|a|
+              it = Rtc::Types::NominalType.of(a)
+
+              if it.method_types.has_key?(name)
+                found = true
+                break
+              end
+            }
+
+            it = nil if not found
+
+            if klass.ancestors[0] != klass
+              it = self
+              while it and not it.method_types.has_key?(name)
+                it = it.superclass
+              end
             end
+
             return nil if it.nil?
+
             m_type = it.method_types[name]
+
             m_type.is_a?(IntersectionType) ? m_type.map { |m| m.instantiate(type_subst) } :
               m_type.instantiate(type_subst)
           end
