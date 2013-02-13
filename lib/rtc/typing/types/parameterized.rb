@@ -55,8 +55,8 @@ module Rtc::Types
         def <=(other)
           case other
           when ParameterizedType
-            return false unless (@nominal <= other.nominal and
-                                 other.nominal <= @nominal)
+            return false unless (@nominal <= other.nominal)
+
             zipped = @parameters.zip(other.parameters)
             if not @dynamic
               return false unless zipped.all? do |t, u|
