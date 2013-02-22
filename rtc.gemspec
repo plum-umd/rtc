@@ -1,6 +1,6 @@
 # In the top directory 
 # gem build rtc.gemspec
-# gem install rtc.gemspec
+# gem install rtc-0.0.0.gem
 
 Gem::Specification.new do |s|
   s.name        = 'rtc'
@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
   s.description = "Ruby Type Checker"
   s.authors     = ["NA"]
   s.email       = 'NA'
-  s.files       = Dir.glob("*") + Dir.glob("*/*")  + Dir.glob("*/*/*") + Dir.glob("*/*/*/*") + Dir.glob("*/*/*/*/*") + ["lib/rtc.rb"]
+  s.files       = Dir.glob("*") + Dir.glob("*/*")  + Dir.glob("*/*/*") + Dir.glob("*/*/*/*") + Dir.glob("*/*/*/*/*") 
   s.homepage    =
     'https://github.com/jeffrey-s-foster/rtc'
   s.add_dependency 'racc'
