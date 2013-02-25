@@ -4,17 +4,18 @@ module ActionController
 
     spec :process_action do
       pre_cond do
-        s = get_self
-        a = false
-
-        if include2?($rtf_pff_meta, [s.class, :except]) 
-          if special_include?($rtc_pff_meta[s.class][:except], s.action_name.to_sym)
-            a = true
-          end
-        end
-
-        $rtc_pff_called or ((not $rtc_pff_called) and a)
+        $rtc_pff_called or
+          ((not $rtc_pff_called) and
+           Dsl.include2?($rtf_pff_meta, [self.class, :except]) and
+           Dsl.special_include?($rtc_pff_meta[self.class][:except], self.action_name.to_sym))
       end
+#      Don't we need to reset it eventually?  Maybe something like:
+#
+#      post_task do
+#        $rtc_pff_called = false
+#      end
+#
+#      so that the next time process_action is called, we ensure another v_a_t call was made?
     end
   end
 
@@ -24,17 +25,10 @@ module ActionController
     module ClassMethods
       extend Dsl
 
-      spec :protect_from_forgery do |options|
-        pre_task do
+      spec :protect_from_forgery do
+        pre_task do |options|
           $rtc_pff_meta = {} if not $rtc_pff_meta
-          h = {}
-          options = get_arg(:options)
-          h[get_self] = get_arg(:options)
-          $rtc_pff_meta.merge!(h)
-        end
-
-        post_task do
-
+          $rtc_pff_meta[self] = options
         end
       end
     end
