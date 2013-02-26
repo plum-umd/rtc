@@ -40,21 +40,6 @@ module Dsl
     end
   end
 
-  def self.include2?(h, ks)
-    h and h.keys.include?(ks[0]) and h[ks[0]].include?(ks[1])
-  end
-
-  def self.special_include?(obj, name)
-    (obj.class == Array and obj.include?(name)) or (obj.class == Symbol and obj == name)
-  end
-
-  def self.has_instance_method?(obj, method)
-    m = method.to_sym
-    obj.public_instance_methods.include?(m) or
-      obj.private_instance_methods.include?(m) or
-      obj.protected_instance_methods.include?(m)
-  end
-
   def self.create_spec(&blk)
     Proc.new &blk
   end

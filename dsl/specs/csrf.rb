@@ -1,3 +1,13 @@
+module CSRFHelper
+  def self.include2?(h, ks)
+    h and h.keys.include?(ks[0]) and h[ks[0]].include?(ks[1])
+  end
+
+  def self.special_include?(obj, name)
+    (obj.class == Array and obj.include?(name)) or (obj.class == Symbol and obj == name)
+  end
+end
+
 module ActionController
   module Rendering
     extend Dsl
@@ -6,8 +16,8 @@ module ActionController
       pre_cond do
         $rtc_pff_called or
           ((not $rtc_pff_called) and
-           Dsl.include2?($rtf_pff_meta, [self.class, :except]) and
-           Dsl.special_include?($rtc_pff_meta[self.class][:except], self.action_name.to_sym))
+           CSRFHelper.include2?($rtf_pff_meta, [self.class, :except]) and
+           CSRFHelper.special_include?($rtc_pff_meta[self.class][:except], self.action_name.to_sym))
       end
 #      Don't we need to reset it eventually?  Maybe something like:
 #

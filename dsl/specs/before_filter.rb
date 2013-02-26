@@ -1,3 +1,12 @@
+module BFHelper
+  def self.has_instance_method?(obj, method)
+    m = method.to_sym
+    obj.public_instance_methods.include?(m) or
+      obj.private_instance_methods.include?(m) or
+      obj.protected_instance_methods.include?(m)
+  end
+end
+
 module AbstractController::Callbacks::ClassMethods
   extend Dsl
   
@@ -24,10 +33,12 @@ class ActionDispatch::Routing::RouteSet::Dispatcher
       methods.all? { |e|
         options = e[0]
         m = options[0]
-        method_found = Dsl.has_instance_method?(controller, m)
+        method_found = BFHelper.has_instance_method?(controller, m)
         if options.size > 1
           only_methods = options[1][:only]
-          method_found and only_methods.all? {|n| Dsl.has_instance_method?(controller, n) }
+          method_found and only_methods.all? {|n|
+            BFHelper.has_instance_method?(controller, n)
+          }
         else method_found
         end
       }
