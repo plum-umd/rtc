@@ -10,7 +10,7 @@ module Dsl
       @post_conds = []
       @post_tasks = []
       @included_specs = []
-      @dsl = nil
+      @dsl = []
     end
 
     def include_spec(s, *args)
@@ -35,7 +35,7 @@ module Dsl
 
     def dsl(&block)
       if block_given?
-        @dsl = block
+        @dsl.push(block)
       else
         @dsl
       end
@@ -62,6 +62,10 @@ module Dsl
   end
 
   def spec(method, &block)
+    unless method_defined? method or private_instance_methods.include? method
+      raise Exception, "method #{method} not defined on #{name}"
+    end
+
     old_method = @@method_prefix + method.to_s
     old_method = old_method.to_sym
 
@@ -80,11 +84,12 @@ module Dsl
         }
         if blk and conds.dsl
           new_blk = Proc.new do |*args|
-            unless self.is_a?(Dsl)
-              class << self; include Dsl; end
-            end
             unless self.instance_variable_get(:@dsl_specs_run)
-              self.instance_exec(*args, &conds.dsl)
+              ec = class << self; self; end
+              unless self.is_a?(Dsl)
+                ec.extend Dsl
+              end
+              conds.dsl.each { |b| ec.class_exec(*args, &b) }
               self.instance_variable_set(:@dsl_specs_run, true)
             end
             self.instance_exec(*args, &blk)
