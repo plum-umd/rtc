@@ -1,6 +1,4 @@
 module Dsl
-  @@method_prefix = "__rtc_old__"
-
   class Conditions
     attr_reader :pre_conds, :pre_tasks, :post_conds, :post_tasks, :included_specs
 
@@ -66,8 +64,13 @@ module Dsl
       raise Exception, "method #{method} not defined on #{name}"
     end
 
-    old_method = @@method_prefix + method.to_s
-    old_method = old_method.to_sym
+    if instance_variable_get(:@dsl_gensym)
+    then gensym = instance_variable_get(:@dsl_gensym) + 1
+    else gensym = 0
+    end
+    instance_variable_set(:@dsl_gensym, gensym)
+
+    old_method = "__rtc_old_#{method}#{gensym}"
 
     conds = Conditions.new
     conds.instance_eval(&block)
@@ -84,14 +87,9 @@ module Dsl
         }
         if blk and conds.dsl
           new_blk = Proc.new do |*args|
-            unless self.instance_variable_get(:@dsl_specs_run)
-              ec = class << self; self; end
-              unless self.is_a?(Dsl)
-                ec.extend Dsl
-              end
-              conds.dsl.each { |b| ec.class_exec(*args, &b) }
-              self.instance_variable_set(:@dsl_specs_run, true)
-            end
+            ec = class << self; self; end
+            ec.extend Dsl unless self.is_a?(Dsl)
+            conds.dsl.each { |b| ec.class_exec(*args, &b) }
             self.instance_exec(*args, &blk)
           end
           r = send old_method, *args, &new_blk
