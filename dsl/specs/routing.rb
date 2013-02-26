@@ -21,27 +21,31 @@ class ActionDispatch::Routing::RouteSet
       end
     end
   end
+  
+  resources_spec = Dsl.create_spec do
+    dsl do
+      spec :resources do
+        include_spec resources_spec
+        include_spec get_post_spec
+        include_spec logging_spec, "resources"
+      end
+      spec :collection do
+        include_spec logging_spec, "collection"
+        include_spec get_post_spec
+      end
+      spec :member do
+        include_spec logging_spec, "member"
+        include_spec get_post_spec
+      end
+    end
+  end
 
   spec :draw do
     include_spec logging_spec, "draw"
+    include_spec resources_spec
     dsl do
-      spec :resources do
-        include_spec logging_spec, "resources"
-        include_spec get_post_spec
-        dsl do
-          spec :collection do
-            include_spec logging_spec, "collection"
-            include_spec get_post_spec
-          end
-          spec :member do
-            include_spec logging_spec, "member"
-            include_spec get_post_spec
-          end
-        end
-      end
       spec :namespace do
-        include_spec logging_spec, "namespace"
-        include_spec get_post_spec
+        include_spec resources_spec
       end
     end
   end
