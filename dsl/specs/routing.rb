@@ -1,6 +1,28 @@
+module Kernel
+  def qualified_const_get(str)
+    path = str.to_s.split('::')
+    from_root = path[0].empty?
+    if from_root
+      from_root = []
+      path = path[1..-1]
+    else
+      start_ns = ((Class === self)||(Module === self)) ? self : self.class
+      from_root = start_ns.to_s.split('::')
+    end
+    until from_root.empty?
+      begin
+        return (from_root+path).inject(Object) { |ns,name| ns.const_get(name) }
+      rescue NameError
+        from_root.delete_at(-1)
+      end
+    end
+    path.inject(Object) { |ns,name| ns.const_get(name) }
+  end
+end
+
 module RoutingHelper
   def self.get_class(name)
-    Module.const_get name
+    qualified_const_get name
   end
 
   def self.class_exists?(name)
@@ -8,6 +30,31 @@ module RoutingHelper
     c.is_a? Class
   rescue NameError
     false
+  end
+
+  def self.use_namespace(ns, name)
+    unless not ns or ns.empty?
+      ns.join("::") << "::" << name
+    else
+      name
+    end
+  end
+
+  def self.extend_namespace(ns, name)
+    if ns
+      ns.push(name)
+    else
+      [name]
+    end
+  end
+
+  def self.retract_namespace(ns, name)
+    raise Exception, "Expected namespace, got #{ns}" unless ns
+    last = ns.pop
+    # For some reason this check seems to be failing comparing equal symbols
+    # on the talks routing table?!
+#    raise Exception, "Last item #{last} didn't match #{name}" unless ns == name
+    ns
   end
 end
 
@@ -24,7 +71,8 @@ class ActionDispatch::Routing::RouteSet
     end
   end
   
-  get_post_spec = Dsl.create_spec do
+  spec :draw do
+    include_spec logging_spec, "draw"
     dsl do
       spec :get do
         include_spec logging_spec, "get"
@@ -32,26 +80,26 @@ class ActionDispatch::Routing::RouteSet
       spec :post do
         include_spec logging_spec, "post"
       end
-    end
-  end
-  
-  resources_spec = Dsl.create_spec do
-    dsl do
+      spec :namespace do
+        pre_task do |name|
+          @dsl_namespace = RoutingHelper.extend_namespace(@dsl_namespace,name)
+        end
+        post_task do |ret, name|
+          @dsl_namespace = RoutingHelper.retract_namespace(@dsl_namespace,name)
+        end
+      end
       spec :resources do
         pre_cond do |*args|
           args.all? do |a|
             if a.is_a? String or a.is_a? Symbol
             then 
-              cname = "#{a.capitalize}Controller"
+              cname = RoutingHelper.use_namespace @dsl_namespace, "#{a.capitalize}Controller"
               p "Checking for class #{cname}"
               RoutingHelper.class_exists? cname
             else true
             end
           end
         end
-        include_spec resources_spec
-        include_spec get_post_spec
-        include_spec logging_spec, "resources"
         # post_cond do |ret, *args|
         #   args.all? do |a|
         #     if a.is_a? String or a.is_a? Symbol
@@ -62,6 +110,7 @@ class ActionDispatch::Routing::RouteSet
         #     end
         #   end
         # end
+        include_spec logging_spec, "resources"
       end
       spec :resource do
         # pre_cond do |*args|
@@ -75,27 +124,13 @@ class ActionDispatch::Routing::RouteSet
         #     end
         #   end
         # end
-        include_spec resources_spec
         include_spec logging_spec, "resource"
-        include_spec get_post_spec
       end
       spec :collection do
         include_spec logging_spec, "collection"
-        include_spec get_post_spec
       end
       spec :member do
         include_spec logging_spec, "member"
-        include_spec get_post_spec
-      end
-    end
-  end
-
-  spec :draw do
-    include_spec logging_spec, "draw"
-    include_spec resources_spec
-    dsl do
-      spec :namespace do
-        include_spec resources_spec
       end
     end
   end
