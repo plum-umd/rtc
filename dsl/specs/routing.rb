@@ -74,15 +74,8 @@ class ActionDispatch::Routing::RouteSet
     include_spec logging_spec, "draw"
     dsl do
       def check_resources(name, options)
-        if options[:controller]
-        then
-          cargs = options[:controller].split("/")
-          name = cargs.pop
-          cargs.map! { |s| s.camelize }
-          ns = @dsl_namespace + cargs
-        else ns = @dsl_namespace
-        end
-        RoutingHelper.class_exists? ns, "#{name.camelize}Controller"
+        name = options[:controller] if options[:controller]
+        RoutingHelper.class_exists? @dsl_namespace, "#{name.camelize}Controller"
       end
 
       spec :get do
