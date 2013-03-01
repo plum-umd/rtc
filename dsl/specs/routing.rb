@@ -36,7 +36,7 @@ module RoutingHelper
 
   def self.use_namespace(ns, name)
     unless not ns or ns.empty?
-      ns.map {|a| a.capitalize }.join("::") << "::" << name
+      ns.join("::") << "::" << name
     else
       name
     end
@@ -44,9 +44,8 @@ module RoutingHelper
 
   def self.extend_namespace(ns, name)
     if ns
-      ns.push(name)
-    else
-      [name]
+    then ns.push(name)
+    else [name]
     end
   end
 
@@ -79,10 +78,11 @@ class ActionDispatch::Routing::RouteSet
         then
           cargs = options[:controller].split("/")
           name = cargs.pop
+          cargs.map! { |s| s.camelize }
           ns = @dsl_namespace + cargs
         else ns = @dsl_namespace
         end
-        RoutingHelper.class_exists? ns, "#{name.capitalize}Controller"
+        RoutingHelper.class_exists? ns, "#{name.camelize}Controller"
       end
 
       spec :get do
@@ -93,16 +93,16 @@ class ActionDispatch::Routing::RouteSet
       end
       spec :namespace do
         pre_task do |name|
-          @dsl_namespace = RoutingHelper.extend_namespace(@dsl_namespace,name)
+          @dsl_namespace = RoutingHelper.extend_namespace(@dsl_namespace,name.to_s.camelize)
         end
         post_task do |ret, name|
-          @dsl_namespace = RoutingHelper.retract_namespace(@dsl_namespace,name)
+          @dsl_namespace = RoutingHelper.retract_namespace(@dsl_namespace,name.to_s.camelize)
         end
       end
       spec :resources do
         pre_cond do |*args, options|
           args.all? do |a|
-            check_resources a, options
+            check_resources a.to_s, options
           end
         end
         # post_cond do |ret, *args|
@@ -120,7 +120,7 @@ class ActionDispatch::Routing::RouteSet
       spec :resource do
         pre_cond do |*args, options|
           args.all? do |a|
-            a = a.to_s + "s"
+            a = a.to_s.pluralize
             check_resources a, options
           end
         end
