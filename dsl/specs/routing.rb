@@ -36,7 +36,7 @@ module RoutingHelper
 
   def self.use_namespace(ns, name)
     unless not ns or ns.empty?
-      ns.join("::") << "::" << name
+      ns.map {|a| a.capitalize }.join("::") << "::" << name
     else
       name
     end
@@ -79,7 +79,6 @@ class ActionDispatch::Routing::RouteSet
         then
           cargs = options[:controller].split("/")
           name = cargs.pop
-          cargs.map! { |a| a.capitalize }
           ns = @dsl_namespace + cargs
         else ns = @dsl_namespace
         end
