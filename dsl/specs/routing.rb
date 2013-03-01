@@ -113,17 +113,21 @@ class ActionDispatch::Routing::RouteSet
         include_spec logging_spec, "resources"
       end
       spec :resource do
-        # pre_cond do |*args|
-        #   args.all? do |a|
-        #     if a.is_a? String or a.is_a? Symbol
-        #     then 
-        #       cname = "#{a.capitalize}sController"
-        #       p "Checking for class #{cname}"
-        #       RoutingHelper.class_exists? cname
-        #     else true
-        #     end
-        #   end
-        # end
+        pre_cond do |*args, options|
+          ret = true
+          unless options[:controller]
+            ret = args.all? do |a|
+              if a.is_a? String or a.is_a? Symbol
+              then
+                cname = "#{a.capitalize}sController"
+                p "Checking for class #{cname}"
+                RoutingHelper.class_exists? cname
+              else true
+              end
+            end
+          end
+          ret
+        end
         include_spec logging_spec, "resource"
       end
       spec :collection do
