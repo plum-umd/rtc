@@ -53,9 +53,7 @@ module RoutingHelper
   def self.retract_namespace(ns, name)
     raise Exception, "Expected namespace, got #{ns}" unless ns
     last = ns.pop
-    # For some reason this check seems to be failing comparing equal symbols
-    # on the talks routing table?!
-#    raise Exception, "Last item #{last} didn't match #{name}" unless ns == name
+    raise Exception, "Last item #{last} didn't match #{name}" unless last == name
     ns
   end
 end
