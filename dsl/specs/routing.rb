@@ -21,12 +21,12 @@ module Kernel
 end
 
 module RoutingHelper
-  def self.get_class(name)
-    qualified_const_get name
+  def self.get_class(ns, name)
+    qualified_const_get (use_namespace ns, name)
   end
 
-  def self.class_exists?(name)
-    c = get_class name
+  def self.class_exists?(ns, name)
+    c = get_class ns, name
     c.is_a? Class
   rescue NameError
     false
@@ -92,10 +92,7 @@ class ActionDispatch::Routing::RouteSet
         pre_cond do |*args|
           args.all? do |a|
             if a.is_a? String or a.is_a? Symbol
-            then 
-              cname = RoutingHelper.use_namespace @dsl_namespace, "#{a.capitalize}Controller"
-              p "Checking for class #{cname}"
-              RoutingHelper.class_exists? cname
+            then RoutingHelper.class_exists? @dsl_namespace, "#{a.capitalize}Controller"
             else true
             end
           end
@@ -118,10 +115,7 @@ class ActionDispatch::Routing::RouteSet
           unless options[:controller]
             ret = args.all? do |a|
               if a.is_a? String or a.is_a? Symbol
-              then
-                cname = "#{a.capitalize}sController"
-                p "Checking for class #{cname}"
-                RoutingHelper.class_exists? cname
+              then RoutingHelper.class_exists? @dsl_namespace, "#{a.capitalize}sController"
               else true
               end
             end
