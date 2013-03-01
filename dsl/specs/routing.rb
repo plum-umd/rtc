@@ -22,7 +22,9 @@ end
 
 module RoutingHelper
   def self.get_class(ns, name)
-    qualified_const_get (use_namespace ns, name)
+    qualified_name = use_namespace ns, name
+    p "Getting class #{qualified_name}"
+    qualified_const_get qualified_name
   end
 
   def self.class_exists?(ns, name)
@@ -74,6 +76,18 @@ class ActionDispatch::Routing::RouteSet
   spec :draw do
     include_spec logging_spec, "draw"
     dsl do
+      def check_resources(name, options)
+        if options[:controller]
+        then
+          cargs = options[:controller].split("/")
+          name = cargs.pop
+          cargs.map! { |a| a.capitalize }
+          ns = @dsl_namespace + cargs
+        else ns = @dsl_namespace
+        end
+        RoutingHelper.class_exists? ns, "#{name.capitalize}Controller"
+      end
+
       spec :get do
         include_spec logging_spec, "get"
       end
@@ -89,12 +103,9 @@ class ActionDispatch::Routing::RouteSet
         end
       end
       spec :resources do
-        pre_cond do |*args|
+        pre_cond do |*args, options|
           args.all? do |a|
-            if a.is_a? String or a.is_a? Symbol
-            then RoutingHelper.class_exists? @dsl_namespace, "#{a.capitalize}Controller"
-            else true
-            end
+            check_resources a, options
           end
         end
         # post_cond do |ret, *args|
@@ -111,16 +122,10 @@ class ActionDispatch::Routing::RouteSet
       end
       spec :resource do
         pre_cond do |*args, options|
-          ret = true
-          unless options[:controller]
-            ret = args.all? do |a|
-              if a.is_a? String or a.is_a? Symbol
-              then RoutingHelper.class_exists? @dsl_namespace, "#{a.capitalize}sController"
-              else true
-              end
-            end
+          args.all? do |a|
+            a = a.to_s + "s"
+            check_resources a, options
           end
-          ret
         end
         include_spec logging_spec, "resource"
       end
