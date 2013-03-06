@@ -14,10 +14,11 @@ module ActionController
 
     spec :process_action do
       pre_cond do
-        $rtc_pff_called or
-          ((not $rtc_pff_called) and
-           CSRFHelper.include2?($rtf_pff_meta, [self.class, :except]) and
-           CSRFHelper.special_include?($rtc_pff_meta[self.class][:except], self.action_name.to_sym))
+        rpc = Dsl.state[:rtc_pff_called]
+        rpm = Dsl.state[:rtc_pff_meta]
+        rpc or (not rpc and
+           CSRFHelper.include2?(rpm, [self.class, :except]) and
+           CSRFHelper.special_include?(rpm[self.class][:except], self.action_name.to_sym))
       end
 #      Don't we need to reset it eventually?  Maybe something like:
 #
@@ -37,15 +38,15 @@ module ActionController
 
       spec :protect_from_forgery do
         pre_task do |options|
-          $rtc_pff_meta = {} if not $rtc_pff_meta
-          $rtc_pff_meta[self] = options
+          Dsl.state[:rtc_pff_meta] = {} if not Dsl.state[:rtc_pff_meta]
+          Dsl.state[:rtc_pff_meta][self] = options
         end
       end
     end
     
     spec :verify_authenticity_token do
       pre_task do
-        $rtc_pff_called = true
+        Dsl.state[:rtc_pff_called] = true
       end
     end
   end

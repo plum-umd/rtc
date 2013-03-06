@@ -1,4 +1,10 @@
 module Dsl
+  @state = {}
+
+  def self.state
+    @state
+  end
+
   class Conditions
     attr_reader :pre_conds, :pre_tasks, :post_conds, :post_tasks, :included_specs
 
@@ -72,8 +78,8 @@ module Dsl
         }
         if blk and conds.dsl
           new_blk = Proc.new do |*args|
-            ec = class << self; self; end
-            ec.extend Dsl unless self.is_a?(Dsl)
+            ec = singleton_class
+            ec.extend Dsl
             conds.dsl.each { |b| ec.class_exec(*args, &b) }
             self.instance_exec(*args, &blk)
           end

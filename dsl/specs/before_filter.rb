@@ -12,9 +12,9 @@ module AbstractController::Callbacks::ClassMethods
   
   spec :before_filter do
     pre_task do |*filters|
-      $before_filter_methods = [] if not $before_filter_methods
+      Dsl.state[:before_filter_methods] = [] if not Dsl.state[:before_filter_methods]
       
-      $before_filter_methods.push([filters, self])
+      Dsl.state[:before_filter_methods].push([filters, self])
     end
   end
 end
@@ -26,9 +26,8 @@ class ActionDispatch::Routing::RouteSet::Dispatcher
     post_cond do |controller|
       methods = []
       
-      $before_filter_methods and $before_filter_methods.each {|e|
-        methods.push(e) if e[1] == controller
-      }
+      bfm = Dsl.state[:before_filter_methods]
+      bfm and bfm.each {|e| methods.push(e) if e[1] == controller }
       
       methods.all? { |e|
         options = e[0]
