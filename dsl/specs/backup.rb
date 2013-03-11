@@ -1,3 +1,9 @@
+module Kernel
+  def implies(test)
+    test ? yield : true
+  end
+end
+
 module Backup
   class Model
     extend Dsl
@@ -8,8 +14,7 @@ module Backup
           post_cond do |a|
             db = a[0]
 
-            if db.class == Backup::Database::PostgreSQL
-              postgres_succ = true
+            implies (db.class == Backup::Database::PostgreSQL) do
               n = 0 - "pg_dump".length - 1
               psql = db.pg_dump_utility[0..n] + "psql"
 
@@ -22,11 +27,8 @@ module Backup
               pipeline << cmd
               pipeline.run
 
-              postgres_succ = false if not pipeline.success?
+              pipeline.success?
             end
-
-            (db.class == Backup::Database::PostgreSQL and postgres_succ) or
-              db.class != Backup::Database::PostgreSQL
           end          
         end
 
@@ -34,19 +36,17 @@ module Backup
           post_cond do |a|
             sw = a[0]
 
-            if sw.class == Backup::Storage::SFTP
-              sftp_connect_ok = true
-
+            implies (sw.class == Backup::Storage::SFTP) do
               begin
+                # Make sure to pass a block so that the session is terminated
+                # automatically.
                 Net::SFTP.start(sw.ip, sw.username, 
-                                :password => sw.password, :port => sw.port) 
+                                :password => sw.password, :port => sw.port) {}
+                true
               rescue
-                sftp_connect_ok = false
+                false
               end
             end
-
-            (sw.class == Backup::Storage::SFTP and sftp_connect_ok) or
-              sw.class != Backup::Storage::SFTP
           end
         end
       end
@@ -84,11 +84,9 @@ module Backup
             # if dir path does not exist, backup will create it later
             
             pre_cond do |path|
-              if File.exist?(path)
+              implies File.exist?(path) do
                 # make sure the path is not an exisiting regular file
                 File.directory?(path) and File.writable?(path) 
-              else
-                true
               end
             end
           end
