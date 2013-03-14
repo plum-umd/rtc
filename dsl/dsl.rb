@@ -1,4 +1,7 @@
 module Dsl
+  class PreConditionFailure < Exception; end
+  class PostConditionFailure < Exception; end
+
   @state = {}
 
   def self.state
@@ -25,16 +28,16 @@ module Dsl
       @post_tasks.push(block)
     end
 
-    def post_cond(&block)
-      @post_conds.push(block)
+    def post_cond(desc = "", &block)
+      @post_conds.push([desc, block])
     end
     
     def pre_task(&block)
       @pre_tasks.push(block)
     end
 
-    def pre_cond(&block)
-      @pre_conds.push(block)
+    def pre_cond(desc = "", &block)
+      @pre_conds.push([desc, block])
     end
 
     def dsl(&block)
@@ -52,7 +55,7 @@ module Dsl
 
   def spec(method, &block)
     unless method_defined? method or private_instance_methods.include? method
-      raise Exception, "method #{method} not defined on #{name}"
+      raise NoMethodError, "method #{method} not defined on #{name}"
     end
 
     if instance_variable_get(:@dsl_gensym)
@@ -73,8 +76,8 @@ module Dsl
         conds.pre_tasks.each { |b|
           self.instance_exec(*args, &b)
         }
-        conds.pre_conds.each { |b|
-          raise Exception, "pre condition not met" unless self.instance_exec(*args, &b)
+        conds.pre_conds.each { |desc, b|
+          raise PreConditionFailure, desc unless self.instance_exec(*args, &b)
         }
         if blk and conds.dsl
           new_blk = Proc.new do |*args|
@@ -90,8 +93,8 @@ module Dsl
         conds.post_tasks.each { |b|
           self.instance_exec(r, *args, &b)
         }
-        conds.post_conds.each { |b|
-          raise Exception, "post condition not met" unless self.instance_exec(r, *args, &b)
+        conds.post_conds.each { |desc, b|
+          raise PostConditionFailure, desc unless self.instance_exec(r, *args, &b)
         }
         r
       end
