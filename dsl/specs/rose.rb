@@ -93,15 +93,14 @@ class << Rose
               end              
             end
 
-            pre_cond "hash key must be a write accessor" do |*args|            
+            pre_cond "hash key must be a Struct field" do |*args|            
               name = Dsl.state[:__rtc_rose_name]
               cls = Dsl.state[:__rtc_rose_class]
 
               if cls
                 if args[0].class == Hash
                   k = args[0].to_a[0][0]
-                  s = k.to_s + '='
-                  cls.instance_methods.include?(s.to_sym)
+                  cls.new.members.include?(k)
                 else
                   true
                 end
