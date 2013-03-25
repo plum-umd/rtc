@@ -20,13 +20,10 @@ module ActionController
            CSRFHelper.include2?(rpm, [self.class, :except]) and
            CSRFHelper.special_include?(rpm[self.class][:except], self.action_name.to_sym))
       end
-#      Don't we need to reset it eventually?  Maybe something like:
-#
-#      post_task do
-#        $rtc_pff_called = false
-#      end
-#
-#      so that the next time process_action is called, we ensure another v_a_t call was made?
+
+      post_task do
+        Dsl.state[:rtc_pff_called] = false
+      end
     end
   end
 
