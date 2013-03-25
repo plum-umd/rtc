@@ -7,7 +7,7 @@ class << HashConverter
 
   spec :convert do
     pre_task do |arg|
-      @Dsl.state[:hashconv] = arg
+      Dsl.state[:hashconv] = arg
     end
 
     dsl do
@@ -18,7 +18,7 @@ class << HashConverter
         end
 
         pre_cond do |arg|
-          x = @Dsl.state[:hashconv]
+          x = Dsl.state[:hashconv]
 
           @spec_path.all? { |i|
             x.keys.include?(i)
@@ -33,7 +33,7 @@ class << HashConverter
 
       spec :map do
         pre_cond do |arg1, arg2, arg3|
-          x = @Dsl.state[:hashconv]
+          x = Dsl.state[:hashconv]
           @spec_path.each {|i| x = x[i]}
 
           arg1.gsub(KEY_REGEX).all? {|v|
