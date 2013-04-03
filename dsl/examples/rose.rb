@@ -2,29 +2,37 @@
 
 require 'rose'
 require 'set'
+require 'dsl'
+
+module Kernel
+  def implies(test)
+    test ? yield : true
+  end
+end
+
+def get_col_names(obj) 
+  cols = []
+  obj.row.attributes.each {|n| cols.push(n.column_name)}
+  cols
+end
 
 module Rose
   class Shell
     extend Dsl
 
     spec :photosynthesize do
-      pre_cond "ID or column name not valid" do |*args|
-        lst = args[0]
-        h = args[1]
+      pre_cond "column name valid" do |*args|
+        # args[0] is the list of objects
 
-        if h.keys.include?(:with)
-          h[:with].all? {|k, v|
+        implies args[1].keys.include?(:with) do
+          args[1][:with].all? {|k, v|
+            cols = get_col_names(self)
             c = v.to_a[0][0]
-            name = Dsl.state[:__rtc_rose_name]
-            Dsl.state[:__rtc_rose_meta][name][:cols].include?(c)
-            k.to_i < lst.size and Dsl.state[:__rtc_rose_meta][name][:cols].include?(c)
+            k.to_i < args[0].size and cols.include?(c)
           }
-        else
-          true
         end
       end
     end
-
   end
 end
 
@@ -33,31 +41,27 @@ class << Rose
 
   check_col_spec = Dsl.create_spec do |method_name|
     pre_cond "Column name must have been defined in Rose.make" do |col|
-      name = Dsl.state[:__rtc_rose_name]
-      cols = Dsl.state[:__rtc_rose_meta][name][:cols]
-      cols.include?(col)       
+      get_col_names(self).include?(col)       
     end
   end
 
   spec :make do 
     pre_task do |name, options|
-      Dsl.state[:__rtc_rose_name] = name
+      Dsl.state[:__rtc_rose_name] = name # current name in Rose.make
       Dsl.state[:__rtc_rose_meta] ||= {}
-      Dsl.state[:__rtc_rose_meta][name] ||= {}
+      Dsl.state[:__rtc_rose_meta][name] ||= {} # will hold meta info for name
 
       if options.class == Hash and options.keys.include?(:class)
         Dsl.state[:__rtc_rose_meta][name][:class] = options[:class]
-        Dsl.state[:__rtc_rose_class] = options[:class]
+        Dsl.state[:__rtc_rose_class] = options[:class] # current class
       else
-        Dsl.state[:__rtc_rose_class] = nil
+        Dsl.state[:__rtc_rose_class] = nil # current class
       end
     end
 
     pre_cond "argument class must be < Struct" do |*args, options|
-      if options.class == Hash and options.keys.include?(:class)
+      implies (options.class == Hash and options.keys.include?(:class)) do
         options[:class].ancestors.include?(Struct)
-      else
-        true
       end
     end
 
@@ -81,39 +85,16 @@ class << Rose
       spec :rows do
         dsl do
           spec :column do 
-            pre_task do |arg|
-              name = Dsl.state[:__rtc_rose_name]
-              Dsl.state[:__rtc_rose_meta][name][:cols] ||= Set.new
-              
-              if arg.class == Hash
-                v = arg.to_a[0][1]
-                Dsl.state[:__rtc_rose_meta][name][:cols].add(v)
-              else
-                Dsl.state[:__rtc_rose_meta][name][:cols].add(arg)
-              end              
-            end
-
             pre_cond "hash key must be a Struct field" do |*args|            
-              name = Dsl.state[:__rtc_rose_name]
               cls = Dsl.state[:__rtc_rose_class]
 
-              if cls
-                if args[0].class == Hash
-                  k = args[0].to_a[0][0]
-                  cls.new.members.include?(k)
-                else
-                  true
-                end
-              else
-                true
+              implies (cls and (args[0].class == Hash)) do
+                cls.members.include?(args[0].to_a[0][0])
               end
             end
           end
         end
       end
-
-
     end
-
   end
 end
