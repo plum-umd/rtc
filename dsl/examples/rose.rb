@@ -11,9 +11,7 @@ module Kernel
 end
 
 def get_col_names(obj) 
-  cols = []
-  obj.row.attributes.each {|n| cols.push(n.column_name)}
-  cols
+  obj.row.attributes.map {|n| n.column_name}
 end
 
 module Rose
@@ -21,7 +19,7 @@ module Rose
     extend Dsl
 
     spec :photosynthesize do
-      pre_cond "column name valid" do |*args|
+      pre_cond "column name must be valid" do |*args|
         # args[0] is the list of objects
 
         implies args[1].keys.include?(:with) do
@@ -48,11 +46,8 @@ class << Rose
   spec :make do 
     pre_task do |name, options|
       Dsl.state[:__rtc_rose_name] = name # current name in Rose.make
-      Dsl.state[:__rtc_rose_meta] ||= {}
-      Dsl.state[:__rtc_rose_meta][name] ||= {} # will hold meta info for name
 
       if options.class == Hash and options.keys.include?(:class)
-        Dsl.state[:__rtc_rose_meta][name][:class] = options[:class]
         Dsl.state[:__rtc_rose_class] = options[:class] # current class
       else
         Dsl.state[:__rtc_rose_class] = nil # current class
