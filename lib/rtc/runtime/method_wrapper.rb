@@ -136,7 +136,10 @@ METHOD_TEMPLATE
       else
         class_name = class_obj.name
       end
+
+      class_name.gsub!('::', '_')
       mangled_name = self.mangle_name(method_name, class_name)
+
       if is_class
         invokee_fetch = "new_invokee = self"
       else
