@@ -15,10 +15,13 @@ module Rtc::Types
         def self.of(types)
             return types[0] if types.size == 1
             pairs = types.product(types)
+
+
             pairs.each do |t, u|
+            puts "T = #{t.inspect}  U = #{u.inspect}   #{t <= u}  #{u <= t}   #{t.equal?(u)}"
                 # pairs includes [t, t] and [u, u], and since t <= t, skip
                 # these.
-                next if t.equal?(u)
+                next if t <= u and u <= t
                 # pairs includes [t, u] and [u, t], so we don't do symmetric
                 # checks.
                 if t <= u
