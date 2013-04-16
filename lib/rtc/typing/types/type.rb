@@ -36,7 +36,7 @@ module Rtc::Types
               end
               end
             when IntersectionType
-              others.types.any? do |a|
+              other.types.any? do |a|
               self <= a
             end
             when TypeVariable
