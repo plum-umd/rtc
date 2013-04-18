@@ -9,13 +9,14 @@ module Dsl
   end
 
   class Conditions
-    attr_reader :pre_conds, :pre_tasks, :post_conds, :post_tasks, :included_specs
+    attr_reader :pre_conds, :pre_tasks, :post_conds, :post_tasks, :included_specs, :action
 
     def initialize
       @pre_conds = []
       @pre_tasks = []
       @post_conds = []
       @post_tasks = []
+      @action = nil
       @included_specs = []
       @dsl = []
     end
@@ -38,6 +39,11 @@ module Dsl
 
     def pre_cond(desc = "", &block)
       @pre_conds.push([desc, block])
+    end
+
+    def action(&block)
+      raise RuntimeException, "Action already defined for spec" if @action
+      @action = block
     end
 
     def dsl(&block)
@@ -70,7 +76,7 @@ module Dsl
     conds.instance_eval(&block)
 
     class_eval do
-      alias_method old_method, method
+      alias_method old_method, method if conds.actions.empty?
 
       define_method(method) do |*args, &blk|
         conds.pre_tasks.each { |b|
@@ -86,9 +92,15 @@ module Dsl
             conds.dsl.each { |b| ec.class_exec(*args, &b) }
             self.instance_exec(*args, &blk)
           end
-          r = send old_method, *args, &new_blk
-        else
+          if conds.actions.empty?
+            r = send old_method, *args, &new_blk
+          else
+            r = conds.action.call(*args, &new_blk)
+          end
+        elsif conds.actions.empty?
           r = send old_method, *args, &blk
+        else
+          r = conds.action.call(*args, &blk)
         end
         conds.post_tasks.each { |b|
           self.instance_exec(r, *args, &b)
