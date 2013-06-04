@@ -1,8 +1,12 @@
 class MethodProxy
-  def initialize
+  @@gensym = 0
+
+  def initialize(kls, mname)
     @pres = []
     @posts = []
     @action = nil
+    @class = kls
+    @mname = mname
   end
 
   def action(&blk)
@@ -17,13 +21,16 @@ class MethodProxy
     @posts.unshift(blk)
   end
 
-  def apply(cls, mname, gensym = 0)
+  def apply
+    gensym = @@gensym
+    @@gensym = gensym + 1
+    mname = @mname
     old_mname = "__rtc_old_#{mname}#{gensym}"
     action = @action
     pres = @pres
     posts = @posts
 
-    cls.class_eval do
+    @class.class_eval do
       alias_method old_mname, mname unless action
 
       define_method(mname) do |*args, &blk|
@@ -62,9 +69,9 @@ module Dsl
     end
     instance_variable_set(:@dsl_gensym, gensym)
 
-    proxy = MethodProxy.new
+    proxy = MethodProxy.new(self, method)
     proxy.instance_eval(&block)
-    proxy.apply(self, method, gensym)
+    proxy.apply
   end
 end
 
