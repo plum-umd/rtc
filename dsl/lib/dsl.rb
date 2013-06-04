@@ -38,14 +38,15 @@ class MethodProxy
           instance_exec(*args, &b)
         end
         *new_args, blk = new_args if blk
-        if conds.action
-          r = conds.action.call(*new_args, &blk)
+        if action
+          r = action.call(*new_args, &blk)
         else
           r = send old_method, *new_args, &blk
         end
         new_r, _ = posts.reduce([r] + new_args + [blk]) do |args, b|
           instance_exec(*args, &b)
         end
+        new_r
       end
     end
   end
