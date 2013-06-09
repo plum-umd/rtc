@@ -82,6 +82,25 @@ module Dsl
       end
     end
 
+
+    # Since we're describing an existing method, not creating a new DSL,
+    # here we want the dsl keyword to just intercept the block and add
+    # our checks. We'll overwrite this functionality inside the entry version.
+    def dsl(&blk)
+      pre do |*args, &b|
+        if b
+          new_b = Proc.new do |*args|
+            ec = singleton_class
+            ec.extend Dsl
+            ec.class_eval &blk
+            instance_exec(*args, &b)
+          end
+          args + [new_b]
+        else args
+        end
+      end
+    end
+
     private
 
     def gensym
