@@ -181,7 +181,7 @@ module Dsl
     Lang.new(self).spec(mname, &blk)
   end
 
-  def create_spec(&b)
+  def self.create_spec(&b)
     Proc.new &b
   end
 end
