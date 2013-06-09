@@ -9,6 +9,10 @@ module Dsl
       end
     end
 
+    def include_spec(blk, *args)
+      instance_exec(*args, &blk)
+    end
+
     # Takes a block that transforms the incoming arguments
     # into (possibly) new arguments to be fed to the method.
     def pre(&b)
@@ -156,5 +160,9 @@ module Dsl
 
   def spec(mname, *args, &blk)
     Lang.new(self).spec(mname, &blk)
+  end
+
+  def create_spec(&b)
+    Proc.new &b
   end
 end
