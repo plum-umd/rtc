@@ -88,7 +88,8 @@ module Dsl
     # our checks. We'll overwrite this functionality inside the entry version.
     def dsl(&blk)
       pre do |*args, b|
-        if b
+        # Allow for methods that only sometimes take DSL blocks.
+        if b.is_a? Proc
           new_b = Proc.new do |*args|
             ec = singleton_class
             ec.extend Dsl
@@ -96,7 +97,7 @@ module Dsl
             instance_exec(*args, &b)
           end
           args + [new_b]
-        else args
+        else args + [b]
         end
       end
     end
