@@ -87,7 +87,7 @@ module Dsl
     # here we want the dsl keyword to just intercept the block and add
     # our checks. We'll overwrite this functionality inside the entry version.
     def dsl(&blk)
-      pre do |*args, &b|
+      pre do |*args, b|
         if b
           new_b = Proc.new do |*args|
             ec = singleton_class
