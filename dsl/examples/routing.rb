@@ -61,11 +61,11 @@ class ActionDispatch::Routing::RouteSet
   extend Dsl
 
   logging_spec = Dsl.create_spec do |name|
-    pre_task do
+    pre_task do |*args|
       p "Entering #{name} on #{self}"
     end
     
-    post_task do
+    post_task do |*args|
       p "Exiting #{name} on #{self}"
     end
   end

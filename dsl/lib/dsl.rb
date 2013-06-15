@@ -18,13 +18,19 @@ module Dsl
     def pre(&b)
       mname = @mname
       old_mname = "__dsl_old_#{mname}_#{gensym}"
+      pre_name = define_method_gensym("pre", &b)
 
       @class.class_eval do
         alias_method old_mname, mname
 
         define_method mname do |*args, &blk|
-          *new_args, new_blk = instance_exec(*args, blk, &b)
-          send old_mname, *new_args, &new_blk
+          if blk
+            *new_args, new_blk = send pre_name, *args, &blk
+            send old_mname, *new_args, &new_blk
+          else
+            *new_args = send pre_name, *args
+            send old_mname, *new_args
+          end
         end
       end
     end
@@ -35,13 +41,14 @@ module Dsl
     def post(&b)
       mname = @mname
       old_mname = "__dsl_old_#{mname}_#{gensym}"
+      post_name = define_method_gensym("post", &b)
 
       @class.class_eval do
         alias_method old_mname, mname
 
         define_method mname do |*args, &blk|
           res = send old_mname, *args, &blk
-          instance_exec(res, *args, blk, &b)
+          send post_name, res, *args, &blk
         end
       end
     end
@@ -51,15 +58,25 @@ module Dsl
     # original arguments or return value.
 
     def pre_task(&b)
-      pre do |*args|
-        instance_exec(*args, &b)
-        args
+      pre_task_name = define_method_gensym("pre_task", &b)
+
+      mname = @mname
+
+      pre do |*args, &blk|
+        send pre_task_name, *args, &blk
+        if blk
+          args + [blk]
+        else
+          args
+        end
       end
     end
 
     def post_task(&b)
-      post do |r, *args|
-        instance_exec(r, *args, &b)
+      post_task_name = define_method_gensym("post_task", &b)
+
+      post do |r, *args, &blk|
+        send post_task_name, r, *args, &blk
         r
       end
     end
@@ -71,14 +88,18 @@ module Dsl
     # the block return and error if the block returns false/nil.
 
     def pre_cond(desc = "", &b)
-      pre_task do |*args|
-        raise PreConditionFailure, desc unless instance_exec(*args, &b)
+      pre_cond_name = define_method_gensym("pre_cond", &b)
+
+      pre_task do |*args, &blk|
+        raise PreConditionFailure, desc unless send pre_cond_name, *args, &blk
       end
     end
 
     def post_cond(desc = "", &b)
-      post_task do |r, *args|
-        raise PostConditionFailure, desc unless instance_exec(r, *args, &b)
+      post_cond_name = define_method_gensym("post_cond", &b)
+
+      post_task do |r, *args, &blk|
+        raise PostConditionFailure, desc unless send post_cond_name, r, *args, &blk
       end
     end
 
@@ -87,9 +108,9 @@ module Dsl
     # here we want the dsl keyword to just intercept the block and add
     # our checks. We'll overwrite this functionality inside the entry version.
     def dsl(&blk)
-      pre do |*args, b|
+      pre do |*args, &b|
         # Allow for methods that only sometimes take DSL blocks.
-        if b.is_a? Proc
+        if b
           new_b = Proc.new do |*args|
             ec = singleton_class
             ec.extend Dsl
@@ -103,6 +124,16 @@ module Dsl
     end
 
     private
+
+    def define_method_gensym(desc="blk",&blk)
+      blk_name = "__dsl_#{desc}_#{gensym}"
+
+      @class.class_eval do
+        define_method blk_name, &blk
+      end
+
+      blk_name
+    end
 
     def gensym
       if @gensym
