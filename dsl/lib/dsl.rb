@@ -57,8 +57,6 @@ module Dsl
     def pre_task(&b)
       pre_task_name = define_method_gensym("pre_task", &b)
 
-      mname = @mname
-
       pre do |*args, &blk|
         send pre_task_name, *args, &blk
         { args: args, block: blk }
@@ -100,14 +98,13 @@ module Dsl
     # Since we're describing an existing method, not creating a new DSL,
     # here we want the dsl keyword to just intercept the block and add
     # our checks. We'll overwrite this functionality inside the entry version.
-    def dsl(&b)
+    def dsl(*a, &b)
       pre do |*args, &blk|
         # Allow for methods that only sometimes take DSL blocks.
         if blk
           new_blk = Proc.new do |*args|
             ec = singleton_class
-            ec.extend Dsl
-            ec.class_eval &b
+            Lang.new(ec).instance_exec(*a, &b)
             instance_exec(*args, &blk)
           end
           { args: args, block: new_blk }
