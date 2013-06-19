@@ -24,13 +24,10 @@ module Dsl
         alias_method old_mname, mname
 
         define_method mname do |*args, &blk|
-          if blk
-            *new_args, new_blk = send pre_name, *args, &blk
-            send old_mname, *new_args, &new_blk
-          else
-            *new_args = send pre_name, *args
-            send old_mname, *new_args
-          end
+          results = send pre_name, *args, &blk
+          new_args = results[:args]
+          new_blk = results[:block]
+          send old_mname, *new_args, &new_blk
         end
       end
     end
@@ -64,11 +61,7 @@ module Dsl
 
       pre do |*args, &blk|
         send pre_task_name, *args, &blk
-        if blk
-          args + [blk]
-        else
-          args
-        end
+        { args: args, block: blk }
       end
     end
 
@@ -107,18 +100,18 @@ module Dsl
     # Since we're describing an existing method, not creating a new DSL,
     # here we want the dsl keyword to just intercept the block and add
     # our checks. We'll overwrite this functionality inside the entry version.
-    def dsl(&blk)
-      pre do |*args, &b|
+    def dsl(&b)
+      pre do |*args, &blk|
         # Allow for methods that only sometimes take DSL blocks.
-        if b
-          new_b = Proc.new do |*args|
+        if blk
+          new_blk = Proc.new do |*args|
             ec = singleton_class
             ec.extend Dsl
-            ec.class_eval &blk
-            instance_exec(*args, &b)
+            ec.class_eval &b
+            instance_exec(*args, &blk)
           end
-          args + [new_b]
-        else args + [b]
+          { args: args, block: new_blk }
+        else { args: args, block: blk }
         end
       end
     end
