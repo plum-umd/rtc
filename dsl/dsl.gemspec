@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
   s.description = "DSL Specification Language"
   s.authors     = ["NA"]
   s.email       = 'NA'
-  s.files       = ["lib/dsl.rb", "lib/dsl/inspect.rb"]
+  s.files       = ["lib/dsl.rb", "lib/dsl/inspect.rb", "lib/dsl/infer.rb"]
   s.homepage    =
     'https://github.com/plum-umd/rtc'
 end
