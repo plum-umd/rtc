@@ -1,28 +1,13 @@
 require 'dsl'
 
 module Dsl::Infer
-  class Nominal
-    attr_reader :class
-
-    def initialize(cls)
-      @class = cls
-    end
-
-    def to_s
-      @class.to_s
-    end
-
+  class Typ
     def superclass
-      return nil if root?
-      Nominal.new(@class.superclass)
-    end
-
-    def ==(cls1)
-      @class == cls1.class
+      nil
     end
 
     def root?
-      @class == Object or @class == BasicObject
+      false
     end
 
     def <=(cls1)
@@ -42,7 +27,33 @@ module Dsl::Infer
     end
   end
 
-  class Arr < Nominal
+  class Nominal < Typ
+    attr_reader :cls
+
+    def initialize(cls)
+      @cls = cls
+    end
+
+    def to_s
+      cls.to_s
+    end
+
+    def superclass
+      return nil if root?
+      Nominal.new(cls.superclass)
+    end
+
+    def ==(cls1)
+      cls1.class == Nominal and
+        cls == cls1.cls
+    end
+
+    def root?
+      cls == Object or cls == BasicObject
+    end
+  end
+
+  class Arr < Typ
     attr_reader :base
 
     def initialize(base)
@@ -67,13 +78,9 @@ module Dsl::Infer
       return Nominal.new(Array) if base.root?
       Arr.new(base.superclass)
     end
-
-    def root?
-      false
-    end
   end
 
-  class Tup < Arr
+  class Tup < Typ
     attr_reader :elts
 
     def initialize(elts)
@@ -91,10 +98,6 @@ module Dsl::Infer
 
     def to_s
       "Tuple#{elts}"
-    end
-
-    def root?
-      false
     end
 
     def ==(cls1)
