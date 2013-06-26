@@ -195,12 +195,12 @@ module Dsl
     end
   end
 
-  def entry(mname,*args, &blk)
-    Lang.new(self).keyword(mname, &blk)
+  def entry(mname, *args, &blk)
+    Lang.new(self).keyword(mname, *args, &blk)
   end
 
   def spec(mname, *args, &blk)
-    Lang.new(self).spec(mname, &blk)
+    Lang.new(self).spec(mname, *args, &blk)
   end
 
   def self.create_spec(&b)
