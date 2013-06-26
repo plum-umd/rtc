@@ -114,104 +114,84 @@ module Dsl::Infer
 
   end
 
-  def self.name_args(cls, mname)
-    @arg_names = {} unless @arg_names
-    @arg_names[cls] = {} unless @arg_names[cls]
-    @arg_names[cls][mname] = cls.instance_method(mname).parameters
-  end
+  class Engine
+    def initialize(cls, mname)
+      @class = cls
+      @mname = mname
 
-  def self.add_args(cls, mname, *a, &b)
-    names = arg_names(cls, mname)
-    block_handled = false
-    names.each { |i|
-      case i[0]
+      @arg_names = cls.instance_method(mname).parameters
+      @args = {}
+      @returns = []
+    end
+
+    def add_args(*a, &b)
+      names = @arg_names
+      block_handled = false
+      names.each { |i|
+        case i[0]
         when :req
-          args(cls, mname, i[1], a.shift)
+          args(i[1], a.shift)
         when :rest
-          args(cls, mname, i[1], a)
-        # This isn't quite right yet, since this only works if all the
-        # opts are at the end, but Ruby allows for more mixed args
-        # (required args can appear after optional args and
-        # take precedence).
+          args(i[1], a)
+          # This isn't quite right yet, since this only works if all the
+          # opts are at the end, but Ruby allows for more mixed args
+          # (required args can appear after optional args and
+          # take precedence).
         when :opt
-          args(cls, mname, i[1], a.shift) unless a.empty?
+          args(i[1], a.shift) unless a.empty?
         else nil
-      end
-    }
-  end
+        end
+      }
+    end
 
-  def self.add_return(cls, mname, ret)
-    returns(cls, mname, ret)
-  end
+    def add_return(ret)
+      @returns.push ret
+    end
 
-  def self.do_infer
-    @args.each_key do |c|
-      puts "For class #{C}:"
-      @args[c].each_key do |m|
-        as = @args[c][m]
-        ret = @returns[c][m]
+    def do_infer
+      as = @args
+      ret = @returns
 
-        puts "  For method #{m}:"
-        as.each { |n, al| puts "    Argument #{n}: #{infer_single_list al}" }
-        puts "    Return: #{infer_single_list ret}"
+      puts "  For method #{@mname} of class #{@class}:"
+      as.each { |n, al| puts "    Argument #{n}: #{infer_single_list al}" }
+      puts "    Return: #{infer_single_list ret}"
+    end
+
+    private
+
+    def infer_single(val)
+      case val.class
+      when Array
+        Tup.new(val.map{ |v| infer_single v })
+      else
+        Nominal.new(val.class)
       end
     end
-  end
 
-  private
+    def infer_single_list(lst)
+      return Nominal.new(Object) if lst.empty?
 
-  def self.infer_single(val)
-    case val.class
-    when Array
-      Tup.new(val.map{ |v| infer_single v })
-    else
-      Nominal.new(val.class)
+      first = lst.shift
+      first_type = infer_single(first)
+      return first_type if lst.empty?
+      rest_type = infer_single_list lst
+
+      first_type.join rest_type
     end
-  end
 
-  def self.infer_single_list(lst)
-    return Nominal.new(Object) if lst.empty?
+    def args(aname, aval)
+      @args[aname] = [] unless @args[aname]
 
-    first = lst.shift
-    first_type = infer_single(first)
-    return first_type if lst.empty?
-    rest_type = infer_single_list lst
-
-    first_type.join rest_type
-  end
-
-  def self.arg_names(cls, mname)
-    @arg_names[cls][mname]
-  end
-
-  def self.returns(cls, mname, ret)
-    @returns = {} unless @returns
-    @returns[cls] = {} unless @returns[cls]
-    @returns[cls][mname] = [] unless @returns[cls][mname]
-
-    @returns[cls][mname].push(ret)
-  end
-
-  def self.args(cls, mname, aname, aval)
-    @args = {} unless @args
-    @args[cls] = {} unless @args[cls]
-    @args[cls][mname] = {} unless @args[cls][mname]
-    @args[cls][mname][aname] = [] unless @args[cls][mname][aname]
-
-    @args[cls][mname][aname].push(aval)
+      @args[aname].push aval
+    end
   end
 end
 
 class Dsl::Spec
   def infer
-    cls = @class
-    mname = @mname
-    Dsl::Infer.name_args(cls, mname)
-    pre_task { |*args, &blk| Dsl::Infer.add_args(cls, mname, *args, &blk) }
-    post_task { |r, *a| Dsl::Infer.add_return(cls, mname, r) }
+    engine = Dsl::Infer::Engine.new(@class, @mname)
+    pre_task { |*args, &blk| engine.add_args *args, &blk }
+    post_task { |r, *a| engine.add_return r }
+    at_exit { engine.do_infer }
   end
-end
-
-at_exit do
-  Dsl::Infer.do_infer
 end
