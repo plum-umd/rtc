@@ -99,7 +99,7 @@ module Dsl::Infer
 
     def ==(cls1)
       cls1.class == Tup and
-        size = cls1.size and
+        size == cls1.size and
         elts.zip(cls1.elts).all? { |p| p[0] == p[1] }
     end
 
