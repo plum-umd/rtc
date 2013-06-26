@@ -104,11 +104,12 @@ module Dsl::Infer
     end
 
     def superclass
+      return Arr.new(Nominal.new(Object)) if elts.empty?
       if elts.all? { |p| p.root? }
         first = elts[0]
-        return Arr.new(elts.slice(1,-1).reduce(first) {|c1, c2| c1.join c2 })
+        return Arr.new(elts[1..-1].reduce(first) {|c1, c2| c1.join c2 })
       else
-        Tuple(elts.map { |p| p.superclass })
+        Tup.new(elts.map { |p| p.superclass })
       end
     end
 
@@ -160,7 +161,7 @@ module Dsl::Infer
     private
 
     def infer_single(val)
-      case val.class
+      case val
       when Array
         Tup.new(val.map{ |v| infer_single v })
       else
