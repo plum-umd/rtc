@@ -1,24 +1,119 @@
 require 'dsl'
 
-class Class
-  def subclass?(cls)
-    return true if cls == self
-    return false unless self.superclass
-    self.superclass.subclass? cls
-  end
-
-  def common_ancestor(cls)
-    return Class unless self.superclass and cls.superclass
-    return self if cls.subclass? self
-    return cls if self.subclass? cls
-    step_one_self = self.superclass.common_ancestor cls
-    step_one_cls = self.common_ancestor cls.superclass
-    return step_one_self if step_one_cls.subclass? step_one_self
-    return step_one_cls
-  end
-end
-
 module Dsl::Infer
+  class Nominal
+    attr_reader :class
+
+    def initialize(cls)
+      @class = cls
+    end
+
+    def to_s
+      @class.to_s
+    end
+
+    def superclass
+      return nil if root?
+      Nominal.new(@class.superclass)
+    end
+
+    def ==(cls1)
+      @class == cls1.class
+    end
+
+    def root?
+      @class == Object or @class == BasicObject
+    end
+
+    def <=(cls1)
+      return true if root?
+      return true if self == cls1
+      return false if cls1.root?
+      self <= cls1.superclass
+    end
+
+    def join(cls)
+      return self if self <= cls
+      return cls if cls <= self
+      cls1 = self.superclass.join cls
+      cls2 = self.join cls.superclass
+      return cls1 if cls1 <= cls2
+      return cls2 if cls2 <= cls1
+    end
+  end
+
+  class Arr < Nominal
+    attr_reader :base
+
+    def initialize(base)
+      case base
+      when Nominal
+        @base = base
+      else
+        @base = Nominal.new(base)
+      end
+    end
+
+    def to_s
+      "Array[#{base}]"
+    end
+
+    def ==(cls1)
+      cls1.class == Arr and
+        base == cls1.base
+    end
+
+    def superclass
+      return Nominal.new(Array) if base.root?
+      Arr.new(base.superclass)
+    end
+
+    def root?
+      false
+    end
+  end
+
+  class Tup < Arr
+    attr_reader :elts
+
+    def initialize(elts)
+      case elts[0]
+      when Nominal
+        @elts = elts
+      else
+        @elts = elts.map { |c| Nominal.new(c) }
+      end
+    end
+
+    def size
+      @elts.length
+    end
+
+    def to_s
+      "Tuple#{elts}"
+    end
+
+    def root?
+      false
+    end
+
+    def ==(cls1)
+      cls1.class == Tup and
+        size = cls1.size and
+        elts.zip(cls1.elts).all? { |p| p[0] == p[1] }
+    end
+
+    def superclass
+      if elts.all? { |p| p.root? }
+        first = elts[0]
+        return Arr.new(elts.slice(1,-1).reduce(first) {|c1, c2| c1.join c2 })
+      else
+        Tuple(elts.map { |p| p.superclass })
+      end
+    end
+
+  end
+
   def self.name_args(cls, mname)
     @arg_names = {} unless @arg_names
     @arg_names[cls] = {} unless @arg_names[cls]
@@ -27,7 +122,6 @@ module Dsl::Infer
 
   def self.add_args(cls, mname, *a, &b)
     names = arg_names(cls, mname)
-    p names
     block_handled = false
     names.each { |i|
       case i[0]
@@ -44,12 +138,10 @@ module Dsl::Infer
         else nil
       end
     }
-    p @args[cls][mname]
   end
 
   def self.add_return(cls, mname, ret)
     returns(cls, mname, ret)
-    p @returns[cls][mname]
   end
 
   def self.do_infer
@@ -68,15 +160,24 @@ module Dsl::Infer
 
   private
 
+  def self.infer_single(val)
+    case val.class
+    when Array
+      Tup.new(val.map{ |v| infer_single v })
+    else
+      Nominal.new(val.class)
+    end
+  end
+
   def self.infer_single_list(lst)
-    return "none provided" if lst.empty?
+    return Nominal.new(Object) if lst.empty?
 
     first = lst.shift
-    first_type = first.class
+    first_type = infer_single(first)
     return first_type if lst.empty?
     rest_type = infer_single_list lst
 
-    first_type.common_ancestor rest_type
+    first_type.join rest_type
   end
 
   def self.arg_names(cls, mname)
