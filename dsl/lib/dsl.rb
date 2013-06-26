@@ -1,4 +1,13 @@
 module Dsl
+  module Gensym
+    def self.gensym
+      @gensym = 0 unless @gensym
+      gsym = @gensym
+      @gensym = gsym + 1
+      gsym
+    end
+  end
+
   class Spec
     def initialize(cls, mname)
       @class = cls
@@ -116,7 +125,7 @@ module Dsl
     private
 
     def define_method_gensym(desc="blk",&blk)
-      blk_name = "__dsl_#{desc}_#{gensym}"
+      blk_name = "__dsl_#{desc}_#{@mname}_#{gensym}"
 
       @class.class_eval do
         define_method blk_name, &blk
@@ -126,13 +135,7 @@ module Dsl
     end
 
     def gensym
-      if @gensym
-        gsym = @gensym
-      else
-        gsym = 0
-      end
-      @gensym = gsym + 1
-      gsym
+      Dsl::Gensym.gensym
     end
   end
 
