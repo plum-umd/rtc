@@ -7,23 +7,23 @@ module Dsl::Infer
     end
 
     def root?
-      false
+      superclass.nil?
     end
 
     def <=(cls1)
-      return true if root?
       return true if self == cls1
-      return false if cls1.root?
-      self <= cls1.superclass
+      return false if root?
+      return true if cls1.root?
+      self.superclass <= cls1
     end
 
     def join(cls)
-      return self if self <= cls
-      return cls if cls <= self
+      return cls if self <= cls
+      return self if cls <= self
       cls1 = self.superclass.join cls
       cls2 = self.join cls.superclass
-      return cls1 if cls1 <= cls2
-      return cls2 if cls2 <= cls1
+      return cls2 if cls1 <= cls2
+      return cls1 if cls2 <= cls1
     end
   end
 
@@ -39,17 +39,15 @@ module Dsl::Infer
     end
 
     def superclass
-      return nil if root?
-      Nominal.new(cls.superclass)
+      cls.superclass.nil? ? nil : Nominal.new(cls.superclass)
     end
 
     def ==(cls1)
-      cls1.class == Nominal and
-        cls == cls1.cls
+      cls1.class == Nominal and cls == cls1.cls
     end
 
-    def root?
-      cls == Object or cls == BasicObject
+    def <=(cls1)
+      cls1.class == Nominal ? cls <= cls1.cls : (super cls1)
     end
   end
 
@@ -57,12 +55,7 @@ module Dsl::Infer
     attr_reader :base
 
     def initialize(base)
-      case base
-      when Nominal
-        @base = base
-      else
-        @base = Nominal.new(base)
-      end
+      @base = base.class <= Typ ? base : Nominal.new(base)
     end
 
     def to_s
@@ -70,13 +63,11 @@ module Dsl::Infer
     end
 
     def ==(cls1)
-      cls1.class == Arr and
-        base == cls1.base
+      cls1.class == Arr and base == cls1.base
     end
 
     def superclass
-      return Nominal.new(Array) if base.root?
-      Arr.new(base.superclass)
+      base.root? ? Nominal.new(Array) : Arr.new(base.superclass)
     end
   end
 
@@ -84,12 +75,7 @@ module Dsl::Infer
     attr_reader :elts
 
     def initialize(elts)
-      case elts[0]
-      when Nominal
-        @elts = elts
-      else
-        @elts = elts.map { |c| Nominal.new(c) }
-      end
+      @elts = elts.map { |c| c.class <= Typ ? c : Nominal.new(c) }
     end
 
     def size
@@ -101,9 +87,16 @@ module Dsl::Infer
     end
 
     def ==(cls1)
-      cls1.class == Tup and
-        size == cls1.size and
+      cls1.class == Tup and size == cls1.size and
         elts.zip(cls1.elts).all? { |p| p[0] == p[1] }
+    end
+
+    def <=(cls1)
+      if cls1.class == Tup and size == cls1.size
+        elts.zip(cls1.elts).all? { |p| p[0] <= p[1] }
+      else
+        super cls1
+      end
     end
 
     def superclass
@@ -112,7 +105,7 @@ module Dsl::Infer
         first = elts[0]
         return Arr.new(elts[1..-1].reduce(first) {|c1, c2| c1.join c2 })
       else
-        Tup.new(elts.map { |p| p.superclass })
+        Tup.new(elts.map { |p| p.root? ? p : p.superclass })
       end
     end
 
