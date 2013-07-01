@@ -149,9 +149,9 @@ module Dsl::Infer
       as = @args
       ret = @returns
 
-      puts "  For method #{@mname} of class #{@class}:"
-      as.each { |n, al| puts "    Argument #{n}: #{infer_single_list al}" }
-      puts "    Return: #{infer_single_list ret}"
+      { class: @class, mname: @mname,
+        args: Hash[as.map { |n, al| [n, (infer_single_list al)]}],
+        ret: (infer_single_list ret) }
     end
 
     private
@@ -182,13 +182,24 @@ module Dsl::Infer
       @args[aname].push aval
     end
   end
+
+  def self.create_engine(cls, mname)
+    @engines = [] unless @engines
+
+    e = Engine.new(cls, mname)
+    @engines.push(e)
+    e
+  end
+
+  class << self
+    attr_reader :engines
+  end
 end
 
 class Dsl::Spec
   def infer
-    engine = Dsl::Infer::Engine.new(@class, @mname)
+    engine = Dsl::Infer.create_engine(@class, @mname)
     pre_task { |*args, &blk| engine.add_args *args, &blk }
     post_task { |r, *a| engine.add_return r }
-    at_exit { engine.do_infer }
   end
 end
