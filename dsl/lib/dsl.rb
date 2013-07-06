@@ -164,6 +164,7 @@ module Dsl
     def dsl_rec
       action do |*args, &blk|
         instance_exec(*args, &blk)
+        self
       end
     end
 
@@ -179,7 +180,9 @@ module Dsl
       end
 
       action do |*args, &blk|
-        cls.new(*a).instance_exec(*args, &blk)
+        c = cls.new(*a)
+        c.instance_exec(*args, &blk)
+        c
       end
     end
   end
