@@ -201,9 +201,11 @@ module Dsl
     end
   end
 
-  def entry(mname, *args, &blk)
+  def keyword(mname, *args, &blk)
     Lang.new(self).keyword(mname, *args, &blk)
   end
+
+  alias :entry :keyword
 
   def spec(mname, *args, &blk)
     Lang.new(self).spec(mname, *args, &blk)
