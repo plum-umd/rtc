@@ -18,7 +18,7 @@ module Rtc::Types
 
 
             pairs.each do |t, u|
-            puts "T = #{t.inspect}  U = #{u.inspect}   #{t <= u}  #{u <= t}   #{t.equal?(u)}"
+            #puts "T = #{t.inspect}  U = #{u.inspect}   #{t <= u}  #{u <= t}   #{t.equal?(u)}"
                 # pairs includes [t, t] and [u, u], and since t <= t, skip
                 # these.
                 next if t <= u and u <= t
