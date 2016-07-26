@@ -1,3 +1,5 @@
+**RTC is no longer maintained** It has been replaced by [RDL](https://github.com/plum-umd/rdl), which provides a more practal approach to types for Ruby.
+
 = Basic Usage
 
 Rtc (Ruby Type Checker) can be loaded via a simple
