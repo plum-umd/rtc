@@ -547,7 +547,7 @@ line to the next, as the following snippet shows:
      my_array.delete_at(0)
      puts my_array.rtc_type # prints "Array<String>"
 across these three lines (not counting the puts statement) the type
-changed twice. To accomodate this dynamic behavior, we say that a type
+changed twice. To accommodate this dynamic behavior, we say that a type
 parameter is either dynamic or fixed.  This is something of a abuse of
 terminology, at runtime, type parameters are substituted with type
 stand-ins, but that is an implementation detail and only confuses the
